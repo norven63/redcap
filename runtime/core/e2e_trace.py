@@ -196,6 +196,44 @@ def trace(tmp: pathlib.Path) -> dict[str, Any]:
     blocked_payload = parse_leading_json(blocked["stdout"])
     assert_ok(blocked["exit_code"] != 0 and blocked_payload.get("ok") is False, failures, "final claim guard did not block missing lifecycle marker")
 
+    purification_dir = tmp / "self-purification"
+    knowledge_path = purification_dir / "knowledge-retrieval-evidence.json"
+    candidates_path = purification_dir / "self-purification-candidates.json"
+    persona_path = purification_dir / "persona-distillation-decision.json"
+    write_json(knowledge_path, {
+        "schema_id": "redcap-self-purification-knowledge-retrieval",
+        "query": "e2e trace fixture completion",
+        "matches": [],
+        "result_handling": "record_no_relevant_entry",
+    })
+    write_json(candidates_path, {
+        "schema_id": "redcap-self-purification-candidates",
+        "task_summary": "e2e trace fixture completion",
+        "candidates": [
+            {
+                "id": "e2e-trace-completion-binding",
+                "source_task": "e2e-trace-fixture",
+                "trigger": "completion_claim_correction",
+                "lesson": "完成态生命周期包必须携带自我净化证据，才能写入完成标记。",
+            }
+        ],
+        "decisions": [
+            {
+                "candidate_id": "e2e-trace-completion-binding",
+                "decision": "no_promote",
+                "reason": "fixture 只验证完成态绑定，不晋升公共知识。",
+            }
+        ],
+    })
+    write_json(persona_path, {
+        "schema_id": "redcap-cap-persona-boundary-decision",
+        "candidate_id": "e2e-trace-completion-binding",
+        "decision": "not_persona",
+        "reason": "fixture 不包含 Cap 私有人格正文。",
+        "hash": "fixture",
+        "counts": {"lesson_chars": 29},
+    })
+
     completion_packet = {
         "schema_id": "redcap-development-lifecycle-packet",
         "task_id": completion_turn,
@@ -254,6 +292,21 @@ def trace(tmp: pathlib.Path) -> dict[str, Any]:
         "implementation_evidence": ["runtime/core/e2e_trace.py"],
         "verification_evidence": ["runtime/bin/redcap e2e-trace self-check"],
         "completion_claim": {"present": True, "evidence_kind": "code"},
+        "self_purification": {
+            "knowledge_retrieval_evidence": str(knowledge_path),
+            "post_task_harvest": {
+                "candidates_path": str(candidates_path),
+            },
+            "review_decision": {
+                "decision": "no_promote",
+                "reason": "fixture 只验证完成态绑定，不晋升公共知识。",
+            },
+            "promotion_or_no_promote_result": {
+                "decision": "no_promote",
+                "reason": "fixture remains local evidence.",
+            },
+            "persona_boundary_evidence": str(persona_path),
+        },
     }
     packet_path = tmp / "completion-packet.json"
     write_json(packet_path, completion_packet)

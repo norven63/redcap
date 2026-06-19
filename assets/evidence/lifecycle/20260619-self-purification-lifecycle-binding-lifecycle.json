@@ -1,0 +1,133 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260619-self-purification-lifecycle-binding",
+  "fsm_state": "PRISM_REVIEW",
+  "requirement_review": {
+    "user_intent": "Norven 要求在网络中断恢复后继续推进 RedCap 复活目标，尤其要解决近期 E2E 暴露的自我净化模块未在普通 RedCap 自开发任务中真实触发的问题。",
+    "target_reality": "把自我净化从可手动调用的命令，接入 RedCap 自开发生命周期完成校验：任务声明完成或进入已验证状态时，必须提交任务前知识检索、任务后候选或无候选理由、评审决策、人格边界和处理结果证据。",
+    "non_goals": [
+      "不降低现有生命周期、棱镜、终局目标或 E2E 门禁要求",
+      "不把 TRPG 示例项目优化当作本轮目标",
+      "不自动把 Cap 私有人格正文写入公共仓库",
+      "不声明 RedCap 完整复活完成或生产可发布",
+      "不要求每个微小问答都强制写公共知识"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回退 runtime/core/development_lifecycle.py、自检更新、本生命周期包和本轮生成的自我净化证据；不触碰旧 RedCap 仓库。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260619-self-purification-lifecycle-binding-lifecycle.json",
+      "runtime/bin/redcap gate --task \"补齐 RedCap 自我净化通用任务后触发与二次 E2E 前置剩余能力\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260619-self-purification-lifecycle-binding-lifecycle.json",
+      "runtime/bin/redcap lifecycle self-check",
+      "runtime/bin/redcap self-purification self-check",
+      "runtime/bin/redcap check --only lifecycle-self-check",
+      "runtime/bin/redcap complete-revival-check"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260619-self-purification-lifecycle-binding/merge.json",
+    "resolution_path": "assets/evidence/prism/20260619-self-purification-lifecycle-binding/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260619-self-purification-lifecycle-binding/session.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "抱歉，刚才网络受阻了，你的任务被中断，现在尝试是否恢复，如果恢复，请继续推进任务目标",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "补齐自我净化对 RedCap 自开发任务完成态的通用绑定。",
+    "primary_deliverable": "生命周期校验器在完成态强制校验自我净化证据，并通过自检覆盖通过、缺失、无候选理由和隐私边界场景。",
+    "acceptance_criteria": [
+      "已验证任务或完成声明缺少自我净化证据时，生命周期校验必须失败。",
+      "完整自我净化证据必须包含知识检索或跳过理由、候选或无候选理由、处理决定和人格边界。",
+      "候选证据存在时必须校验候选文件、处理决定和人格边界文件可解析且结构正确。",
+      "允许轻量任务用 task_weight=light 或 purification_required=false 进入明确跳过路径，但必须写明具体 skip_reason。",
+      "self_purification 类型任务必须有防递归豁免，不得要求它为自身再生成完整自我净化证据。",
+      "跨会话 UserPromptSubmit 标记污染必须通过按 session_id 读取或 events 回退修复。",
+      "自检必须覆盖缺失证据失败和有效证据通过。"
+    ],
+    "status": "verified",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/development_lifecycle.py",
+      "runtime/core/self_purification.py",
+      "runtime/host-adapters/codex/codex-hook.py"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "最佳接入点是 development_lifecycle，因为 RedCap 自开发任务的完成声明已经必须经过生命周期包。",
+        "只新增完成态校验，不改变 run-loop 的候选生成和知识晋升职责。"
+      ],
+      "evidence": [
+        "runtime/core/development_lifecycle.py",
+        "runtime/core/self_purification.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "本轮修复的是触发缺口，不是用新报告证明旧问题不存在。",
+        "允许无候选理由只用于轻量任务收口；公共晋升仍要经过知识网关、Forge 和 Arsenal 边界。"
+      ],
+      "evidence": [
+        "assets/contracts/self-purification.json",
+        "assets/contracts/next-redcap-development-queue.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "现有 self-purification 合同已经声明 lifecycle_binding，本轮把声明落到 lifecycle validator 的硬校验里。",
+        "终局目标仍保持开放，不能把本轮局部修复当作完整复活。"
+      ],
+      "evidence": [
+        "assets/contracts/self-purification.json",
+        "assets/contracts/terminal-goals.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/development_lifecycle.py",
+    "runtime/host-adapters/codex/codex-hook.py"
+  ],
+  "verification_evidence": [
+    "assets/evidence/prism/20260619-self-purification-lifecycle-binding/check-receipts/py-compile-lifecycle-hook.receipt.json",
+    "assets/evidence/prism/20260619-self-purification-lifecycle-binding/check-receipts/lifecycle-self-check.receipt.json",
+    "assets/evidence/prism/20260619-self-purification-lifecycle-binding/check-receipts/self-purification-self-check.receipt.json",
+    "assets/evidence/prism/20260619-self-purification-lifecycle-binding/check-receipts/codex-hook-self-check.receipt.json",
+    "assets/evidence/prism/20260619-self-purification-lifecycle-binding/check-receipts/redcap-check-lifecycle-self-check.receipt.json",
+    "assets/evidence/prism/20260619-self-purification-lifecycle-binding/check-receipts/redcap-check-self-purification-self-check.receipt.json"
+  ],
+  "self_purification": {
+    "knowledge_retrieval_evidence": "assets/evidence/self-purification/20260619-self-purification-lifecycle-binding/knowledge-retrieval-evidence.json",
+    "post_task_harvest": {
+      "candidates_path": "assets/evidence/self-purification/20260619-self-purification-lifecycle-binding/self-purification-candidates.json"
+    },
+    "review_decision": {
+      "decision": "no_promote",
+      "reason": "本轮经验已作为运行时代码和自检落地，暂不晋升公共知识，避免把未经历二次 E2E 的经验过早公共化。"
+    },
+    "promotion_or_no_promote_result": {
+      "decision": "no_promote",
+      "reason": "已保留结构化候选和人格边界证据，等待二次 E2E 观察后再决定是否晋升。"
+    },
+    "persona_boundary_evidence": "assets/evidence/self-purification/20260619-self-purification-lifecycle-binding/persona-distillation-decision.json"
+  },
+  "completion_claim": {
+    "present": false,
+    "scope": "本轮只声明自我净化生命周期绑定与跨会话提示标记修复已进入验证通过状态，不声明 RedCap 完整复活或生产可发布。"
+  }
+}

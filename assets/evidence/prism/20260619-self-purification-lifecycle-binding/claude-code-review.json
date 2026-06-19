@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "设计方案声称通过硬校验解决模块尘封，但未区分 self-purification 产出价值不足与执行约束缺失两个根因。硬校验可确保形式合规，但无法确保实质净化效果——如果证据生成沦为模板复制，问题将转化为系统性敷衍。此外，方案将两个架构上无关的修复（生命周期绑定 + 跨会话 UserPromptSubmit 污染）捆绑在同一轮次，增加变更风险面。",
+  "main_concern": "触发范围过度覆盖轻量任务：三个触发条件（completion_claim、status=verified、TEMPORARY_USABLE）覆盖所有完成路径，轻量任务仅豁免候选字段仍需填写其余证据包（知识检索/跳过、review_decision、promotion_result、persona_boundary）。这会导致模板化敷衍或轻量任务被重型流程误伤，违反已知约束\"不能让轻量问答被重型工程流程误伤\"。方案需增加显式的 purification_required 标记或 task_weight 阈值，而非仅放宽候选要求。",
+  "top_risks": [
+    "死循环：self_purification 自身作为任务完成后触发生命周期完成检查，该检查又要求 self_purification 证据，形成无限递归。方案未提及 self_purification 类型任务的豁免逻辑。",
+    "完成声明降级：新增校验若回溯应用于旧任务（缺少 self_purification 证据），将导致已完成任务回退为未完成。方案未说明前向兼容策略。",
+    "跨会话修复耦合风险：UserPromptSubmit 跨会话污染修复与生命周期绑定在架构上无关，捆绑修改增加回归面和调试复杂度。"
+  ],
+  "missing_evidence": [
+    "未提供轻量任务定义及阈值标准——谁来判断任务是否轻量？依据什么？",
+    "未提供 self_purification 任务类型的豁免逻辑或防递归设计。",
+    "未提供旧任务兼容策略——新增校验是仅前向生效还是回溯检查？"
+  ],
+  "minimum_fix": "1. 增加 task_weight 阈值或 purification_required 显式标记，低于阈值的任务仅需单一 purification_skip_reason 即可完成生命周期，无需完整证据包。2. 在 development_lifecycle.py 校验入口增加任务类型判断：若 task_type=self_purification，豁免自引用校验以防死循环。3. 明确校验仅对新增完成声明生效（forward-only），旧任务不受影响。4. 将跨会话 UserPromptSubmit 修复拆分为独立变更，不与生命周期绑定耦合。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "设计方案未提及 self_purification 任务自身的递归触发防护。若 self_purification 任务完成后触发生命周期完成检查，该检查又要求 self_purification 证据缺失则失败，可能触发新的 self_purification 任务，形成无限递归。必须在校验入口增加任务类型判断并豁免自引用。"
+  },
+  "user_intent_alignment": "aligned"
+}

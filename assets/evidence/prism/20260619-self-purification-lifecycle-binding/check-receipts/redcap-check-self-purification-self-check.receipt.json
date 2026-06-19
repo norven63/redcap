@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap check --only self-purification-self-check",
+  "executed_at": "2026-06-19T04:50:41+00:00",
+  "executor": "codex-redcap-local-wrapper",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 271,
+  "stdout_sha256": "b3a901e5adeac8d2dce3aeec1ade3706d45afff4301996621efdd57720479614"
+}

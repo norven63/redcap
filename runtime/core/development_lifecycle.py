@@ -63,6 +63,8 @@ LEGACY_EVIDENCE_KINDS = {"mixed"}
 EVIDENCE_KINDS = TASK_BODY_EVIDENCE_KINDS | REVIEW_EVIDENCE_KINDS | LEGACY_EVIDENCE_KINDS
 PROOF_ONLY_COMPLETION_KINDS = {"docs", "documentation", "ledger", "receipt", "report", "governance", "prism-review", "gate-check", "checklist", "metadata", "writeup", "spec"}
 COMPLETION_MARKER = REPO_ROOT / "assets" / "evidence" / "lifecycle" / "latest-completion.json"
+SELF_PURIFICATION_DECISIONS = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
+SELF_PURIFICATION_FORBIDDEN_PERSONA_KEYS = {"private_identity_body", "raw_persona_body", "secret", "token", "credential"}
 
 
 def iso_now() -> str:
@@ -84,6 +86,33 @@ def load_json_object(path: pathlib.Path, label: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"{label} must be a JSON object: {path}")
     return payload
+
+
+def optional_json_object(raw_path: Any, label: str, failures: list[str]) -> dict[str, Any] | None:
+    if not (isinstance(raw_path, str) and raw_path.strip()):
+        return None
+    path = resolve_reference_path(raw_path)
+    try:
+        return load_json_object(path, label)
+    except ValueError as exc:
+        failures.append(str(exc))
+        return None
+
+
+def contains_forbidden_key(value: Any, forbidden: set[str]) -> str | None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if str(key) in forbidden:
+                return str(key)
+            nested = contains_forbidden_key(item, forbidden)
+            if nested is not None:
+                return nested
+    elif isinstance(value, list):
+        for item in value:
+            nested = contains_forbidden_key(item, forbidden)
+            if nested is not None:
+                return nested
+    return None
 
 
 def resolve_reference_path(raw: str, base_dir: pathlib.Path | None = None) -> pathlib.Path:
@@ -333,6 +362,107 @@ def validate_task_body(packet: dict[str, Any], failures: list[str]) -> None:
         failures.append("VERIFYING->TEMPORARY_USABLE requires task_body.status=verified")
 
 
+def self_purification_completion_required(packet: dict[str, Any]) -> bool:
+    task_body = packet.get("task_body") if isinstance(packet.get("task_body"), dict) else {}
+    completion_claim = packet.get("completion_claim")
+    transition = packet.get("fsm_transition")
+    transition_target = transition.get("to") if isinstance(transition, dict) else None
+    return (
+        (isinstance(completion_claim, dict) and completion_claim.get("present") is True)
+        or task_body.get("status") == "verified"
+        or transition_target == "TEMPORARY_USABLE"
+    )
+
+
+def validate_self_purification_candidates(payload: dict[str, Any], failures: list[str]) -> None:
+    candidates = payload.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        failures.append("self_purification candidates_path must contain at least one candidate")
+    decisions = payload.get("decisions")
+    if not isinstance(decisions, list):
+        decisions = []
+    for candidate in candidates if isinstance(candidates, list) else []:
+        if isinstance(candidate, dict) and isinstance(candidate.get("decisions"), list):
+            decisions.extend(item for item in candidate["decisions"] if isinstance(item, dict))
+    if not decisions:
+        failures.append("self_purification candidates must include at least one decision")
+        return
+    for index, decision in enumerate(decisions):
+        if not isinstance(decision, dict):
+            failures.append(f"self_purification decision[{index}] must be an object")
+            continue
+        if decision.get("decision") not in SELF_PURIFICATION_DECISIONS:
+            failures.append(f"self_purification decision[{index}] has invalid decision")
+        if not (isinstance(decision.get("reason"), str) and substantive_text(decision["reason"])):
+            failures.append(f"self_purification decision[{index}] requires a substantive reason")
+
+
+def validate_self_purification_binding(packet: dict[str, Any], failures: list[str]) -> None:
+    if not self_purification_completion_required(packet):
+        return
+    task_body = packet.get("task_body") if isinstance(packet.get("task_body"), dict) else {}
+    binding = packet.get("self_purification")
+    if not isinstance(binding, dict):
+        failures.append("verified/completion lifecycle requires self_purification evidence or an explicit light-task skip")
+        return
+
+    task_type = str(task_body.get("task_type") or binding.get("task_type") or "").strip()
+    task_weight = str(task_body.get("task_weight") or binding.get("task_weight") or "standard").strip()
+    required_flag = binding.get("purification_required")
+    self_reference = task_type in {"self_purification", "self-purification"}
+    light_skip = required_flag is False or task_weight == "light" or self_reference
+    if light_skip:
+        reason = binding.get("skip_reason") or binding.get("recursive_skip_reason")
+        if not (isinstance(reason, str) and substantive_text(reason)):
+            failures.append("self_purification light/self-reference skip requires a substantive skip_reason")
+        return
+
+    if not (
+        isinstance(binding.get("knowledge_retrieval_evidence"), str)
+        and binding["knowledge_retrieval_evidence"].strip()
+    ) and not (
+        isinstance(binding.get("knowledge_retrieval_skip_reason"), str)
+        and substantive_text(binding["knowledge_retrieval_skip_reason"])
+    ):
+        failures.append("self_purification requires knowledge_retrieval_evidence or knowledge_retrieval_skip_reason")
+
+    harvest = binding.get("post_task_harvest")
+    if not isinstance(harvest, dict):
+        failures.append("self_purification.post_task_harvest must be an object")
+        harvest = {}
+    candidates_path = harvest.get("candidates_path")
+    no_candidate_reason = harvest.get("no_candidate_reason")
+    if isinstance(candidates_path, str) and candidates_path.strip():
+        candidates_payload = optional_json_object(candidates_path, "self_purification candidates_path", failures)
+        if candidates_payload is not None:
+            validate_self_purification_candidates(candidates_payload, failures)
+    elif not (isinstance(no_candidate_reason, str) and substantive_text(no_candidate_reason)):
+        failures.append("self_purification.post_task_harvest requires candidates_path or substantive no_candidate_reason")
+
+    review_decision = binding.get("review_decision")
+    if isinstance(review_decision, dict):
+        decision_value = review_decision.get("decision")
+        reason_value = review_decision.get("reason")
+    else:
+        decision_value = review_decision
+        reason_value = binding.get("review_reason")
+    if decision_value not in SELF_PURIFICATION_DECISIONS:
+        failures.append("self_purification.review_decision must be a valid self-purification decision")
+    if not (isinstance(reason_value, str) and substantive_text(reason_value)):
+        failures.append("self_purification.review_decision requires a substantive reason")
+
+    result = binding.get("promotion_or_no_promote_result")
+    if not (isinstance(result, (dict, str)) and str(result).strip()):
+        failures.append("self_purification.promotion_or_no_promote_result is required")
+
+    persona_path = binding.get("persona_boundary_evidence")
+    persona_payload = optional_json_object(persona_path, "self_purification persona_boundary_evidence", failures)
+    if persona_payload is not None:
+        forbidden_key = contains_forbidden_key(persona_payload, SELF_PURIFICATION_FORBIDDEN_PERSONA_KEYS)
+        if forbidden_key is not None:
+            failures.append(f"self_purification persona boundary contains forbidden key: {forbidden_key}")
+
+
 def validate_prompt_context(packet: dict[str, Any], failures: list[str], events_path: pathlib.Path) -> None:
     prompt_context = packet.get("prompt_context")
     if not isinstance(prompt_context, dict):
@@ -535,6 +665,7 @@ def validate_packet(packet: dict[str, Any], events_path: pathlib.Path = DEFAULT_
             failures.append("technical_review.runtime_boundary_checked must be true")
     validate_prompt_context(packet, failures, events_path)
     validate_task_body(packet, failures)
+    validate_self_purification_binding(packet, failures)
     validate_prism_review_resolution(packet, failures)
     validate_review_tracks(packet, failures)
     fsm_transition = packet.get("fsm_transition")
@@ -868,6 +999,87 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         governance_failures = validate_packet(governance_implementation, events_path)
         if not any("allowed task-body evidence kinds" in item or "allowed evidence kinds" in item for item in governance_failures):
             failures.append("present=false implemented non-whitelisted evidence could still advance to IMPLEMENTING")
+        purification_dir = tmp / "self-purification"
+        purification_dir.mkdir(parents=True)
+        knowledge_path = purification_dir / "knowledge-retrieval-evidence.json"
+        candidates_path = purification_dir / "self-purification-candidates.json"
+        persona_path = purification_dir / "persona-distillation-decision.json"
+        write_json(knowledge_path, {
+            "schema_id": "redcap-self-purification-knowledge-retrieval",
+            "matches": [],
+            "result_handling": "record_no_relevant_entry",
+        })
+        write_json(candidates_path, {
+            "schema_id": "redcap-self-purification-candidates",
+            "candidates": [
+                {
+                    "id": "fixture-candidate",
+                    "source_task": "fixture",
+                    "trigger": "workflow_drift",
+                    "lesson": "生命周期完成态必须触发自我净化证据。",
+                }
+            ],
+            "decisions": [
+                {
+                    "candidate_id": "fixture-candidate",
+                    "decision": "no_promote",
+                    "reason": "fixture 只验证生命周期绑定，不晋升公共知识。",
+                }
+            ],
+        })
+        write_json(persona_path, {
+            "schema_id": "redcap-cap-persona-boundary-decision",
+            "candidate_id": "fixture-candidate",
+            "decision": "not_persona",
+            "reason": "fixture does not contain Cap private persona body.",
+            "hash": "fixture",
+            "counts": {"lesson_chars": 20},
+        })
+        completion_packet = copy.deepcopy(valid)
+        completion_packet["prompt_context"]["authorized_scope"] = "completion"
+        completion_packet["task_body"]["status"] = "verified"
+        completion_packet["completion_claim"] = {"present": True, "evidence_kind": "code"}
+        completion_packet["self_purification"] = {
+            "knowledge_retrieval_evidence": str(knowledge_path),
+            "post_task_harvest": {
+                "candidates_path": str(candidates_path),
+            },
+            "review_decision": {
+                "decision": "no_promote",
+                "reason": "fixture 只验证完成态绑定，不晋升公共知识。",
+            },
+            "promotion_or_no_promote_result": {
+                "decision": "no_promote",
+                "reason": "fixture remains local evidence.",
+            },
+            "persona_boundary_evidence": str(persona_path),
+        }
+        completion_failures = validate_packet(completion_packet, events_path)
+        if completion_failures:
+            failures.append(f"completion packet with self-purification evidence should pass: {'; '.join(completion_failures)}")
+        missing_purification = copy.deepcopy(completion_packet)
+        missing_purification.pop("self_purification", None)
+        missing_purification_failures = validate_packet(missing_purification, events_path)
+        if not any("self_purification evidence" in item for item in missing_purification_failures):
+            failures.append("verified completion without self_purification evidence was not rejected")
+        light_completion = copy.deepcopy(completion_packet)
+        light_completion["self_purification"] = {
+            "purification_required": False,
+            "task_weight": "light",
+            "skip_reason": "fixture light task has no reusable lesson and does not need full harvest evidence.",
+        }
+        light_failures = validate_packet(light_completion, events_path)
+        if light_failures:
+            failures.append(f"light task explicit self-purification skip should pass: {'; '.join(light_failures)}")
+        recursive_completion = copy.deepcopy(completion_packet)
+        recursive_completion["task_body"]["task_type"] = "self_purification"
+        recursive_completion["self_purification"] = {
+            "task_type": "self_purification",
+            "recursive_skip_reason": "self_purification lifecycle binding avoids requiring itself to produce another full self-purification bundle.",
+        }
+        recursive_failures = validate_packet(recursive_completion, events_path)
+        if recursive_failures:
+            failures.append(f"self-purification recursive skip should pass: {'; '.join(recursive_failures)}")
         packet_path = tmp / "valid.json"
         packet_path.write_text(json.dumps(valid, ensure_ascii=False), encoding="utf-8")
         if load_json(packet_path).get("task_id") != "fixture":

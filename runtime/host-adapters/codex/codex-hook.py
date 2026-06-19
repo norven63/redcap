@@ -309,6 +309,48 @@ def write_json_atomic(path: pathlib.Path, payload: dict[str, Any]) -> None:
     os.replace(tmp, path)
 
 
+def safe_marker_suffix(value: Any) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    suffix = re.sub(r"[^A-Za-z0-9_.:-]+", "-", value.strip()).strip("-")
+    if not suffix:
+        return None
+    return suffix[:120]
+
+
+def user_prompt_session_marker_path(session_id: Any) -> pathlib.Path | None:
+    suffix = safe_marker_suffix(session_id)
+    if suffix is None:
+        return None
+    return EVIDENCE_DIR / f"latest-UserPromptSubmit.{suffix}.json"
+
+
+def load_marker_file(path: pathlib.Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def read_events() -> list[dict[str, Any]]:
+    try:
+        lines = EVENTS_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    events: list[dict[str, Any]] = []
+    for raw_line in lines:
+        if not raw_line.strip():
+            continue
+        try:
+            payload = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            events.append(payload)
+    return events
+
+
 def parse_leading_json_object(stdout: str) -> tuple[dict[str, Any] | None, str | None]:
     try:
         parsed, _ = json.JSONDecoder().raw_decode(stdout.lstrip())
@@ -1158,13 +1200,18 @@ def tool_is_mutating(payload: dict[str, Any], command: str) -> bool:
     return tool_name in mutating_tools or command_is_mutating(command)
 
 
-def latest_user_prompt_marker() -> dict[str, Any]:
-    latest = EVIDENCE_DIR / "latest-UserPromptSubmit.json"
-    try:
-        payload = json.loads(latest.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
+def latest_user_prompt_marker(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    session_id = payload.get("session_id") if isinstance(payload, dict) else None
+    session_marker = user_prompt_session_marker_path(session_id)
+    if session_marker is not None:
+        marker = load_marker_file(session_marker)
+        if marker:
+            return marker
+    if isinstance(session_id, str) and session_id.strip():
+        for event in reversed(read_events()):
+            if event.get("event") == "UserPromptSubmit" and event.get("session_id") == session_id:
+                return event
+    return load_marker_file(EVIDENCE_DIR / "latest-UserPromptSubmit.json")
 
 
 def effective_prompt_intent(prompt_marker: dict[str, Any]) -> dict[str, Any] | None:
@@ -1558,6 +1605,10 @@ def write_marker(event: str, payload: dict[str, Any]) -> dict[str, Any]:
         with EVENTS_PATH.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(json_safe(marker), ensure_ascii=False, sort_keys=True) + "\n")
         write_json_atomic(latest, marker)
+        if event == "UserPromptSubmit":
+            session_marker = user_prompt_session_marker_path(marker.get("session_id"))
+            if session_marker is not None:
+                write_json_atomic(session_marker, marker)
     return marker
 
 
@@ -1748,7 +1799,7 @@ def cmd_event(args: argparse.Namespace) -> int:
     elif args.event == "PreToolUse":
         command = tool_command(payload)
         cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) else None
-        prompt_marker = latest_user_prompt_marker()
+        prompt_marker = latest_user_prompt_marker(payload)
         intent_deny_reason = None
         intent_judge = None
         prompt_marker_fresh = prompt_marker_is_fresh_for_tool(prompt_marker, payload)
@@ -2438,6 +2489,8 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         continuation_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
         continuation_marker["recorded_at"] = "2000-01-01T00:00:00+00:00"
         write_json_atomic(continuation_marker_path, continuation_marker)
+        continuation_session_marker_path = evidence_dir / "latest-UserPromptSubmit.same-session-continuation.json"
+        write_json_atomic(continuation_session_marker_path, continuation_marker)
         continuation = run_hook_event_for_self_check(
             "PreToolUse",
             {
