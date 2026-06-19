@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260620-loom-failure-loop-and-e2e-retention",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-loom-failure-loop-and-e2e-retention",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-19T18:50:58+00:00",
+  "task_started_at": "2026-06-19T18:50:58+00:00",
+  "updated_at": "2026-06-19T19:15:24+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "34a6a6cb-a246-4bb7-9aff-41fecd4e0f10",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-loom-failure-loop-and-e2e-retention/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_e601c15e-0b09-4b4e-9eb9-6d52c2d4cde5",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-loom-failure-loop-and-e2e-retention/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted both Prism concerns after implementing Loom failure-route consumption, anti-loop controls, and conservative E2E run retention."
+  }
+}

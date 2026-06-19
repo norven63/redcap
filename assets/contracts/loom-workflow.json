@@ -342,6 +342,66 @@
       "to": "change_intake"
     }
   ],
+  "failure_loop_policy": {
+    "cap_boundary": {
+      "cap_may_route_failure": true,
+      "cap_may_modify_target_project": false,
+      "runner_may_generate_failure_route_plan": true,
+      "runner_may_generate_fix_patch": false,
+      "tester_or_reviewer_may_fix_project": false
+    },
+    "route_schema_required_fields": [
+      "route_id",
+      "project_id",
+      "task_id",
+      "source_role",
+      "source_phase",
+      "root_cause",
+      "root_cause_hash",
+      "target_role",
+      "target_phase",
+      "restart_from_phase",
+      "downstream_replay_required",
+      "evidence",
+      "loop_count",
+      "previous_route_id",
+      "escalation_threshold",
+      "status"
+    ],
+    "consume_policy": {
+      "target_role_must_acknowledge": true,
+      "target_role_must_read_route_before_edit": true,
+      "allowed_statuses": [
+        "open",
+        "accepted",
+        "completed",
+        "rejected",
+        "escalated"
+      ],
+      "acceptance_evidence_required": [
+        "accepted_by",
+        "accepted_at",
+        "route_id"
+      ],
+      "completion_evidence_required": [
+        "completed_by",
+        "completed_at",
+        "evidence"
+      ]
+    },
+    "anti_loop_policy": {
+      "max_same_root_cause_routes": 3,
+      "escalation_threshold": 3,
+      "deadlock_timeout_seconds": 86400,
+      "escalation_path": [
+        "product_manager",
+        "cap_orchestrator"
+      ],
+      "repeated_route_effect": "mark_escalated_and_stop_auto_rerun",
+      "no_blind_rerun_without_source_or_evidence_delta": true
+    },
+    "retention_policy_reference": "complete-revival-e2e prune-runs keeps failed, interrupted, and unknown runs while pruning only older successful runs outside the active run."
+  },
   "completion_rules": {
     "closeout_requires_all_roles": true,
     "closeout_requires_terminal_acceptance": true,

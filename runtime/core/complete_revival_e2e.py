@@ -46,6 +46,33 @@ REQUIRED_HOOK_EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostT
 REQUIRED_CONFIGURED_HOOK_EVENTS = [*REQUIRED_HOOK_EVENTS, "Stop"]
 LOOM_EXECUTION_ROLES = ["product_manager", "architect", "developer", "tester", "reviewer"]
 ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
+LOOM_ROLE_DEFAULT_PHASE = {
+    "product_manager": "idea_intake",
+    "architect": "architecture_design",
+    "developer": "implementation",
+    "tester": "quality_assurance",
+    "reviewer": "review_and_acceptance",
+}
+LOOM_PHASE_ROLE = {
+    "idea_intake": "product_manager",
+    "change_intake": "product_manager",
+    "architecture_design": "architect",
+    "implementation": "developer",
+    "quality_assurance": "tester",
+    "review_and_acceptance": "reviewer",
+}
+ROOT_CAUSE_FAILURE_ROUTE = {
+    "code": ("developer", "implementation"),
+    "implementation": ("developer", "implementation"),
+    "test": ("tester", "quality_assurance"),
+    "design": ("architect", "architecture_design"),
+    "architecture": ("architect", "architecture_design"),
+    "requirement": ("product_manager", "idea_intake"),
+    "requirements": ("product_manager", "idea_intake"),
+    "change": ("product_manager", "change_intake"),
+    "review": ("reviewer", "review_and_acceptance"),
+}
+E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS = int(os.environ.get("REDCAP_E2E_RETENTION_KEEP_LATEST_SUCCESS", "5"))
 ROLE_TIMEOUT_SECONDS = {
     "product_manager": 420,
     "architect": 420,
@@ -167,6 +194,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "completion-marker-preview.json",
     "completion-marker-preview-validation.json",
     "convergence-diagnosis.json",
+    "loom-failure-route-plan.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -194,6 +222,7 @@ ROLE_EVIDENCE_FILES = {
     "runner-self-purification-resolution.json",
     "persona-distillation-decision.json",
     "failure-backlog.json",
+    "loom-failure-route-plan.json",
 }
 MEANINGFUL_E2E_REQUIRED_GATES = [
     "session_id",
@@ -2419,8 +2448,9 @@ def build_role_prompt(
 
     额外修复反馈包：
     - 路径：{feedback_packet}
-    - 必须先读取该文件，再修改 developer 范围内的项目产物。
-    - 反馈包只包含上一轮失败事实、证据文件路径、哈希和失败信号；它不是修复方案，不得把它当作 runner 或 tester 在替你设计实现。
+    - 必须先读取该文件，再处理本角色职责范围内的项目产物或设计产物。
+    - 反馈包只包含上一轮失败事实、证据文件路径、哈希、失败信号和目标角色路由；它不是修复方案，不得把它当作 runner 或 tester 在替你设计实现。
+    - 如果反馈包中的 target_role 不是本角色，必须写 blocked-package.json 说明路由不匹配，不得替其他角色处理。
     - 你必须正面修复其中列出的 contract_violation、validation_failure 或 readiness_failure，并重新运行本地验证命令。
     - 禁止通过删除验证、降低错误为 warning、移除领域数据、跳过 file:// 支持或让 tester 放宽标准来“通过”。
         """
@@ -4028,6 +4058,29 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
             }
         ],
         "failure_policy": "structural gaps must stop blind reruns"
+    })
+    write_json(evidence / "loom-failure-route-plan-template.json", {
+        "schema_id": "redcap-e2e-loom-failure-route-plan",
+        "producer": "e2e-runner",
+        "cap_boundary": {
+            "cap_may_route_failure": True,
+            "cap_may_modify_target_project": False,
+            "runner_may_generate_failure_route_plan": True,
+            "runner_may_generate_fix_patch": False,
+            "tester_or_reviewer_may_fix_project": False
+        },
+        "consume_policy": {
+            "target_role_must_acknowledge": True,
+            "target_role_must_read_route_before_edit": True,
+            "route_must_be_consumed_by_loom_runtime": True
+        },
+        "anti_loop_policy": {
+            "max_same_root_cause_routes": 3,
+            "escalation_threshold": 3,
+            "no_blind_rerun_without_source_or_evidence_delta": True
+        },
+        "routes": [],
+        "failure_policy": "失败必须回流到 Loom 目标角色，而不是由 Cap 或 E2E 运行器直接修目标项目。"
     })
     write_json(evidence / "final-prism-review-template.json", {
         "schema_id": "redcap-e2e-final-prism-review",
@@ -7535,6 +7588,222 @@ def write_failure_backlog_with_runner_items(evidence: pathlib.Path, failures: li
     write_json(evidence / "failure-backlog.json", backlog)
 
 
+def normalize_root_cause(value: Any) -> str:
+    raw = str(value or "unknown").strip().lower()
+    mapping = {
+        "代码": "code",
+        "实现": "code",
+        "架构": "design",
+        "设计": "design",
+        "需求": "requirement",
+        "变更": "change",
+        "测试": "test",
+        "评审": "review",
+    }
+    return mapping.get(raw, raw)
+
+
+def route_target_for_root_cause(root_cause: Any, owner: Any = None) -> tuple[str, str]:
+    normalized = normalize_root_cause(root_cause)
+    if normalized in ROOT_CAUSE_FAILURE_ROUTE:
+        return ROOT_CAUSE_FAILURE_ROUTE[normalized]
+    owner_text = str(owner or "").strip().lower()
+    owner_map = {
+        "developer": ("developer", "implementation"),
+        "architect": ("architect", "architecture_design"),
+        "product_manager": ("product_manager", "idea_intake"),
+        "tester": ("tester", "quality_assurance"),
+        "reviewer": ("reviewer", "review_and_acceptance"),
+        "e2e-runner": ("reviewer", "review_and_acceptance"),
+    }
+    return owner_map.get(owner_text, ("reviewer", "review_and_acceptance"))
+
+
+def downstream_replay_roles_from_phase(phase: str) -> list[str]:
+    phase_order = [
+        "idea_intake",
+        "architecture_design",
+        "implementation",
+        "quality_assurance",
+        "review_and_acceptance",
+    ]
+    if phase not in phase_order:
+        return []
+    downstream_phases = phase_order[phase_order.index(phase):]
+    return unique_preserve_order([
+        LOOM_PHASE_ROLE[item]
+        for item in downstream_phases
+        if item in LOOM_PHASE_ROLE
+    ])
+
+
+def failure_item_route_hash(item: dict[str, Any], evidence_files: list[str]) -> str:
+    return sha256_text(json.dumps({
+        "id": item.get("id"),
+        "root_cause": normalize_root_cause(item.get("root_cause")),
+        "summary": item.get("summary"),
+        "owner": item.get("owner"),
+        "evidence": sorted(evidence_files),
+    }, ensure_ascii=False, sort_keys=True))
+
+
+def build_loom_failure_route_plan(
+    *,
+    evidence: pathlib.Path,
+    failure_backlog: dict[str, Any] | None,
+    convergence: dict[str, Any] | None,
+    final_failures: list[str],
+) -> dict[str, Any]:
+    open_items: list[dict[str, Any]] = []
+    if isinstance(failure_backlog, dict):
+        raw_items = failure_backlog.get("open_items")
+        if isinstance(raw_items, list):
+            open_items.extend(item for item in raw_items if isinstance(item, dict))
+    existing_ids = {str(item.get("id")) for item in open_items}
+    for index, failure in enumerate(final_failures, start=1):
+        item_id = f"RUNNER-FINAL-ROUTE-{index:03d}"
+        if item_id in existing_ids:
+            continue
+        open_items.append({
+            "id": item_id,
+            "severity": "blocking",
+            "summary": failure,
+            "root_cause": "review",
+            "impact": "当前轮无法进入终局完成，必须回到对应 Loom 角色处理。",
+            "suggested_fix": "目标角色阅读失败路由后自行修复，不由 Cap 或 E2E 运行器生成补丁。",
+            "owner": "reviewer",
+            "next_step": "生成失败路由并从目标角色节点重新推进。",
+        })
+    routes: list[dict[str, Any]] = []
+    for index, item in enumerate(open_items, start=1):
+        evidence_files = unique_preserve_order([
+            "failure-backlog.json",
+            "convergence-diagnosis.json",
+            "final-prism-review.json",
+            *[str(value) for value in item.get("evidence", []) if isinstance(value, str)],
+        ])
+        target_role, target_phase = route_target_for_root_cause(item.get("root_cause"), item.get("owner"))
+        route_hash = failure_item_route_hash(item, evidence_files)
+        routes.append({
+            "route_id": f"e2e-route-{index:03d}-{route_hash[:12]}",
+            "source_role": "tester" if normalize_root_cause(item.get("root_cause")) in {"code", "design", "requirement", "test"} else "reviewer",
+            "source_phase": "quality_assurance" if normalize_root_cause(item.get("root_cause")) in {"code", "design", "requirement", "test"} else "review_and_acceptance",
+            "root_cause": normalize_root_cause(item.get("root_cause")),
+            "root_cause_hash": route_hash,
+            "summary": str(item.get("summary") or item.get("id") or "未命名失败"),
+            "target_role": target_role,
+            "target_phase": target_phase,
+            "restart_from_phase": target_phase,
+            "downstream_replay_required": True,
+            "downstream_replay_roles": downstream_replay_roles_from_phase(target_phase),
+            "loop_count": 1,
+            "previous_route_id": "",
+            "escalation_threshold": 3,
+            "status": "open",
+            "evidence": evidence_files,
+            "target_role_must_acknowledge": True,
+            "target_role_must_read_route_before_edit": True,
+        })
+    plan = {
+        "schema_id": "redcap-e2e-loom-failure-route-plan",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "cap_boundary": {
+            "cap_may_route_failure": True,
+            "cap_may_modify_target_project": False,
+            "runner_may_generate_failure_route_plan": True,
+            "runner_may_generate_fix_patch": False,
+            "tester_or_reviewer_may_fix_project": False,
+        },
+        "consume_policy": {
+            "target_role_must_acknowledge": True,
+            "target_role_must_read_route_before_edit": True,
+            "route_must_be_consumed_by_loom_runtime": True,
+        },
+        "anti_loop_policy": {
+            "max_same_root_cause_routes": 3,
+            "escalation_threshold": 3,
+            "no_blind_rerun_without_source_or_evidence_delta": True,
+            "deadlock_timeout_seconds": 86400,
+        },
+        "convergence_summary": convergence.get("summary") if isinstance(convergence, dict) else None,
+        "routes": routes,
+        "no_open_items_reason": "" if routes else "当前 failure-backlog 与最终失败列表没有开放项。",
+    }
+    write_json(evidence / "loom-failure-route-plan.json", plan)
+    return plan
+
+
+def validate_loom_failure_route_plan(evidence: pathlib.Path, *, route_required: bool) -> list[str]:
+    failures: list[str] = []
+    plan = load_optional_json(evidence / "loom-failure-route-plan.json")
+    if plan is None:
+        if route_required:
+            failures.append("存在失败或开放项时必须写入 loom-failure-route-plan.json")
+        return failures
+    if plan.get("schema_id") != "redcap-e2e-loom-failure-route-plan":
+        failures.append("loom-failure-route-plan.json schema_id 错误")
+    if plan.get("producer") != "e2e-runner":
+        failures.append("loom-failure-route-plan.json 必须由 e2e-runner 生成")
+    boundary = plan.get("cap_boundary")
+    if not isinstance(boundary, dict):
+        failures.append("loom-failure-route-plan 缺少 cap_boundary")
+    else:
+        if boundary.get("cap_may_modify_target_project") is not False:
+            failures.append("loom-failure-route-plan 必须禁止 Cap 直接修改目标项目")
+        if boundary.get("runner_may_generate_fix_patch") is not False:
+            failures.append("loom-failure-route-plan 必须禁止运行器生成修复补丁")
+    consume = plan.get("consume_policy")
+    if not isinstance(consume, dict) or consume.get("target_role_must_acknowledge") is not True or consume.get("route_must_be_consumed_by_loom_runtime") is not True:
+        failures.append("loom-failure-route-plan 必须要求目标角色通过 Loom 运行时接收")
+    anti_loop = plan.get("anti_loop_policy")
+    if not isinstance(anti_loop, dict) or anti_loop.get("no_blind_rerun_without_source_or_evidence_delta") is not True:
+        failures.append("loom-failure-route-plan 必须禁止无变化盲目重跑")
+    routes = plan.get("routes")
+    if not isinstance(routes, list):
+        failures.append("loom-failure-route-plan.routes 必须是列表")
+        routes = []
+    if route_required and not routes:
+        failures.append("存在失败或开放项时 loom-failure-route-plan.routes 不能为空")
+    for route in routes:
+        if not isinstance(route, dict):
+            failures.append("loom-failure-route-plan.routes 条目必须是对象")
+            continue
+        for field in [
+            "route_id",
+            "source_role",
+            "source_phase",
+            "root_cause",
+            "root_cause_hash",
+            "summary",
+            "target_role",
+            "target_phase",
+            "restart_from_phase",
+            "downstream_replay_required",
+            "downstream_replay_roles",
+            "loop_count",
+            "previous_route_id",
+            "escalation_threshold",
+            "status",
+            "evidence",
+        ]:
+            if field not in route:
+                failures.append(f"loom-failure-route-plan 路由缺少字段：{field}")
+        target_role = str(route.get("target_role") or "")
+        target_phase = str(route.get("target_phase") or "")
+        if target_role not in LOOM_ROLE_DEFAULT_PHASE:
+            failures.append(f"loom-failure-route-plan target_role 非法：{target_role}")
+        if LOOM_PHASE_ROLE.get(target_phase) != target_role:
+            failures.append(f"loom-failure-route-plan target_phase 与 target_role 不匹配：{target_phase}/{target_role}")
+        if route.get("downstream_replay_required") is not True:
+            failures.append("loom-failure-route-plan 每条路由都必须要求下游重放")
+        if not isinstance(route.get("evidence"), list) or not route.get("evidence"):
+            failures.append("loom-failure-route-plan 每条路由都必须包含证据文件")
+        if route.get("status") == "open" and isinstance(route.get("loop_count"), int) and isinstance(route.get("escalation_threshold"), int) and route["loop_count"] >= route["escalation_threshold"]:
+            failures.append("loom-failure-route-plan 达到升级阈值后不能继续保持 open")
+    return failures
+
+
 def redcap_source_revision() -> dict[str, Any]:
     relevant_paths = [
         "runtime/core/complete_revival_e2e.py",
@@ -7811,6 +8080,158 @@ def convergence_rerun_guard(work_root: pathlib.Path) -> dict[str, Any]:
         "recorded_source_signature": recorded_signature,
         "current_source_signature": current_signature,
         "current_source": current_source,
+    }
+
+
+def direct_e2e_run_dirs(root: pathlib.Path) -> list[pathlib.Path]:
+    if not root.exists():
+        return []
+    candidates: list[pathlib.Path] = []
+
+    def has_run_summary(path: pathlib.Path) -> bool:
+        return bool(run_summary_paths(path))
+
+    def nested_runs(container: pathlib.Path) -> list[pathlib.Path]:
+        return [
+            child.resolve()
+            for child in container.iterdir()
+            if child.is_dir() and has_run_summary(child)
+        ]
+
+    if root.name.startswith("redcap-e2e-runs"):
+        candidates.extend(nested_runs(root))
+        if not candidates and has_run_summary(root):
+            candidates.append(root.resolve())
+        return sorted(candidates)
+
+    for child in root.iterdir():
+        if not child.is_dir() or not child.name.startswith("redcap-e2e-runs"):
+            continue
+        nested = nested_runs(child)
+        if nested:
+            candidates.extend(nested)
+        elif has_run_summary(child):
+            candidates.append(child.resolve())
+    return sorted(candidates)
+
+
+def run_summary_paths(run_dir: pathlib.Path) -> list[pathlib.Path]:
+    paths = [run_dir / "redcap-e2e-run-summary.json"]
+    paths.extend(sorted(run_dir.glob("**/.redcap/evidence/e2e/run-summary.json")))
+    return unique_preserve_order([str(path) for path in paths if path.exists()])
+
+
+def classify_e2e_run_dir(run_dir: pathlib.Path) -> dict[str, Any]:
+    summaries = [load_optional_json(pathlib.Path(path)) for path in run_summary_paths(run_dir)]
+    summaries = [item for item in summaries if isinstance(item, dict)]
+    active_packets = [
+        payload
+        for payload in [
+            load_optional_json(path)
+            for path in run_dir.glob("**/redcap-long-task-active-run.json")
+        ]
+        if isinstance(payload, dict)
+    ]
+    active_running = any(item.get("lifecycle_state") == "running" for item in active_packets)
+    if active_running:
+        status = "active"
+    elif any(item.get("ok") is True or item.get("ready_for_engineering_use") is True for item in summaries):
+        status = "success"
+    elif any(item.get("blocked_before_project_run") is True or item.get("status") == "blocked" for item in summaries):
+        status = "blocked"
+    elif summaries:
+        status = "failed"
+    else:
+        status = "unknown"
+    try:
+        mtime = max(path.stat().st_mtime for path in [run_dir, *[pathlib.Path(item) for item in run_summary_paths(run_dir)]])
+    except OSError:
+        mtime = 0.0
+    return {
+        "path": str(run_dir),
+        "name": run_dir.name,
+        "status": status,
+        "mtime": mtime,
+        "mtime_iso": dt.datetime.fromtimestamp(mtime, dt.timezone.utc).replace(microsecond=0).isoformat() if mtime else None,
+        "summary_paths": run_summary_paths(run_dir),
+        "delete_allowed": False,
+        "delete_reason": "",
+    }
+
+
+def plan_e2e_run_retention(
+    root: pathlib.Path,
+    *,
+    keep_latest_success: int = E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS,
+) -> dict[str, Any]:
+    resolved_root = root.expanduser().resolve()
+    source = REPO_ROOT.resolve()
+    failures: list[str] = []
+    if resolved_root == source or source in resolved_root.parents:
+        failures.append("拒绝在 RedCap 源工作区内部清理 E2E 运行目录")
+    if not resolved_root.exists():
+        failures.append(f"清理根目录不存在：{resolved_root}")
+    summaries = [classify_e2e_run_dir(path) for path in direct_e2e_run_dirs(resolved_root)]
+    success = sorted(
+        [item for item in summaries if item["status"] == "success"],
+        key=lambda item: float(item.get("mtime") or 0.0),
+        reverse=True,
+    )
+    keep_names = {item["name"] for item in success[:max(0, keep_latest_success)]}
+    delete_candidates: list[dict[str, Any]] = []
+    for item in summaries:
+        if item["status"] != "success":
+            item["delete_reason"] = f"保留 {item['status']} 状态目录，避免删除排障证据"
+            continue
+        if item["name"] in keep_names:
+            item["delete_reason"] = "保留最近成功运行"
+            continue
+        item["delete_allowed"] = True
+        item["delete_reason"] = f"旧成功运行超过保留数量 {keep_latest_success}"
+        delete_candidates.append(item)
+    return {
+        "schema_id": "redcap-e2e-run-retention-plan",
+        "created_at": iso_now(),
+        "ok": not failures,
+        "root": str(resolved_root),
+        "keep_latest_success": keep_latest_success,
+        "delete_policy": "只删除旧成功运行；失败、阻塞、中断、未知和正在运行目录保留",
+        "runs": summaries,
+        "delete_candidates": delete_candidates,
+        "failures": failures,
+    }
+
+
+def execute_e2e_run_retention(plan: dict[str, Any]) -> dict[str, Any]:
+    deleted: list[str] = []
+    failures: list[str] = [str(item) for item in plan.get("failures", []) if item]
+    if failures:
+        return {
+            "schema_id": "redcap-e2e-run-retention-execution",
+            "ok": False,
+            "deleted": deleted,
+            "failures": failures,
+        }
+    for item in plan.get("delete_candidates", []):
+        if not isinstance(item, dict) or item.get("delete_allowed") is not True:
+            continue
+        path = pathlib.Path(str(item.get("path") or "")).resolve()
+        if not path.name.startswith("redcap-e2e-runs"):
+            failures.append(f"拒绝删除非 E2E 运行目录：{path}")
+            continue
+        if path == REPO_ROOT.resolve() or REPO_ROOT.resolve() in path.parents:
+            failures.append(f"拒绝删除 RedCap 源工作区内路径：{path}")
+            continue
+        try:
+            shutil.rmtree(path)
+            deleted.append(str(path))
+        except OSError as exc:
+            failures.append(f"删除失败 {path}: {exc}")
+    return {
+        "schema_id": "redcap-e2e-run-retention-execution",
+        "ok": not failures,
+        "deleted": deleted,
+        "failures": failures,
     }
 
 
@@ -9461,16 +9882,40 @@ def finalize_e2e_acceptance(
                 write_json(evidence / "convergence-diagnosis.json", convergence)
             write_runner_prism_assistance(evidence, final_prism)
         write_failure_backlog_with_runner_items(evidence, failures)
+        route_plan = build_loom_failure_route_plan(
+            evidence=evidence,
+            failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
+            convergence=load_optional_json(evidence / "convergence-diagnosis.json"),
+            final_failures=failures,
+        )
+        route_failures = validate_loom_failure_route_plan(evidence, route_required=True)
+        if route_failures:
+            failures.extend(f"Loom 失败路由计划未通过：{item}" for item in route_failures)
+            write_failure_backlog_with_runner_items(evidence, route_failures)
+            route_plan = build_loom_failure_route_plan(
+                evidence=evidence,
+                failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
+                convergence=load_optional_json(evidence / "convergence-diagnosis.json"),
+                final_failures=failures,
+            )
         write_final_iteration_verdict(project, evidence, False, failures, {
             **pre_final_context,
             "final_prism_ok": final_prism.get("ok") is True if "final_prism" in locals() else False,
+            "loom_failure_route_plan": route_plan,
         })
     else:
         convergence = classify_final_prism_convergence(final_prism, failures)
         write_json(evidence / "convergence-diagnosis.json", convergence)
+        route_plan = build_loom_failure_route_plan(
+            evidence=evidence,
+            failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
+            convergence=convergence,
+            final_failures=[],
+        )
         write_final_iteration_verdict(project, evidence, True, [], {
             **pre_final_context,
             "final_prism_ok": final_prism.get("ok") is True,
+            "loom_failure_route_plan": route_plan,
         })
         write_completion_marker(
             evidence,
@@ -9767,6 +10212,7 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 "visual-independence-report.json",
                 "pre-final-readiness.json",
                 "convergence-diagnosis.json",
+                "loom-failure-route-plan.json",
                 "final-prism-review.json",
                 "failure-backlog.json",
                 "iteration-verdict.json",
@@ -9814,13 +10260,20 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             if marker_boundary_validation.get("ok") is not True:
                 failures.append(f"completion-marker 必须逐字复制边界披露：{marker_boundary_validation.get('failures')}")
     backlog = load_optional_json(evidence / "failure-backlog.json")
+    route_required = False
     if backlog is not None:
         open_items = backlog.get("open_items")
         if open_items is not None and not isinstance(open_items, list):
             failures.append("failure-backlog.open_items 必须是列表")
+        if isinstance(open_items, list) and open_items:
+            route_required = True
         closed_non_blocking = backlog.get("closed_non_blocking")
         if closed_non_blocking:
             failures.append("failure-backlog 不允许存在未解释的 closed_non_blocking；请转为 closed_items 并提供验证证据，或保留为 open_items")
+    convergence = load_optional_json(evidence / "convergence-diagnosis.json")
+    if convergence is not None and convergence.get("final_prism_ok") is not True:
+        route_required = True
+    failures.extend(validate_loom_failure_route_plan(evidence, route_required=route_required))
     verdict = load_optional_json(evidence / "iteration-verdict.json")
     ready = False
     if verdict is not None:
@@ -10777,6 +11230,30 @@ def cmd_convergence_guard_check(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_prune_runs(args: argparse.Namespace) -> int:
+    root = pathlib.Path(args.root).expanduser().resolve()
+    plan = plan_e2e_run_retention(root, keep_latest_success=args.keep_latest_success)
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-run-retention-result",
+        "plan": plan,
+        "executed": args.execute,
+    }
+    if args.execute:
+        result["execution"] = execute_e2e_run_retention(plan)
+        ok = bool(plan.get("ok")) and result["execution"].get("ok") is True
+    else:
+        result["execution"] = None
+        ok = bool(plan.get("ok"))
+    result["ok"] = ok
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if ok:
+        print("REDCAP_AI_E2E_RUN_RETENTION_OK")
+        return 0
+    return 1
+
+
 def cmd_runtime_boundary_probe(args: argparse.Namespace) -> int:
     result = run_e2e_active_run_runtime_boundary_probe(resolve_work_root(args.work_root))
     if args.out:
@@ -11465,6 +11942,40 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if role_completion_ready(project, evidence, "tester", min_role_artifact_mtime=time.time() + 60):
                 failures.append("角色完成谓词不应允许旧 role-artifact 短路新一轮角色执行")
             current_source = pathlib.Path(__file__).read_text(encoding="utf-8")
+            retention_root = work_root / "retention-fixture"
+            retention_root.mkdir()
+            for index in range(7):
+                run_dir = retention_root / f"redcap-e2e-runs-success-{index}"
+                run_dir.mkdir()
+                write_json(run_dir / "redcap-e2e-run-summary.json", {
+                    "schema_id": "redcap-e2e-run-summary",
+                    "ok": True,
+                    "ready_for_engineering_use": True,
+                    "index": index,
+                })
+                os.utime(run_dir, (time.time() + index, time.time() + index))
+            failed_dir = retention_root / "redcap-e2e-runs-failed"
+            failed_dir.mkdir()
+            write_json(failed_dir / "redcap-e2e-run-summary.json", {
+                "schema_id": "redcap-e2e-run-summary",
+                "ok": False,
+                "failures": ["fixture"],
+            })
+            unknown_dir = retention_root / "redcap-e2e-runs-unknown"
+            unknown_dir.mkdir()
+            unrelated_dir = retention_root / "not-redcap-e2e-runs"
+            unrelated_dir.mkdir()
+            retention_plan = plan_e2e_run_retention(retention_root, keep_latest_success=5)
+            if retention_plan.get("ok") is not True or len(retention_plan.get("delete_candidates", [])) != 2:
+                failures.append(f"E2E 运行目录保留计划没有只挑出 2 个旧成功目录：{retention_plan}")
+            retention_execution = execute_e2e_run_retention(retention_plan)
+            if retention_execution.get("ok") is not True or len(retention_execution.get("deleted", [])) != 2:
+                failures.append(f"E2E 运行目录保留执行没有删除 2 个旧成功目录：{retention_execution}")
+            if not failed_dir.exists() or not unknown_dir.exists() or not unrelated_dir.exists():
+                failures.append("E2E 运行目录保留执行误删了失败、未知或非 E2E 目录")
+            source_retention_plan = plan_e2e_run_retention(REPO_ROOT, keep_latest_success=5)
+            if source_retention_plan.get("ok") is True:
+                failures.append("E2E 运行目录保留计划不应允许在 RedCap 源工作区内清理")
             if CODEX_PROJECT_TRUST_MODE == "persist":
                 failures.append("项目级 trust 默认不得持久写入 Codex config；必须优先使用单次 -c 覆盖，避免 E2E 污染用户全局配置")
             if "prepare_isolated_codex_home" not in current_source or "CODEX_HOME" not in current_source:
@@ -11644,6 +12155,61 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             feedback_prompt = build_role_prompt(project, evidence, "developer", "自检方向", feedback_packet=feedback_fixture)
             if "额外修复反馈包" not in feedback_prompt or "降低错误为 warning" not in feedback_prompt:
                 failures.append("developer 修复反馈提示没有禁止降低验收严重度")
+            if "target_role 不是本角色" not in feedback_prompt or "runner 或 tester 在替你设计实现" not in feedback_prompt:
+                failures.append("角色修复反馈提示没有要求按 Loom 路由目标角色处理，可能复发 Cap 或 tester 间接修复")
+            route_plan = build_loom_failure_route_plan(
+                evidence=evidence,
+                failure_backlog={
+                    "schema_id": "redcap-e2e-failure-backlog",
+                    "open_items": [
+                        {
+                            "id": "FIXTURE-CODE",
+                            "severity": "blocking",
+                            "summary": "开发验证脚本未覆盖报名负向路径",
+                            "root_cause": "code",
+                            "impact": "测试无法证明实现满足验收",
+                            "suggested_fix": "目标角色读取路由后自行修复",
+                            "owner": "developer",
+                            "next_step": "回到 implementation",
+                        },
+                        {
+                            "id": "FIXTURE-DESIGN",
+                            "severity": "blocking",
+                            "summary": "架构没有设计 file:// 数据降级",
+                            "root_cause": "design",
+                            "impact": "本地入口不可用",
+                            "suggested_fix": "目标角色读取路由后自行修复",
+                            "owner": "architect",
+                            "next_step": "回到 architecture_design",
+                        },
+                        {
+                            "id": "FIXTURE-REQ",
+                            "severity": "blocking",
+                            "summary": "验收标准未定义报名意向数据契约",
+                            "root_cause": "requirement",
+                            "impact": "下游无法验证真实需求",
+                            "suggested_fix": "目标角色读取路由后自行修复",
+                            "owner": "product_manager",
+                            "next_step": "回到 idea_intake",
+                        },
+                    ],
+                },
+                convergence={"summary": "fixture"},
+                final_failures=[],
+            )
+            route_failures = validate_loom_failure_route_plan(evidence, route_required=True)
+            if route_failures:
+                failures.append(f"Loom 失败路由计划自检失败：{route_failures}")
+            route_targets = {(item.get("target_role"), item.get("target_phase")) for item in route_plan.get("routes", []) if isinstance(item, dict)}
+            for expected_target in [
+                ("developer", "implementation"),
+                ("architect", "architecture_design"),
+                ("product_manager", "idea_intake"),
+            ]:
+                if expected_target not in route_targets:
+                    failures.append(f"Loom 失败路由计划没有路由到目标角色：{expected_target}")
+            if route_plan.get("cap_boundary", {}).get("cap_may_modify_target_project") is not False:
+                failures.append("Loom 失败路由计划没有禁止 Cap 直接修改目标项目")
             if "signup-empty" not in critical_categories_from_text("session signups 为空；warning only"):
                 failures.append("关键 warning 分类没有识别 signups 空数组")
             if "remote-dependency" not in critical_categories_from_text("入口包含 https://cdn.example/asset.js 远端依赖"):
@@ -13087,6 +13653,12 @@ def build_parser() -> argparse.ArgumentParser:
     guard_check.add_argument("--out")
     guard_check.add_argument("--expect-blocked", action="store_true")
     guard_check.set_defaults(func=cmd_convergence_guard_check)
+    prune = sub.add_parser("prune-runs")
+    prune.add_argument("--root", default=str(DEFAULT_PERSISTENT_WORK_ROOT.parent))
+    prune.add_argument("--keep-latest-success", type=int, default=E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS)
+    prune.add_argument("--execute", action="store_true")
+    prune.add_argument("--out")
+    prune.set_defaults(func=cmd_prune_runs)
     runtime_probe = sub.add_parser("runtime-boundary-probe")
     runtime_probe.add_argument("--work-root")
     runtime_probe.add_argument("--out")

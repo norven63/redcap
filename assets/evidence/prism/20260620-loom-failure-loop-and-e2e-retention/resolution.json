@@ -1,0 +1,56 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260620-loom-failure-loop-and-e2e-retention",
+  "merge_path": "assets/evidence/prism/20260620-loom-failure-loop-and-e2e-retention/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260620-loom-failure-loop-and-e2e-retention/kimi.review.json",
+    "assets/evidence/prism/20260620-loom-failure-loop-and-e2e-retention/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 指出的 Cap/E2E runner 直接修目标项目风险、循环断路器缺失和运行目录清理安全边界均成立；本轮以合同、运行机、E2E 路由计划和保守清理命令正面修复。",
+      "implementation_evidence": [
+        "assets/contracts/loom-workflow.json",
+        "runtime/core/loom_workflow.py",
+        "runtime/core/loom_runtime.py",
+        "runtime/core/complete_revival_e2e.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/loom-workflow-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/loom-runtime-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/complete-revival-e2e-self-check-skip-carrier.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/prune-runs-dry-run.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 指出的 failure-route 只有写入端、缺少目标角色消费闭环的问题成立；本轮新增 Loom runtime 的 failure-route create/accept/complete/check 命令，并让 E2E 生成目标角色可消费的 loom-failure-route-plan.json。",
+      "implementation_evidence": [
+        "assets/contracts/loom-workflow.json",
+        "runtime/core/loom_runtime.py",
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/bin/redcap"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/loom-runtime-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/complete-revival-e2e-design-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-loom-failure-loop-and-e2e-retention/complete-revival-e2e-self-check-skip-carrier.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方 concern 均已采纳，并映射到运行逻辑、合同检查和命令级验证；没有把关注项仅记录为文档状态。"
+  }
+}

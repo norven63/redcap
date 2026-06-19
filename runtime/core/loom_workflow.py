@@ -75,6 +75,41 @@ REQUIRED_PRISM_EVIDENCE = {
     "merge_or_resolution",
     "cap_decision",
 }
+REQUIRED_FAILURE_LOOP_ROUTE_FIELDS = {
+    "route_id",
+    "project_id",
+    "task_id",
+    "source_role",
+    "source_phase",
+    "root_cause",
+    "root_cause_hash",
+    "target_role",
+    "target_phase",
+    "restart_from_phase",
+    "downstream_replay_required",
+    "evidence",
+    "loop_count",
+    "previous_route_id",
+    "escalation_threshold",
+    "status",
+}
+REQUIRED_FAILURE_ROUTE_STATUSES = {
+    "open",
+    "accepted",
+    "completed",
+    "rejected",
+    "escalated",
+}
+REQUIRED_FAILURE_ACCEPTANCE_FIELDS = {
+    "accepted_by",
+    "accepted_at",
+    "route_id",
+}
+REQUIRED_FAILURE_COMPLETION_FIELDS = {
+    "completed_by",
+    "completed_at",
+    "evidence",
+}
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -170,6 +205,74 @@ def validate_prism_assistance(contract: dict[str, Any], failures: list[str]) -> 
         failures.append("Loom 必须声明 Cap 不能盲从或无理由否决棱镜")
 
 
+def validate_failure_loop_policy(contract: dict[str, Any], failures: list[str]) -> None:
+    policy = contract.get("failure_loop_policy")
+    if not isinstance(policy, dict):
+        failures.append("Loom 工作流缺少 failure_loop_policy，失败回流不能只停留在转移表")
+        return
+
+    boundary = policy.get("cap_boundary")
+    if not isinstance(boundary, dict):
+        failures.append("Loom 失败循环缺少 cap_boundary")
+    else:
+        expected = {
+            "cap_may_route_failure": True,
+            "cap_may_modify_target_project": False,
+            "runner_may_generate_failure_route_plan": True,
+            "runner_may_generate_fix_patch": False,
+            "tester_or_reviewer_may_fix_project": False,
+        }
+        for key, value in expected.items():
+            if boundary.get(key) is not value:
+                failures.append(f"Loom 失败循环边界 {key} 必须为 {value}")
+
+    fields = set(policy.get("route_schema_required_fields", []) if isinstance(policy.get("route_schema_required_fields"), list) else [])
+    missing_fields = sorted(REQUIRED_FAILURE_LOOP_ROUTE_FIELDS - fields)
+    if missing_fields:
+        failures.append(f"Loom 失败路由字段缺失：{missing_fields}")
+
+    consume = policy.get("consume_policy")
+    if not isinstance(consume, dict):
+        failures.append("Loom 失败循环缺少 consume_policy，目标角色无法被强制接收失败路由")
+    else:
+        if consume.get("target_role_must_acknowledge") is not True:
+            failures.append("Loom 失败路由目标角色必须显式接收")
+        if consume.get("target_role_must_read_route_before_edit") is not True:
+            failures.append("Loom 失败路由目标角色必须先读路由再修改")
+        statuses = set(consume.get("allowed_statuses", []) if isinstance(consume.get("allowed_statuses"), list) else [])
+        missing_statuses = sorted(REQUIRED_FAILURE_ROUTE_STATUSES - statuses)
+        if missing_statuses:
+            failures.append(f"Loom 失败路由状态缺失：{missing_statuses}")
+        acceptance = set(consume.get("acceptance_evidence_required", []) if isinstance(consume.get("acceptance_evidence_required"), list) else [])
+        missing_acceptance = sorted(REQUIRED_FAILURE_ACCEPTANCE_FIELDS - acceptance)
+        if missing_acceptance:
+            failures.append(f"Loom 失败路由接收证据缺失：{missing_acceptance}")
+        completion = set(consume.get("completion_evidence_required", []) if isinstance(consume.get("completion_evidence_required"), list) else [])
+        missing_completion = sorted(REQUIRED_FAILURE_COMPLETION_FIELDS - completion)
+        if missing_completion:
+            failures.append(f"Loom 失败路由完成证据缺失：{missing_completion}")
+
+    anti_loop = policy.get("anti_loop_policy")
+    if not isinstance(anti_loop, dict):
+        failures.append("Loom 失败循环缺少 anti_loop_policy，容易复发无限 E2E 重跑")
+    else:
+        if not isinstance(anti_loop.get("max_same_root_cause_routes"), int) or anti_loop["max_same_root_cause_routes"] < 1:
+            failures.append("Loom 失败循环 max_same_root_cause_routes 必须是正整数")
+        if not isinstance(anti_loop.get("escalation_threshold"), int) or anti_loop["escalation_threshold"] < 1:
+            failures.append("Loom 失败循环 escalation_threshold 必须是正整数")
+        if anti_loop.get("max_same_root_cause_routes") != anti_loop.get("escalation_threshold"):
+            failures.append("Loom 失败循环 max_same_root_cause_routes 与 escalation_threshold 必须保持一致，避免双标准")
+        if not isinstance(anti_loop.get("deadlock_timeout_seconds"), int) or anti_loop["deadlock_timeout_seconds"] < 60:
+            failures.append("Loom 失败循环 deadlock_timeout_seconds 必须足够明确")
+        if anti_loop.get("repeated_route_effect") != "mark_escalated_and_stop_auto_rerun":
+            failures.append("Loom 失败循环重复根因必须升级并停止自动盲目重跑")
+        if anti_loop.get("no_blind_rerun_without_source_or_evidence_delta") is not True:
+            failures.append("Loom 失败循环必须禁止无源码或证据变化的盲目重跑")
+        escalation_path = anti_loop.get("escalation_path")
+        if not isinstance(escalation_path, list) or "cap_orchestrator" not in escalation_path:
+            failures.append("Loom 失败循环升级路径必须包含 cap_orchestrator")
+
+
 def validate_contract(contract: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     if contract.get("schema_id") != "redcap-loom-workflow-contract":
@@ -241,6 +344,7 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     missing_routes = sorted(REQUIRED_FAILURE_ROUTES - route_tuples)
     if missing_routes:
         failures.append(f"Loom 工作流缺少根因回流：{missing_routes}")
+    validate_failure_loop_policy(contract, failures)
     rules = contract.get("completion_rules")
     if not isinstance(rules, dict):
         failures.append("Loom 工作流缺少完成规则")
@@ -313,6 +417,22 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     missing_prism["prism_assistance_policy"]["required_for"] = ["code_review"]
     if not any("棱镜协助场景缺失" in item for item in validate_contract(missing_prism)):
         failures.append("缺少棱镜协助场景的样例没有失败")
+    missing_failure_policy = json.loads(json.dumps(good, ensure_ascii=False))
+    missing_failure_policy.pop("failure_loop_policy", None)
+    if not any("failure_loop_policy" in item for item in validate_contract(missing_failure_policy)):
+        failures.append("缺少失败循环策略的样例没有失败")
+    cap_can_modify = json.loads(json.dumps(good, ensure_ascii=False))
+    cap_can_modify["failure_loop_policy"]["cap_boundary"]["cap_may_modify_target_project"] = True
+    if not any("cap_may_modify_target_project" in item for item in validate_contract(cap_can_modify)):
+        failures.append("允许 Cap 直接修改目标项目的样例没有失败")
+    missing_consume = json.loads(json.dumps(good, ensure_ascii=False))
+    missing_consume["failure_loop_policy"].pop("consume_policy", None)
+    if not any("consume_policy" in item for item in validate_contract(missing_consume)):
+        failures.append("缺少目标角色消费策略的样例没有失败")
+    weak_loop = json.loads(json.dumps(good, ensure_ascii=False))
+    weak_loop["failure_loop_policy"]["anti_loop_policy"]["no_blind_rerun_without_source_or_evidence_delta"] = False
+    if not any("盲目重跑" in item for item in validate_contract(weak_loop)):
+        failures.append("允许无变化盲目重跑的样例没有失败")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1
