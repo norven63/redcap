@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260619-next-redcap-development-design",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-next-redcap-development-design",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-19T01:13:20+00:00",
+  "task_started_at": "2026-06-19T01:13:20+00:00",
+  "updated_at": "2026-06-19T01:24:08+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "f3a5dab9-f829-4317-b401-63386c8a43db",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-next-redcap-development-design/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_8da30f35-c596-4277-8311-fa5fa0d9387d",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-next-redcap-development-design/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted Prism concerns and implemented runtime fixes with executed-check receipts."
+  }
+}

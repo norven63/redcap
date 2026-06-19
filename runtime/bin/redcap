@@ -22,11 +22,12 @@ Usage:
   runtime/bin/redcap complete-revival-e2e design-check|prepare|carrier-probe|convergence-check|convergence-guard-check|run|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
+  runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|self-check [...]
   runtime/bin/redcap forge check|self-check [...]
   runtime/bin/redcap arsenal check|self-check [...]
   runtime/bin/redcap project-install check|package|audit-package|release-check|init|self-check [...]
-  runtime/bin/redcap knowledge-gateway check|search [...]
-  runtime/bin/redcap self-purification check|self-check [...]
+  runtime/bin/redcap knowledge-gateway check|search|draft|review|promote|self-check [...]
+  runtime/bin/redcap self-purification check|run-loop|self-check [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
@@ -80,6 +81,7 @@ Commands:
                 Run the generic AI-only RedCap E2E methodology and Codex CLI carrier probe.
   fsm           Run the RedCap workflow FSM kernel.
   loom-workflow Verify the role-based Loom engineering workflow contract.
+  loom-runtime  Run the project-level Loom role session manifest and loss alarms.
   forge         Verify RedCap Forge and redcap-arsenal promotion rules.
   arsenal       Verify the public reusable redcap-arsenal index.
   project-install
@@ -87,7 +89,7 @@ Commands:
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
   self-purification
-                Verify pre-task retrieval, post-task harvest, no-promote, and Cap private persona boundaries.
+                Run and verify pre-task retrieval, post-task harvest, promotion decisions, and Cap private persona boundaries.
   evidence-restore
                 Restore bounded generated evidence through a RedCap-owned writer.
   legacy-evidence
@@ -193,6 +195,9 @@ case "$cmd" in
     ;;
   loom-workflow)
     exec python3 "$REPO_ROOT/runtime/core/loom_workflow.py" "$@"
+    ;;
+  loom-runtime)
+    exec python3 "$REPO_ROOT/runtime/core/loom_runtime.py" "$@"
     ;;
   forge)
     exec python3 "$REPO_ROOT/runtime/core/redcap_forge.py" "$@"

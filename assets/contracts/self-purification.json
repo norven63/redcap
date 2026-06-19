@@ -102,7 +102,7 @@
   },
   "runtime_integration": {
     "pre_task_entrypoint": "runtime/bin/redcap knowledge-gateway search <query>",
-    "post_task_entrypoint": "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e",
+    "post_task_entrypoint": "runtime/bin/redcap self-purification run-loop --task-summary <text> --evidence-root <dir>",
     "aggregate_check": "runtime/bin/redcap self-purification check",
     "e2e_hard_gate": "runtime/bin/redcap complete-revival-e2e run",
     "skip_policy": "Implementation, completion, E2E, and self-development tasks may skip retrieval only with an explicit reason; full revival E2E cannot skip retrieval.",

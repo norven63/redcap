@@ -1,86 +1,83 @@
 {
-  "schema_id": "redcap-knowledge-index",
-  "version": 1,
   "default_read": "index-only",
-  "raw_archive_default": "forbidden",
   "entries": [
     {
-      "id": "revival-doctrine",
-      "title": "RedCap revival doctrine",
-      "route": "revival-doc",
-      "path": "assets/docs/redcap-revival-doctrine.md",
-      "first_read": "assets/docs/redcap-revival-doctrine.md",
       "body_read_rule": "index-first",
+      "first_read": "assets/docs/redcap-revival-doctrine.md",
+      "id": "revival-doctrine",
+      "path": "assets/docs/redcap-revival-doctrine.md",
+      "route": "revival-doc",
+      "summary": "Compact doctrine for reviving RedCap without importing old pathology or treating documents as completion.",
       "tags": [
         "doctrine",
         "revival",
         "anti-loop"
       ],
-      "summary": "Compact doctrine for reviving RedCap without importing old pathology or treating documents as completion."
+      "title": "RedCap revival doctrine"
     },
     {
-      "id": "revival-map",
-      "title": "RedCap revival map",
-      "route": "revival-doc",
-      "path": "assets/docs/redcap-revival-map.md",
-      "first_read": "assets/docs/redcap-revival-map.md",
       "body_read_rule": "index-first",
+      "first_read": "assets/docs/redcap-revival-map.md",
+      "id": "revival-map",
+      "path": "assets/docs/redcap-revival-map.md",
+      "route": "revival-doc",
+      "summary": "Map of useful old RedCap ideas, redesign targets, and designs that should not be carried forward wholesale.",
       "tags": [
         "migration",
         "architecture",
         "old-redcap"
       ],
-      "summary": "Map of useful old RedCap ideas, redesign targets, and designs that should not be carried forward wholesale."
+      "title": "RedCap revival map"
     },
     {
-      "id": "directory-architecture",
-      "title": "Runtime and assets directory architecture",
-      "route": "revival-doc",
-      "path": "assets/docs/directory-architecture.md",
-      "first_read": "assets/docs/directory-architecture.md",
       "body_read_rule": "index-first",
+      "first_read": "assets/docs/directory-architecture.md",
+      "id": "directory-architecture",
+      "path": "assets/docs/directory-architecture.md",
+      "route": "revival-doc",
+      "summary": "Thin-root layout rule separating executable runtime units from durable asset units.",
       "tags": [
         "directory",
         "runtime",
         "assets"
       ],
-      "summary": "Thin-root layout rule separating executable runtime units from durable asset units."
+      "title": "Runtime and assets directory architecture"
     },
     {
-      "id": "old-prism-lock-pattern",
-      "title": "Old Prism run lock pattern",
-      "route": "old-redcap-reference",
-      "path": "/Users/norven/workspace/redcap/prism/tools/prism-run-state.sh",
-      "first_read": "assets/evidence/prism/20260531-171337-old-redcap-implementation-reuse-review/merge.json",
       "body_read_rule": "explicit-only",
+      "first_read": "assets/evidence/prism/20260531-171337-old-redcap-implementation-reuse-review/merge.json",
+      "id": "old-prism-lock-pattern",
+      "path": "/Users/norven/workspace/redcap/prism/tools/prism-run-state.sh",
+      "route": "old-redcap-reference",
+      "summary": "Old hard-link lock pattern adapted into runtime/prism/lib/prism_lock.py for session manifest writes.",
       "tags": [
         "prism",
         "lock",
         "atomic-write"
       ],
-      "summary": "Old hard-link lock pattern adapted into runtime/prism/lib/prism_lock.py for session manifest writes."
+      "title": "Old Prism run lock pattern"
     },
     {
-      "id": "old-session-ownership-pattern",
-      "title": "Old Codex session ownership pattern",
-      "route": "old-redcap-reference",
-      "path": "/Users/norven/workspace/redcap/compass/tools/redcap-codex-session-ownership.sh",
-      "first_read": "assets/evidence/prism/20260531-171337-old-redcap-implementation-reuse-review/merge.json",
       "body_read_rule": "explicit-only",
+      "first_read": "assets/evidence/prism/20260531-171337-old-redcap-implementation-reuse-review/merge.json",
+      "id": "old-session-ownership-pattern",
+      "path": "/Users/norven/workspace/redcap/compass/tools/redcap-codex-session-ownership.sh",
+      "route": "old-redcap-reference",
+      "summary": "Old session ownership model should be adapted by concept, not copied with .dev-task.md coupling.",
       "tags": [
         "session",
         "ownership",
         "codex"
       ],
-      "summary": "Old session ownership model should be adapted by concept, not copied with .dev-task.md coupling."
+      "title": "Old Codex session ownership pattern"
     },
     {
-      "id": "raw-evidence-access-boundary",
-      "title": "Raw Evidence Access Boundary",
-      "route": "active-local-index",
-      "path": "assets/knowledge/entries/raw-evidence-access-boundary.md",
-      "first_read": "assets/knowledge/entries/raw-evidence-access-boundary.md",
       "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+      "id": "raw-evidence-access-boundary",
+      "path": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+      "route": "active-local-index",
+      "summary": "Raw evidence is explicit-access only: not default context, not a package candidate, not physically cleaned, no cleanup apply, protected by minimum run count and release blocker rules.",
       "tags": [
         "raw",
         "evidence",
@@ -90,7 +87,40 @@
         "lifecycle",
         "release"
       ],
-      "summary": "Raw evidence is explicit-access only: not default context, not a package candidate, not physically cleaned, no cleanup apply, protected by minimum run count and release blocker rules."
+      "title": "Raw Evidence Access Boundary"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/self-purification-runtime-loop.md",
+      "id": "self-purification-runtime-loop",
+      "path": "assets/knowledge/entries/self-purification-runtime-loop.md",
+      "route": "active-local-index",
+      "summary": "自我净化必须把任务前检索、任务后候选、评审决策和后续召回串成闭环，不能停留在合同检查。",
+      "tags": [
+        "self-purification",
+        "runtime",
+        "knowledge",
+        "anti-loop"
+      ],
+      "title": "自我净化运行闭环"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/loom-runtime-session-continuity.md",
+      "id": "loom-runtime-session-continuity",
+      "path": "assets/knowledge/entries/loom-runtime-session-continuity.md",
+      "route": "active-local-index",
+      "summary": "Loom 必须在普通项目中记录角色会话、续接关系、丢失报警和上下游交付证据，不能由共享上下文冒充多角色。",
+      "tags": [
+        "loom",
+        "runtime",
+        "session",
+        "codex-cli"
+      ],
+      "title": "Loom 角色会话连续性"
     }
-  ]
+  ],
+  "raw_archive_default": "forbidden",
+  "schema_id": "redcap-knowledge-index",
+  "version": 1
 }

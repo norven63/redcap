@@ -86,6 +86,7 @@ STEPS: tuple[Step, ...] = (
     Step("fsm-check", redcap("fsm", "check")),
     Step("loom-workflow-self-check", redcap("loom-workflow", "self-check")),
     Step("loom-workflow-check", redcap("loom-workflow", "check")),
+    Step("loom-runtime-self-check", redcap("loom-runtime", "self-check")),
     Step("forge-self-check", redcap("forge", "self-check")),
     Step("forge-check", redcap("forge", "check")),
     Step("arsenal-check", redcap("arsenal", "check")),

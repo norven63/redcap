@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap check --only loom-runtime-self-check",
+  "exit_code": 0,
+  "executed_at": "2026-06-19T01:32:39+00:00",
+  "executor": "redcap-next-development-implementation",
+  "stdout_sha256": "43ab1f1cb9fd60172db7e3bc56011b46e5729511a427f513a37bda06822e4684",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

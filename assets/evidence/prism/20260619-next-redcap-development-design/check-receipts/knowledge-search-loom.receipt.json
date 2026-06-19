@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap knowledge-gateway search loom --require-hit",
+  "exit_code": 0,
+  "executed_at": "2026-06-19T01:32:39+00:00",
+  "executor": "redcap-next-development-implementation",
+  "stdout_sha256": "7859ff2946f7acfd39358bd7e808d499b9fbb495b10c44c7ab188df435732bd4",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

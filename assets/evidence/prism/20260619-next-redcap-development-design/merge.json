@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The main AI is counting 'we wrote down the correct next steps' as progress toward the user's request to actually fix and run the system. The user's intent was to organize real E2E problems into tasks *and land them*, especially confirming that Loom independent roles, session continuation, self-purification, and Cap personality sedimentation are actually running. A plan and queue satisfy the 'organize' half but not the 'land/verify' half."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The design produces a closed loop of self-referential artifacts: a plan document, a machine-readable queue, and a Prism review request — all referencing each other, all created in the same evidence batch. This pattern risks substituting documentation production for runtime implementation. The known constraint #1 explicitly forbids treating plan documents as completion evidence, yet the evidence set contains only documents and pre-existing code that is acknowledged as incomplete. The self-purification module is admitted to be \"mainly a contract checker\" — the gap between that and a working run-loop is the entire implementation, not a minor extension."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Reclassify the plan.md and queue.json as planning outputs, not changed reality. Require the next iteration to ship one executable runtime piece (e.g., a Loom role runtime that can start/continue a Codex CLI session, or a self-purification run-loop that runs before/after a task) plus a concrete acceptance test tied to a real first-E2E failure. Do not accept another refined plan or expanded queue as completion."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Require queue.json to include executable verification commands for each task (not just descriptions). For example: a command that attempts to spawn a Loom role session in a non-TRPG project and fails if the runtime is missing; a command that runs self-purification and asserts it detected (or failed to detect) a specific contamination pattern. Without falsifiable acceptance criteria, the queue is structured documentation, not a machine-executable contract."
+    }
+  ],
+  "anti_loop_detected": true
+}

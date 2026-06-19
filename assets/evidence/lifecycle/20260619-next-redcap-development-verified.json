@@ -1,0 +1,119 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260619-next-redcap-development",
+  "fsm_state": "VERIFYING",
+  "requirement_review": {
+    "user_intent": "Norven 要求把首次 E2E 暴露出的 RedCap 能力缺口整理成任务并落地，重点补齐 Loom 独立角色会话、自我净化闭环、知识召回和二次 E2E 前置能力。",
+    "target_reality": "本轮已新增 Loom 项目级会话运行机、自我净化 run-loop、知识召回公共条目，并通过棱镜 concern resolution 与 redcap check 验证。",
+    "non_goals": [
+      "不声明 RedCap 完整复活",
+      "不声明生产发布可用",
+      "不把 TRPG 示例项目质量当作本轮完成目标",
+      "不把计划、队列或评审本身当作完成证据"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回退 runtime/core/loom_runtime.py、runtime/core/self_purification.py、runtime/core/knowledge_gateway.py、runtime/core/check_runner.py、runtime/bin/redcap 以及本轮新增知识条目和证据目录。",
+    "verification_plan": [
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-next-redcap-development-design/merge.json --resolution assets/evidence/prism/20260619-next-redcap-development-design/resolution.json --review assets/evidence/prism/20260619-next-redcap-development-design/kimi.review.json --review assets/evidence/prism/20260619-next-redcap-development-design/claude-code.review.json --manifest assets/evidence/prism/20260619-next-redcap-development-design/session.json",
+      "runtime/bin/redcap loom-runtime self-check",
+      "runtime/bin/redcap self-purification self-check",
+      "runtime/bin/redcap knowledge-gateway search self-purification --require-hit",
+      "runtime/bin/redcap knowledge-gateway search loom --require-hit",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260619-next-redcap-development-design/merge.json",
+    "resolution_path": "assets/evidence/prism/20260619-next-redcap-development-design/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260619-next-redcap-development-design/session.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "把下一步 RedCap 开发任务和技术方案拟定好，满足近十五轮上下文中持续提出的要求，尤其是目标是渔而非鱼。",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "提交基线后，设计并落地下一步 RedCap 能力补强，重点是 Loom 独立角色会话、自我净化运行闭环和知识召回有效性。",
+    "primary_deliverable": "运行时代码、合同更新、公共知识条目、棱镜评审闭环和可重复检查结果。",
+    "acceptance_criteria": [
+      "Loom 必须有项目级角色会话清单和丢失报警检查。",
+      "自我净化必须能运行检索、候选、决策、公共晋升或私有边界记录。",
+      "知识网关必须能召回 self-purification 与 loom 相关知识。",
+      "棱镜 concern 必须被接受并映射到实现证据和检查回执。",
+      "全量 runtime/bin/redcap check 必须通过。"
+    ],
+    "status": "verified",
+    "evidence_kind": "code-and-review",
+    "evidence": [
+      "runtime/core/loom_runtime.py",
+      "runtime/core/self_purification.py",
+      "runtime/core/knowledge_gateway.py",
+      "runtime/core/check_runner.py",
+      "assets/knowledge/entries/self-purification-runtime-loop.md",
+      "assets/knowledge/entries/loom-runtime-session-continuity.md",
+      "assets/evidence/prism/20260619-next-redcap-development-design/resolution.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "Loom 运行机独立于 E2E 专用实现，可在普通项目 .redcap/state/loom/session-manifest.json 记录角色会话。",
+        "自我净化 run-loop 复用知识网关，不直接改写 Cap 私有身份源。"
+      ],
+      "evidence": [
+        "runtime/core/loom_runtime.py",
+        "runtime/core/self_purification.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "棱镜 concern 未被忽略；两方 concern 均已接受并用执行回执闭环。",
+        "completion_claim 仍为 false，避免阶段成果冒充完整复活。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260619-next-redcap-development-design/resolution.json",
+        "assets/evidence/prism/20260619-next-redcap-development-design/check-receipts"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "self-purification 合同的任务后入口已指向新的 run-loop。",
+        "总检查链纳入 loom-runtime-self-check。"
+      ],
+      "evidence": [
+        "assets/contracts/self-purification.json",
+        "runtime/core/check_runner.py"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/loom_runtime.py",
+    "runtime/core/self_purification.py",
+    "runtime/core/knowledge_gateway.py",
+    "runtime/bin/redcap"
+  ],
+  "verification_evidence": [
+    "assets/evidence/prism/20260619-next-redcap-development-design/check-receipts/py-compile-runtime.receipt.json",
+    "assets/evidence/prism/20260619-next-redcap-development-design/check-receipts/aggregate-loom-runtime.receipt.json",
+    "assets/evidence/prism/20260619-next-redcap-development-design/check-receipts/aggregate-self-purification.receipt.json",
+    "assets/evidence/prism/20260619-next-redcap-development-design/check-receipts/aggregate-knowledge-gateway.receipt.json",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": false
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap knowledge-gateway search self-purification --require-hit",
+  "exit_code": 0,
+  "executed_at": "2026-06-19T01:32:39+00:00",
+  "executor": "redcap-next-development-implementation",
+  "stdout_sha256": "f996ce0ce7a7fe57d136bac93ceb12094260e2bdb7eab1aece7fd9ee1c6cdb61",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

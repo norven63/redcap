@@ -436,7 +436,7 @@ def build_parser() -> argparse.ArgumentParser:
     check.set_defaults(func=cmd_check)
     search = subparsers.add_parser("search")
     search.add_argument("query")
-    search.add_argument("--require-match", action="store_true")
+    search.add_argument("--require-match", "--require-hit", dest="require_match", action="store_true")
     search.set_defaults(func=cmd_search)
     draft = subparsers.add_parser("draft")
     draft.add_argument("--id", required=True)

@@ -1,75 +1,75 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-19T01:06:53+00:00",
-  "event_count": 44289,
-  "session_event_count": 11231,
-  "task_count": 122,
-  "success_count": 57,
-  "success_rate": 0.4672,
-  "operational_task_count": 112,
-  "operational_success_count": 57,
-  "operational_success_rate": 0.5089,
+  "computed_at": "2026-06-19T01:38:21+00:00",
+  "event_count": 44600,
+  "session_event_count": 11316,
+  "task_count": 123,
+  "success_count": 58,
+  "success_rate": 0.4715,
+  "operational_task_count": 113,
+  "operational_success_count": 58,
+  "operational_success_rate": 0.5133,
   "self_check_task_count": 10,
   "active_count": 54,
   "operational_active_count": 44,
   "attention_count": 64,
-  "average_duration_seconds": 1663.902,
+  "average_duration_seconds": 1655.634,
   "providers": {
     "claude-code": {
-      "tasks": 122,
-      "rounds": 117,
-      "reviews_loaded": 95,
+      "tasks": 123,
+      "rounds": 118,
+      "reviews_loaded": 96,
       "pass": 9,
-      "concern": 77,
+      "concern": 78,
       "block": 9,
       "missing_verdict": 27
     },
     "kimi": {
-      "tasks": 122,
-      "rounds": 113,
-      "reviews_loaded": 89,
+      "tasks": 123,
+      "rounds": 114,
+      "reviews_loaded": 90,
       "pass": 10,
-      "concern": 68,
+      "concern": 69,
       "block": 11,
       "missing_verdict": 33
     }
   },
   "recent_attention_tasks": [
     {
-      "task_id": "20260619-e2e-change-review",
-      "outcome": "failed",
-      "strictest_verdict": "concern",
-      "recorded_at": "2026-06-18T19:07:16+00:00"
-    },
-    {
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T19:01:22+00:00"
+      "recorded_at": "2026-06-19T01:38:20+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T19:00:42+00:00"
+      "recorded_at": "2026-06-19T01:37:40+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T19:00:36+00:00"
+      "recorded_at": "2026-06-19T01:37:34+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T19:00:34+00:00"
+      "recorded_at": "2026-06-19T01:37:33+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T19:00:32+00:00"
+      "recorded_at": "2026-06-19T01:37:32+00:00"
+    },
+    {
+      "task_id": "20260619-e2e-change-review",
+      "outcome": "failed",
+      "strictest_verdict": "concern",
+      "recorded_at": "2026-06-18T19:07:16+00:00"
     },
     {
       "task_id": "20260618-e2e-feedback-loop-review",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-18T12:39:42+00:00"
     }
   ],
-  "gate_event_count": 33058,
-  "gate_success_count": 33058,
+  "gate_event_count": 33284,
+  "gate_success_count": 33284,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 653,
-    "required": 28068,
+    "optional": 656,
+    "required": 28291,
     "skipped": 4337
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 28253,
-    "cli-gate": 4805
+    "codex-UserPromptSubmit": 28461,
+    "cli-gate": 4823
   },
-  "gate_average_duration_seconds": 0.262
+  "gate_average_duration_seconds": 0.261
 }

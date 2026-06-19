@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m py_compile runtime/core/loom_runtime.py runtime/core/self_purification.py runtime/core/knowledge_gateway.py runtime/core/check_runner.py",
+  "exit_code": 0,
+  "executed_at": "2026-06-19T01:32:39+00:00",
+  "executor": "redcap-next-development-implementation",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

@@ -12,6 +12,7 @@
 !lifecycle/20260615-e2e-role-timeout-hardening-prism-resolution.json
 !lifecycle/20260615-revival-resume-after-archive-lifecycle/
 !lifecycle/20260615-revival-resume-after-archive-lifecycle/packet.json
+!lifecycle/20260619-next-redcap-development-verified.json
 
 !migrations/
 !migrations/20260611-process-artifact-migration-map.json
@@ -58,6 +59,8 @@
 !prism/*/*.merge.json
 !prism/*/resolution.json
 !prism/*/*.resolution.json
+!prism/*/check-receipts/
+!prism/*/check-receipts/*.receipt.json
 !prism/**/*-prism-request.json
 !prism/20260615-e2e-resume-request.json
 !prism/20260611-process-artifact-migration/

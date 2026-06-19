@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The claimed reality change — that RedCap has pivoted from TRPG示例修补 to 通用工程辅助能力建设 — is supported by newly created plan/contract artifacts. However, the actual runtime code (self_purification.py, Loom workflow) remains at contract-checking and declaration stage. The delta between \"方案已明确\" and \"运行时已就绪\" is large. Two new documents (plan.md, queue.json) were created alongside this review request, forming a documentation artifact cluster, but no corresponding runtime code changes are evidenced.",
+  "main_concern": "The design produces a closed loop of self-referential artifacts: a plan document, a machine-readable queue, and a Prism review request — all referencing each other, all created in the same evidence batch. This pattern risks substituting documentation production for runtime implementation. The known constraint #1 explicitly forbids treating plan documents as completion evidence, yet the evidence set contains only documents and pre-existing code that is acknowledged as incomplete. The self-purification module is admitted to be \"mainly a contract checker\" — the gap between that and a working run-loop is the entire implementation, not a minor extension.",
+  "top_risks": [
+    "Artifact-loop substitution: plan.md → queue.json → prism review → plan revision forms a documentation cycle that can iterate without ever producing runtime code changes",
+    "Loom runtime conflation: existing TRPG-specific Loom logic (E2E专用逻辑) gets relabeled as '通用角色运行机' without architectural separation, violating constraint #3",
+    "Self-purification scope creep: 'run-loop' ambition turns into an underspecified agent that either does nothing useful or overreaches into Cap personality management beyond the public-repo boundary (constraint #5)"
+  ],
+  "missing_evidence": [
+    "Actual file contents of next-redcap-development-plan.md and next-redcap-development-queue.json — review is based on summaries only because local file tools are unavailable in this context",
+    "Concrete design for the self-purification run-loop: what triggers it, what it checks beyond contracts, what it modifies, and what prevents it from becoming an uncontrolled autonomous agent",
+    "A falsifiable acceptance test for 'knowledge recall influences task decisions' — e.g., a specific scenario where recalled knowledge changes a task priority or scope with measurable before/after"
+  ],
+  "minimum_fix": "Require queue.json to include executable verification commands for each task (not just descriptions). For example: a command that attempts to spawn a Loom role session in a non-TRPG project and fails if the runtime is missing; a command that runs self-purification and asserts it detected (or failed to detect) a specific contamination pattern. Without falsifiable acceptance criteria, the queue is structured documentation, not a machine-executable contract.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The known constraint #6 ('如果评审发现任务顺序、边界或验收不足，必须先修正方案再实现') combined with this Prism review creates a recursive gate: review finds issues → plan is revised → re-reviewed → more issues found. Each iteration produces more documentation artifacts without necessarily producing runtime code. The artifact cluster (plan + queue + review evidence directory) was created together on 20260619, suggesting a batch documentation generation pattern rather than incremental implementation."
+  },
+  "user_intent_alignment": "unclear"
+}
