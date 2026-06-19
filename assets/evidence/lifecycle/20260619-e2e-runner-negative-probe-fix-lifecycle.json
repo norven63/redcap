@@ -80,7 +80,8 @@
             "Loom 角色提示必须明确要求 role-artifacts/<role>.json.status 精确为 completed，避免独立角色写 implemented 等近义状态后被运行器判失败。",
             "E2E harness 只允许处理 runner_pid 与当前 worker pid 匹配的独立观察者请求；旧运行目录遗留请求必须被记录为跳过，不能污染本轮验收。",
             "E2E harness 遇到尚不可读、被并发删除或尚未原子替换完成的 observer-request.json 时，不得把该路径永久标记为已处理，必须保持可重试。",
-            "E2E harness 的 skipped_observer_requests 只能作为诊断信息，不能替代当前轮 observer_commands，也不能把旧请求失败计入当前轮失败。"
+            "E2E harness 的 skipped_observer_requests 只能作为诊断信息，不能替代当前轮 observer_commands，也不能把旧请求失败计入当前轮失败。",
+            "reviewer 的 prism_assistance_request 必须写在 prism-assisted-review.json 顶层；只写在 reviews[] 内部必须被判为失败，不能被兼容放行。"
     ],
     "status": "implemented",
     "task_type": "e2e_runner_verification_hardening",
@@ -189,6 +190,9 @@
         "runtime/core/complete_revival_e2e.py:observer_request_routing_decision",
         "runtime/core/complete_revival_e2e.py:run_e2e_harness current-worker observer routing",
         "runtime/core/test_e2e_layered_preflight.py:test_observer_request_routing_ignores_stale_and_retries_unreadable",
+        "runtime/core/complete_revival_e2e.py:validate_reviewer_outputs top-level prism_assistance_request contract",
+        "runtime/core/test_e2e_layered_preflight.py:test_reviewer_prism_assistance_request_must_be_top_level",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/merge.json -> concern resolved by strict top-level-only contract",
         ".redcap/evidence/prism/20260619-relation-visual-focus-review/kimi-review.json -> concern about CSS-only visual focus",
     ".redcap/evidence/prism/20260619-relation-visual-focus-review/claude-code-review.json -> concern about CSS-only visual focus",
     ".redcap/evidence/prism/20260619-relation-visual-focus-review/kimi-review-round2.json -> concern about viewport scroll reset and full E2E",
@@ -224,7 +228,13 @@
         "complete-revival-e2e run after relation crop hardening exposed developer role artifact status drift: developer wrote status=implemented while validator requires completed; source workspace guard stayed ok",
         "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after role status exact completed prompt and self-check guard",
         "python3 -m unittest runtime.core.test_e2e_layered_preflight -v -> observer request routing regression ok",
-        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after observer request routing guard"
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after observer request routing guard",
+        "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/test_e2e_layered_preflight.py -> ok after reviewer prism assistance contract fix",
+        "python3 -m unittest runtime.core.test_e2e_layered_preflight -v -> 4 tests ok after reviewer top-level request contract",
+        "runtime/bin/redcap complete-revival-e2e design-check -> REDCAP_AI_E2E_DESIGN_OK after reviewer top-level request contract",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after reviewer top-level request contract"
+        ,
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-e2e-reviewer-completion-validation/merge.json --resolution assets/evidence/prism/20260619-e2e-reviewer-completion-validation/resolution.json --review assets/evidence/prism/20260619-e2e-reviewer-completion-validation/kimi.review.json --review assets/evidence/prism/20260619-e2e-reviewer-completion-validation/claude-code.review.json --manifest assets/evidence/prism/20260619-e2e-reviewer-completion-validation/session.json -> PRISM_CONCERN_RESOLUTION_OK"
     ],
   "self_purification": {
     "task_type": "runtime_change",

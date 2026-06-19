@@ -31,6 +31,92 @@ e2e = load_e2e_module()
 
 
 class LayeredPreflightTests(unittest.TestCase):
+    def _write_minimal_reviewer_evidence(self, evidence: pathlib.Path) -> None:
+        evidence.mkdir(parents=True, exist_ok=True)
+        e2e.write_json(evidence / "failure-backlog.json", {
+            "schema_id": "redcap-e2e-failure-backlog",
+            "open_items": [],
+            "closed_items": [],
+            "next_round_required": False,
+        })
+        e2e.write_json(evidence / "self-purification-candidates.json", {
+            "schema_id": "redcap-e2e-self-purification-candidates",
+            "candidates": [
+                {
+                    "id": "reviewer-contract",
+                    "summary": "校验 reviewer 顶层棱镜请求契约。",
+                    "source": "unit-test",
+                    "decisions": [
+                        {
+                            "decision": "no_promote",
+                            "reason": "单测夹具不晋升为公共知识。",
+                        }
+                    ],
+                }
+            ],
+        })
+        e2e.write_json(evidence / "persona-distillation-decision.json", {
+            "schema_id": "redcap-e2e-persona-distillation-decision",
+            "privacy_class": "cap-private",
+            "public_write": False,
+            "private_body_written": False,
+            "reason": "单测没有可晋升的人格信号。",
+        })
+        e2e.write_json(evidence / "review-verdict.json", {
+            "schema_id": "redcap-e2e-review-verdict",
+            "terminal_completion": False,
+            "blocking_findings": [],
+            "runner_owned_follow_up": e2e.REVIEWER_RUNNER_OWNED_FOLLOW_UP,
+            "role_opposition_matrix": [
+                {"role": "product_manager", "challenge_summary": "产品挑战", "reviewer_disposition": "accepted"},
+                {"role": "architect", "challenge_summary": "架构挑战", "reviewer_disposition": "accepted"},
+                {"role": "developer", "challenge_summary": "开发挑战", "reviewer_disposition": "accepted"},
+                {"role": "tester", "challenge_summary": "测试挑战", "reviewer_disposition": "accepted"},
+            ],
+        })
+
+    def test_reviewer_prism_assistance_request_must_be_top_level(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="redcap-reviewer-contract-unit-") as raw:
+            evidence = pathlib.Path(raw) / "evidence"
+            self._write_minimal_reviewer_evidence(evidence)
+
+            valid_payload = {
+                "schema_id": "redcap-e2e-prism-assisted-review",
+                "used": True,
+                "reviews": [
+                    {
+                        "scope": "runner-prism-boundary",
+                        "finding": "顶层棱镜请求存在。",
+                        "effect_on_verdict": "阶段评审通过。",
+                    }
+                ],
+                "skip_reason": None,
+                "cap_decision": "stage_pass",
+                "prism_assistance_request": {"requested": True, "owner": "e2e-runner"},
+            }
+            e2e.write_json(evidence / "prism-assisted-review.json", valid_payload)
+            self.assertEqual(e2e.validate_reviewer_outputs(evidence), [])
+
+            nested_only = dict(valid_payload)
+            nested_only.pop("prism_assistance_request")
+            nested_only["reviews"] = [
+                {
+                    "scope": "runner-prism-boundary",
+                    "finding": "错误嵌套棱镜请求。",
+                    "effect_on_verdict": "必须失败。",
+                    "prism_assistance_request": {"requested": True},
+                }
+            ]
+            e2e.write_json(evidence / "prism-assisted-review.json", nested_only)
+            nested_failures = e2e.validate_reviewer_outputs(evidence)
+            self.assertTrue(any("reviews[] 内部不算有效请求" in item for item in nested_failures))
+
+            missing = dict(valid_payload)
+            missing.pop("prism_assistance_request")
+            e2e.write_json(evidence / "prism-assisted-review.json", missing)
+            missing_failures = e2e.validate_reviewer_outputs(evidence)
+            self.assertTrue(any("顶层记录运行器统一调度棱镜的请求" in item for item in missing_failures))
+
     def test_preflight_records_command_failure_without_test_injection(self) -> None:
         def fake_run_command(argv, **_kwargs):
             command = " ".join(argv)

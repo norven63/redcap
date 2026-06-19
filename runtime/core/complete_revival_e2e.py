@@ -2442,7 +2442,11 @@ def build_role_prompt(
            - "runner_owned_follow_up": ["completion-marker.json", "iteration-verdict.json", "final-prism-review.json", "final-runner-test-results.json"]，必须是这四个精确文件名字符串，不要写成说明句。
            - "role_opposition_matrix": 非空数组，必须覆盖 product_manager、architect、developer、tester；每项必须精确包含 role、challenge_summary、reviewer_disposition 三个非空字符串字段，分别说明角色名、上游挑战证据摘要、reviewer 是否接受及原因。可以额外写 reason 等补充字段，但不能用 challenged、reviewer_acceptance 等近义字段替代这三个必需字段。
            同时在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
-        3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
+        3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。
+           prism_assistance_request 是整份文件的顶层字段，必须写在 prism-assisted-review.json 顶层，精确形如：
+           "prism_assistance_request": {"requested": true, "owner": "e2e-runner", "reason": "reviewer 角色不能直接调度完整棱镜，最终棱镜由运行器统一调度"}。
+           禁止只把 prism_assistance_request 写在 reviews[0] 或任何 reviews[] 条目内部；reviews[] 内部不算有效请求，嵌套位置不算有效请求。
+           至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决。
         4. 写 self-purification-candidates.json，必须包含至少一个候选和对应 decisions 数组。candidate 可以来自本轮 E2E 暴露的流程缺陷、质量约束、角色协作经验、验证经验或 no-promote 经验；decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；每个 decision 必须包含 reason。即使本轮不晋升，也要用 no_promote 或 defer_with_owner 说明原因，不能只写 no_candidate_reason。
         5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，reason 必须是非空字符串，推荐写“本轮没有可晋升的人格信号”。禁止写身份私密材料正文，也禁止出现 private_body、cap_private_body、persona_private_body、private_text 等私有正文键；reason 不要复述禁止项本身，不要用 rationale 替代 reason。
         6. 写 failure-backlog.json。必须使用 open_items 数组作为唯一开放问题字段；没有开放问题时 open_items=[] 且 next_round_required=false。禁止只写 open_issues。若有开放问题，每项必须包含 id、severity、summary、root_cause、impact、suggested_fix、owner、next_step。
@@ -2591,11 +2595,22 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
         failures.append("reviewer 必须写入可解析的 prism-assisted-review.json")
     else:
         request = assisted.get("prism_assistance_request")
+        reviews = assisted.get("reviews")
         if not isinstance(request, dict) or request.get("requested") is not True:
-            failures.append("reviewer 必须在 prism-assisted-review.json 记录运行器统一调度棱镜的请求")
+            nested_request_seen = False
+            if isinstance(reviews, list):
+                nested_request_seen = any(
+                    isinstance(item, dict)
+                    and isinstance(item.get("prism_assistance_request"), dict)
+                    and item["prism_assistance_request"].get("requested") is True
+                    for item in reviews
+                )
+            if nested_request_seen:
+                failures.append("reviewer 的 prism_assistance_request 必须写在 prism-assisted-review.json 顶层；只写在 reviews[] 内部不算有效请求")
+            else:
+                failures.append("reviewer 必须在 prism-assisted-review.json 顶层记录运行器统一调度棱镜的请求")
         if assisted.get("used") is not True:
             failures.append("reviewer 必须把棱镜边界或包内棱镜要求如何影响裁决记录为 used=true")
-        reviews = assisted.get("reviews")
         if not isinstance(reviews, list) or not reviews:
             failures.append("reviewer 的 prism-assisted-review.reviews 必须是非空数组")
         if not assisted.get("cap_decision"):
@@ -3706,7 +3721,12 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
             }
         ],
         "skip_reason": None,
-        "cap_decision": "<required>"
+        "cap_decision": "<required>",
+        "prism_assistance_request": {
+            "requested": True,
+            "owner": "e2e-runner",
+            "reason": "reviewer 角色不能直接调度完整棱镜，最终棱镜由运行器统一调度"
+        }
     })
     write_json(evidence / "knowledge-retrieval-evidence-template.json", {
         "schema_id": "redcap-e2e-knowledge-retrieval-evidence",
@@ -12279,6 +12299,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("reviewer 提示词没有禁止 blocking_failures 近义字段")
             if "challenge_summary" not in reviewer_prompt or "reviewer_disposition" not in reviewer_prompt or "不能用 challenged、reviewer_acceptance" not in reviewer_prompt:
                 failures.append("reviewer 提示词没有精确声明 role_opposition_matrix 必需字段")
+            if '"prism_assistance_request": {"requested": true' not in reviewer_prompt or "顶层字段" not in reviewer_prompt or "reviews[] 内部不算有效请求" not in reviewer_prompt:
+                failures.append("reviewer 提示词没有明确 prism_assistance_request 必须写在顶层")
             if "private_body" not in reviewer_prompt or "reason 必须是非空字符串" not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确人格边界字段要求")
             if "reason 不要复述禁止项本身" not in reviewer_prompt:
@@ -12371,6 +12393,28 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             reviewer_failures = validate_reviewer_outputs(evidence)
             if reviewer_failures:
                 failures.append(f"reviewer 终局边界自检失败：{reviewer_failures}")
+            assisted_positive = load_json(evidence / "prism-assisted-review.json")
+            assisted_nested_only = dict(assisted_positive)
+            assisted_nested_only.pop("prism_assistance_request", None)
+            assisted_nested_only["reviews"] = [
+                {
+                    "scope": "runner-prism-boundary",
+                    "finding": "自检夹具模拟错误嵌套请求。",
+                    "effect_on_verdict": "该结构必须失败。",
+                    "prism_assistance_request": {"requested": True}
+                }
+            ]
+            write_json(evidence / "prism-assisted-review.json", assisted_nested_only)
+            nested_failures = validate_reviewer_outputs(evidence)
+            if not any("reviews[] 内部不算有效请求" in item for item in nested_failures):
+                failures.append(f"reviewer 嵌套 prism_assistance_request 负向自检未失败：{nested_failures}")
+            assisted_missing = dict(assisted_positive)
+            assisted_missing.pop("prism_assistance_request", None)
+            write_json(evidence / "prism-assisted-review.json", assisted_missing)
+            missing_request_failures = validate_reviewer_outputs(evidence)
+            if not any("顶层记录运行器统一调度棱镜的请求" in item for item in missing_request_failures):
+                failures.append(f"reviewer 缺少顶层 prism_assistance_request 负向自检未失败：{missing_request_failures}")
+            write_json(evidence / "prism-assisted-review.json", assisted_positive)
             structural_final_prism = {
                 "schema_id": "redcap-e2e-final-prism-review",
                 "producer": "e2e-runner",

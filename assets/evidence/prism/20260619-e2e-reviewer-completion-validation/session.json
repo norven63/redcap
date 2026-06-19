@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260619-e2e-reviewer-completion-validation",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-reviewer-completion-validation",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-19T13:01:21+00:00",
+  "task_started_at": "2026-06-19T13:01:21+00:00",
+  "updated_at": "2026-06-19T13:16:04+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "40a74e53-b334-497f-8f62-22f233b420f2",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-reviewer-completion-validation/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_180278fa-6bd6-4f99-a706-4b62270bc6b5",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-reviewer-completion-validation/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "accepted both provider concerns and implemented strict top-level-only reviewer prism_assistance_request contract"
+  }
+}

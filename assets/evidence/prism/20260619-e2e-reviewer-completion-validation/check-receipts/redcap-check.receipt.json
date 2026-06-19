@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap check",
+  "exit_code": 0,
+  "executed_at": "2026-06-19T13:15:48+00:00",
+  "executor": "cap",
+  "stdout_sha256": "09964a2aad353d53c0d685339024bd085fd3ab7ea8bd0015cdf16ec1a1cfe085",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/redcap-check.stdout.txt",
+  "stderr_path": "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/redcap-check.stderr.txt",
+  "ok": true
+}

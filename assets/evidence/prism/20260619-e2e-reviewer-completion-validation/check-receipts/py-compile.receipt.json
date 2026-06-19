@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/test_e2e_layered_preflight.py",
+  "exit_code": 0,
+  "executed_at": "2026-06-19T13:13:04+00:00",
+  "executor": "cap",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/py-compile.stdout.txt",
+  "stderr_path": "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/py-compile.stderr.txt",
+  "ok": true
+}

@@ -1,0 +1,51 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260619-e2e-reviewer-completion-validation",
+  "merge_path": "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/kimi.review.json",
+    "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi concern valid：不能把顶层契约缺失降级为无害字段位置问题。本轮修复选择更严格的顶层唯一有效契约；reviews[] 内的 prism_assistance_request 不被兼容放行，而是明确失败。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/test_e2e_layered_preflight.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/unit-layered-preflight.receipt.json",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code concern valid：单向放宽校验器会制造非对称修复。本轮同时收紧提示词、模板和校验器，并补顶层通过、嵌套失败、缺失失败测试；没有扩大通过面。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/test_e2e_layered_preflight.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/unit-layered-preflight.receipt.json",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/prism/20260619-e2e-reviewer-completion-validation/check-receipts/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两份 concern 均被接受；修复没有兼容嵌套请求，而是把顶层字段作为唯一有效契约，并用正负测试和全量检查验证。完整 RedCap 复活仍需后续完整 E2E 通过，不在本决议中声明终局完成。"
+  }
+}
