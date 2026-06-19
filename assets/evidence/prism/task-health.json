@@ -1,8 +1,8 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-19T09:06:40+00:00",
-  "event_count": 46371,
-  "session_event_count": 11803,
+  "computed_at": "2026-06-19T09:38:48+00:00",
+  "event_count": 46523,
+  "session_event_count": 11843,
   "task_count": 141,
   "success_count": 62,
   "success_rate": 0.4397,
@@ -13,7 +13,7 @@
   "active_count": 68,
   "operational_active_count": 58,
   "attention_count": 78,
-  "average_duration_seconds": 1497.638,
+  "average_duration_seconds": 1497.617,
   "providers": {
     "claude-code": {
       "tasks": 141,
@@ -39,31 +39,31 @@
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T09:05:35+00:00"
+      "recorded_at": "2026-06-19T09:38:47+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T09:05:13+00:00"
-    },
-    {
-      "task_id": "dispatcher-truncation-self-check",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-19T09:05:08+00:00"
+      "recorded_at": "2026-06-19T09:38:27+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T09:05:07+00:00"
+      "recorded_at": "2026-06-19T09:38:22+00:00"
+    },
+    {
+      "task_id": "dispatcher-truncation-self-check",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-19T09:38:22+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T09:05:06+00:00"
+      "recorded_at": "2026-06-19T09:38:21+00:00"
     },
     {
       "task_id": "20260619-e2e-runner-negative-probe-fix-implementation-review-round7",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-19T07:47:39+00:00"
     }
   ],
-  "gate_event_count": 34568,
-  "gate_success_count": 34568,
+  "gate_event_count": 34680,
+  "gate_success_count": 34680,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 677,
-    "required": 29554,
+    "optional": 678,
+    "required": 29665,
     "skipped": 4337
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 29643,
-    "cli-gate": 4925
+    "codex-UserPromptSubmit": 29747,
+    "cli-gate": 4933
   },
-  "gate_average_duration_seconds": 0.257
+  "gate_average_duration_seconds": 0.256
 }

@@ -3,8 +3,8 @@
   "task_id": "20260619-e2e-runner-negative-probe-fix",
   "fsm_state": "IMPLEMENTING",
   "requirement_review": {
-    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。",
-    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。",
+    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。 进一步处理完整 E2E 最终棱镜 concern：评审方需要在正式 completion-marker 写入前看到边界复制预览，同时 file:// 浏览器证据需要可区分视觉截图。",
+    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。 最终棱镜前必须存在 completion-marker-preview.json 与 preview validation；HTTP 与 file:// 截图必须可区分，不能把像素相同作为常规独立证据。",
     "non_goals": [
       "不把本次修复说成 RedCap 完整复活已经终局完成",
       "不降低最终棱镜 strictest_verdict 必须为 pass 的要求",
@@ -48,8 +48,8 @@
     }
   },
   "task_body": {
-    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。",
-    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。",
+    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。 并补强最终收口前完成标记预览与 file:// 视觉独立性。",
+    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。 追加 completion-marker 预览、边界复制校验、file:// 独立视口和视觉报告收紧。",
     "acceptance_criteria": [
       "运行器负向探针必须保持 data/seed-data.js 语法有效。",
       "signup 探针必须通过清空某个活动的 signups 与 signupIntent 触发合同失败。",
@@ -60,7 +60,11 @@
       "终局完整复活仍未验证时，必须保持阶段口径。",
       "行为级浏览器关系探针必须记录 relation_view_control，说明是否探索了角色、玩家或关系视图入口。",
       "当角色和玩家关系隐藏在标签页或视图按钮后面时，运行器必须主动探索入口，并仍以 DOM 结构级同容器证明通过。",
-      "必须用真实失败项目或等价夹具验证关系视图探索能力，而不是只通过静态代码检查。"
+      "必须用真实失败项目或等价夹具验证关系视图探索能力，而不是只通过静态代码检查。",
+      "最终棱镜复核前必须生成 completion-marker-preview.json 和 completion-marker-preview-validation.json，且预览不能替代正式 completion-marker.json。",
+      "completion-marker-preview-validation 和 completion-marker-boundary-validation 必须证明完成标记逐字复制 self-referential-boundary 的核心边界披露。",
+      "file-browser-inspection 必须使用独立视口或独立状态，使 file:// 截图与 HTTP 截图可区分。",
+      "visual-independence-report 不得再把 HTTP/file 同像素截图作为常规通过路径。"
     ],
     "status": "implemented",
     "task_type": "e2e_runner_verification_hardening",
@@ -78,7 +82,10 @@
       "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json",
       "runtime/core/complete_revival_e2e.py:click_relation_view_control",
       "临时复测 /tmp/redcap-behavior-retest.* 证明旧失败 TRPG 示例可通过关系视图探针",
-      "runtime/bin/redcap check -> REDCAP_CHECK_OK"
+      "runtime/bin/redcap check -> REDCAP_CHECK_OK",
+      "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json",
+      "runtime/core/complete_revival_e2e.py:write_completion_marker_preview",
+      "runtime/core/complete_revival_e2e.py:FILE_BROWSER_INSPECTION_VIEWPORT"
     ]
   },
   "review_tracks": {
@@ -108,12 +115,14 @@
       "status": "checked",
       "findings": [
         "完整复活 E2E 合同已经补充负向探针别名覆盖、独立重建和 setup_error 控制组要求；当前修复只关闭负向探针质量缺陷，不关闭 RedCap 完整复活父目标。",
-        "行为级关系探针合同已要求 relation_view_control；关系验证不能只看扁平文本，也不能因未点击关系视图而误杀真实能力。"
+        "行为级关系探针合同已要求 relation_view_control；关系验证不能只看扁平文本，也不能因未点击关系视图而误杀真实能力。",
+        "最终收口合同已要求 completion-marker-preview、preview validation、正式 boundary validation 和 file:// 可区分视觉证据。"
       ],
       "evidence": [
         "assets/contracts/complete-revival-e2e-acceptance-design.json",
         "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-negative-probe-external-audit.json",
-        "runtime/core/complete_revival_e2e.py"
+        "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json"
       ]
     }
   },
@@ -131,7 +140,11 @@
     "runtime/bin/redcap",
     "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/implementation-diff/implementation-diff.txt",
     "runtime/core/complete_revival_e2e.py:click_relation_view_control",
-    "assets/contracts/complete-revival-e2e-acceptance-design.json relation_view_control contract update"
+    "assets/contracts/complete-revival-e2e-acceptance-design.json relation_view_control contract update",
+    "runtime/core/complete_revival_e2e.py:build_completion_marker_payload",
+    "runtime/core/complete_revival_e2e.py:write_completion_marker_preview",
+    "runtime/core/complete_revival_e2e.py:completion_marker_boundary_validation",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json completion marker preview and file visual independence contract update"
   ],
   "verification_evidence": [
     "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/audit/e2e_negative_probe_external_audit.py",
@@ -143,7 +156,10 @@
     "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/claude-code-rerun-summary/claude-code-rerun-summary.json",
     "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json --resolution assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json --manifest assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/session.json",
     "PYTHONPATH=runtime/core python3 - <<targeted behavioral retest against /Users/norven/workspace/redcap-e2e-runs/run-20260619T084251Z-4381/...>> -> ok true",
-    "runtime/bin/redcap check -> REDCAP_CHECK_OK"
+    "runtime/bin/redcap check -> REDCAP_CHECK_OK",
+    "runtime/bin/redcap complete-revival-e2e design-check -> REDCAP_AI_E2E_DESIGN_OK",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK",
+    "targeted retest on run-20260619T090739Z-63176: HTTP/file screenshot hashes differ and preview validation ok"
   ],
   "self_purification": {
     "task_type": "runtime_change",
@@ -161,10 +177,14 @@
       "decision": "no_promote",
       "evidence": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/runner-self-purification-resolution.json"
     },
-    "persona_boundary_evidence": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/persona-distillation-decision.json"
+    "persona_boundary_evidence": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/persona-distillation-decision.json",
+    "latest_e2e_final_marker_preview_fix": {
+      "decision": "no_promote",
+      "evidence": "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json"
+    }
   },
   "completion_claim": {
     "present": false,
-    "scope": "E2E 运行器负向探针和关系视图探针已进入实现后验证阶段；不声明 RedCap 完整复活终局完成。"
+    "scope": "E2E 运行器多项硬化已实现并通过自检；不声明 RedCap 完整复活终局完成，仍需完整 E2E 复跑。"
   }
 }

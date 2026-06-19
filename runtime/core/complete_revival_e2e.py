@@ -159,11 +159,14 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "independent-observer.json",
     "visual-independence-report.json",
     "self-referential-boundary.json",
+    "completion-marker-preview.json",
+    "completion-marker-preview-validation.json",
     "convergence-diagnosis.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
+    "completion-marker-boundary-validation.json",
     "completion-marker.json",
 ]
 REVIEWER_RUNNER_OWNED_FOLLOW_UP = [
@@ -221,6 +224,7 @@ HARNESS_WORKER_COMMUNICATE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_E2E_WO
 HARNESS_WATCHDOG_GRACE_SECONDS = float(os.environ.get("REDCAP_E2E_WATCHDOG_GRACE_SECONDS", "10"))
 HARNESS_WATCHDOG_POLL_SECONDS = float(os.environ.get("REDCAP_E2E_WATCHDOG_POLL_SECONDS", "0.5"))
 BROWSER_INSPECTION_VIEWPORT = {"width": 1280, "height": 900}
+FILE_BROWSER_INSPECTION_VIEWPORT = {"width": 1024, "height": 768}
 BEHAVIORAL_BROWSER_VIEWPORT = {"width": 1280, "height": 900}
 INDEPENDENT_BROWSER_VIEWPORT = {"width": 1176, "height": 820}
 
@@ -3823,7 +3827,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "producer": "e2e-runner",
         "checks": [
             "所有 E2E 截图证据必须存在于 sources 中并带 sha256，不能漏掉已落盘 PNG",
-            "截图 sha256 默认必须互不相同；若 HTTP 与 file:// 对同一静态入口在相同视口下产生相同像素截图，必须在 allowed_duplicate_screenshot_hashes 中解释并记录独立 browser_context；若行为截图与关系探针截图处于同一已选活动状态且像素相同，必须记录 relation_event_control、relation_view_control 和 dom_structural_probe 作为新增证明",
+            "截图 sha256 默认必须互不相同；HTTP 与 file:// 检查必须通过独立视口或独立状态提供可区分截图；只有行为截图与关系探针截图处于同一已选活动状态且像素相同，且记录 relation_event_control、relation_view_control 和 dom_structural_probe 作为新增证明时，才允许解释为可接受重复",
             "所有浏览器证据必须记录 browser_context",
             "观察者读取的 final-evidence-bundle.json 文件哈希必须等于请求中的冻结哈希"
         ],
@@ -3859,6 +3863,26 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "completion-marker-preview-template.json", {
+        "schema_id": "redcap-e2e-completion-marker-preview",
+        "producer": "e2e-runner",
+        "preview_only": True,
+        "will_write_only_after_final_prism_pass": True,
+        "marker_payload": "<planned completion-marker payload with boundary disclosures copied>"
+    })
+    write_json(evidence / "completion-marker-preview-validation-template.json", {
+        "schema_id": "redcap-e2e-completion-marker-boundary-validation",
+        "producer": "e2e-runner",
+        "preview": True,
+        "ok": "<boolean>",
+        "copied_fields": [
+            "validation_chain_scope",
+            "not_claimed",
+            "role_process_completion",
+            "observer_boundary",
+            "bootstrap_review_boundary"
+        ]
+    })
     write_json(evidence / "failure-backlog-template.json", {
         "schema_id": "redcap-e2e-failure-backlog",
         "reviewer_scope": "open_items 只写 reviewer 从上游证据中发现的真实阻塞；运行器固定收尾动作写入 review-verdict.runner_owned_follow_up",
@@ -3880,6 +3904,13 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ready_for_engineering_use": True,
         "requires_final_prism_pass": True,
         "requires_no_open_failure_backlog": True
+    })
+    write_json(evidence / "completion-marker-boundary-validation-template.json", {
+        "schema_id": "redcap-e2e-completion-marker-boundary-validation",
+        "producer": "e2e-runner",
+        "preview": False,
+        "ok": "<boolean>",
+        "purpose": "证明正式 completion-marker.json 逐字复制 self-referential-boundary.json 的边界披露"
     })
     (evidence / "implementer-prompt.md").write_text(prompt, encoding="utf-8")
     write_json(evidence / "review-verdict-template.json", {
@@ -5476,7 +5507,7 @@ def run_file_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             browser_version = browser.version
-            page = browser.new_page(viewport=BROWSER_INSPECTION_VIEWPORT)
+            page = browser.new_page(viewport=FILE_BROWSER_INSPECTION_VIEWPORT)
             page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.goto(file_url, wait_until="domcontentloaded", timeout=20_000)
@@ -5527,10 +5558,11 @@ def run_file_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -
         "browser_context": {
             "process_pid": os.getpid(),
             "browser_version": browser_version,
-            "viewport": BROWSER_INSPECTION_VIEWPORT,
+            "viewport": FILE_BROWSER_INSPECTION_VIEWPORT,
             "capture_role": "file-browser-inspection",
             "screenshot_phase": "file_protocol_render",
             "protocol": "file",
+            "visual_independence_strategy": "different_viewport_from_http_browser_inspection",
         },
         "checks": checks,
         "failures": failures,
@@ -6689,32 +6721,7 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
         failures.append(f"视觉三角报告发现未纳入 sources 的截图文件：{unreported_png_paths}")
     distinct_hashes = sorted(set(screenshot_hashes))
     duplicate_hashes = sorted({item for item in screenshot_hashes if screenshot_hashes.count(item) > 1})
-    browser_source = source_by_id.get("browser-inspection", {})
-    file_source = source_by_id.get("file-browser-inspection", {})
-    browser_record = browser_source.get("screenshot") if isinstance(browser_source.get("screenshot"), dict) else {}
-    file_record = file_source.get("screenshot") if isinstance(file_source.get("screenshot"), dict) else {}
-    browser_context = browser_source.get("browser_context") if isinstance(browser_source.get("browser_context"), dict) else {}
-    file_context = file_source.get("browser_context") if isinstance(file_source.get("browser_context"), dict) else {}
     allowed_duplicate_screenshot_hashes: list[dict[str, Any]] = []
-    if (
-        browser_record.get("exists") is True
-        and file_record.get("exists") is True
-        and browser_record.get("sha256")
-        and browser_record.get("sha256") == file_record.get("sha256")
-        and browser_context.get("capture_role") == "browser-inspection"
-        and file_context.get("capture_role") == "file-browser-inspection"
-        and file_context.get("protocol") == "file"
-        and browser_context.get("viewport") == file_context.get("viewport")
-    ):
-        allowed_duplicate_screenshot_hashes.append({
-            "sha256": browser_record.get("sha256"),
-            "sources": ["browser-inspection", "file-browser-inspection"],
-            "reason": "同一个静态入口在相同视口下通过本地 HTTP 与 file:// 独立渲染，像素完全一致是可接受结果；独立性由不同 launch_mode、protocol、capture_role 和浏览器上下文记录证明。",
-            "browser_capture_role": browser_context.get("capture_role"),
-            "file_capture_role": file_context.get("capture_role"),
-            "file_protocol": file_context.get("protocol"),
-            "viewport": file_context.get("viewport"),
-        })
     behavioral_source = source_by_id.get("behavioral-browser-verification", {})
     relation_source = source_by_id.get("behavioral-relation-probe", {})
     behavioral_record = behavioral_source.get("screenshot") if isinstance(behavioral_source.get("screenshot"), dict) else {}
@@ -8271,7 +8278,7 @@ def write_self_referential_boundary(
     return payload
 
 
-def write_completion_marker(
+def build_completion_marker_payload(
     evidence: pathlib.Path,
     project: pathlib.Path,
     bundle: dict[str, Any],
@@ -8280,8 +8287,8 @@ def write_completion_marker(
     final_marker_validation: dict[str, Any] | None = None,
     file_browser_inspection: dict[str, Any] | None = None,
     convergence_diagnosis: dict[str, Any] | None = None,
-) -> None:
-    write_json(evidence / "completion-marker.json", {
+) -> dict[str, Any]:
+    return {
         "schema_id": "redcap-e2e-completion-marker",
         "producer": "e2e-runner",
         "created_at": iso_now(),
@@ -8320,7 +8327,119 @@ def write_completion_marker(
         "behavioral_browser_verification": "behavioral-browser-verification.json",
         "iteration_verdict": "iteration-verdict.json",
         "no_open_failure_backlog": True,
-    })
+    }
+
+
+def completion_marker_boundary_validation(
+    payload: dict[str, Any],
+    self_referential_boundary: dict[str, Any] | None,
+    *,
+    preview: bool,
+) -> dict[str, Any]:
+    failures: list[str] = []
+    boundary = self_referential_boundary if isinstance(self_referential_boundary, dict) else {}
+    copied_fields = [
+        "validation_chain_scope",
+        "not_claimed",
+        "role_process_completion",
+        "observer_boundary",
+        "bootstrap_review_boundary",
+    ]
+    for field in copied_fields:
+        if payload.get(field) != boundary.get(field):
+            failures.append(f"completion-marker {field} 未逐字复制 self-referential-boundary")
+    if payload.get("completion_scope") != "single-e2e-run":
+        failures.append("completion-marker completion_scope 必须是 single-e2e-run")
+    meaning = str(payload.get("ready_for_engineering_use_means") or "")
+    for required_text in ["工程试用", "不等同于跨机器", "人工", "永久生产验收"]:
+        if required_text not in meaning:
+            failures.append(f"completion-marker 工程试用边界说明缺少：{required_text}")
+    return {
+        "schema_id": "redcap-e2e-completion-marker-boundary-validation",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "preview": preview,
+        "ok": not failures,
+        "copied_fields": copied_fields,
+        "boundary_file": "self-referential-boundary.json",
+        "payload_sha256": sha256_text(json.dumps(payload, ensure_ascii=False, sort_keys=True)),
+        "boundary_sha256": sha256_text(json.dumps(boundary, ensure_ascii=False, sort_keys=True)) if boundary else None,
+        "failures": failures,
+    }
+
+
+def write_completion_marker_preview(
+    evidence: pathlib.Path,
+    project: pathlib.Path,
+    bundle: dict[str, Any],
+    self_referential_boundary: dict[str, Any] | None = None,
+    final_marker_validation: dict[str, Any] | None = None,
+    file_browser_inspection: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    preview_final_prism = {
+        "strictest_verdict": "pending-final-prism-pass-required",
+    }
+    preview_convergence = {
+        "auto_rerun_allowed": None,
+        "strictest_verdict": "pending-final-prism-pass-required",
+    }
+    marker_payload = build_completion_marker_payload(
+        evidence,
+        project,
+        bundle,
+        preview_final_prism,
+        self_referential_boundary=self_referential_boundary,
+        final_marker_validation=final_marker_validation,
+        file_browser_inspection=file_browser_inspection,
+        convergence_diagnosis=preview_convergence,
+    )
+    preview_payload = {
+        "schema_id": "redcap-e2e-completion-marker-preview",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "preview_only": True,
+        "completion_marker_target": "completion-marker.json",
+        "will_write_only_after_final_prism_pass": True,
+        "payload_builder_shared_with_final_marker": True,
+        "preview_final_prism_placeholder": "pending-final-prism-pass-required",
+        "marker_payload": marker_payload,
+    }
+    validation = completion_marker_boundary_validation(marker_payload, self_referential_boundary, preview=True)
+    preview_payload["boundary_validation"] = {
+        "path": "completion-marker-preview-validation.json",
+        "ok": validation.get("ok") is True,
+        "payload_sha256": validation.get("payload_sha256"),
+    }
+    write_json(evidence / "completion-marker-preview.json", preview_payload)
+    write_json(evidence / "completion-marker-preview-validation.json", validation)
+    return preview_payload
+
+
+def write_completion_marker(
+    evidence: pathlib.Path,
+    project: pathlib.Path,
+    bundle: dict[str, Any],
+    final_prism: dict[str, Any],
+    self_referential_boundary: dict[str, Any] | None = None,
+    final_marker_validation: dict[str, Any] | None = None,
+    file_browser_inspection: dict[str, Any] | None = None,
+    convergence_diagnosis: dict[str, Any] | None = None,
+) -> None:
+    payload = build_completion_marker_payload(
+        evidence,
+        project,
+        bundle,
+        final_prism,
+        self_referential_boundary=self_referential_boundary,
+        final_marker_validation=final_marker_validation,
+        file_browser_inspection=file_browser_inspection,
+        convergence_diagnosis=convergence_diagnosis,
+    )
+    validation = completion_marker_boundary_validation(payload, self_referential_boundary, preview=False)
+    write_json(evidence / "completion-marker-boundary-validation.json", validation)
+    if validation.get("ok") is not True:
+        raise RuntimeError(f"completion marker boundary validation failed: {validation.get('failures')}")
+    write_json(evidence / "completion-marker.json", payload)
 
 
 def write_runner_prism_assistance(evidence: pathlib.Path, final_prism: dict[str, Any]) -> None:
@@ -8426,6 +8545,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "self-referential-boundary.json explicitly discloses that the runner, observer, browser checks, and final reviews are coordinated on the same host and same RedCap package, and states what is not claimed.",
             "self-referential-boundary.json also discloses that role process exit codes may reflect intentional PTY stop after artifact completion, that independent observer is a same-host harness sibling rather than a human or cross-machine observer, and that final Prism review is part of the same bootstrapped engineering-trial chain.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
+            "completion-marker-preview.json previews the exact boundary-copying payload shape that will become completion-marker.json only if final Prism passes; completion-marker-preview-validation.json proves it copies self-referential-boundary.json disclosures before providers review.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
         ],
         "evidence": [
@@ -8465,6 +8585,16 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "summary": supplemental_evidence.get("pre_final_readiness"),
             },
             {
+                "kind": "completion-marker-preview",
+                "reference": "completion-marker-preview.json",
+                "summary": supplemental_evidence.get("completion_marker_preview"),
+            },
+            {
+                "kind": "completion-marker-preview-validation",
+                "reference": "completion-marker-preview-validation.json",
+                "summary": supplemental_evidence.get("completion_marker_preview_validation"),
+            },
+            {
                 "kind": "failure-backlog-full",
                 "reference": "failure-backlog.json",
                 "summary": supplemental_evidence.get("failure_backlog"),
@@ -8499,10 +8629,11 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "iteration-verdict.json is intentionally not finalized before this provider review; pre-final-readiness.json is generated after final-evidence-bundle.json and is only an objective pre-final summary, not a completion claim.",
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
+            "completion-marker-preview.json is not a completion claim; it is a pre-final payload preview. Providers should evaluate whether its marker_payload copies boundary disclosures, while completion-marker.json remains forbidden until final Prism passes.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
-            "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
-            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png and behavioral-relation-probe.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation. Expected allowances are: browser-inspection.png and file-browser-inspection.png rendering the same deterministic static page in separate HTTP and file:// contexts; behavioral-browser-verification.png and behavioral-relation-probe.png capturing the same selected event state while relation_event_control, relation_view_control, and dom_structural_probe provide the additional relation proof.",
+            "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, completion-marker-preview.json, completion-marker-preview-validation.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, completion-marker-boundary-validation.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
+            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png and behavioral-relation-probe.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation. HTTP browser-inspection.png and file-browser-inspection.png must be visually distinguishable through independent viewport or state; the expected duplicate allowance is only behavioral-browser-verification.png and behavioral-relation-probe.png capturing the same selected event state while relation_event_control, relation_view_control, and dom_structural_probe provide the additional relation proof.",
             "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
             "If this provider review passes, completion-marker.json must copy role_process_completion, observer_boundary, and bootstrap_review_boundary from self-referential-boundary.json.",
             "If the remaining concern is that any same-host automated E2E can never be externally production-certified, treat that as compatible with an engineering-trial marker only when self-referential-boundary.json and completion-marker.json explicitly disclose that limitation.",
@@ -8731,6 +8862,20 @@ def finalize_e2e_acceptance(
         failures.append(f"视觉三角独立性验证未通过：{visual_independence.get('failures')}")
     pre_final_context["independent_observer_ok"] = independent_observer_verification.get("ok") is True
     pre_final_readiness = write_pre_final_readiness(project, evidence, failures, pre_final_context)
+    completion_marker_preview = write_completion_marker_preview(
+        evidence,
+        project,
+        bundle,
+        self_referential_boundary=self_referential_boundary,
+        final_marker_validation=final_marker_validation,
+        file_browser_inspection=file_browser_inspection,
+    )
+    completion_marker_preview_validation = load_optional_json(evidence / "completion-marker-preview-validation.json")
+    if not isinstance(completion_marker_preview_validation, dict) or completion_marker_preview_validation.get("ok") is not True:
+        failures.append(
+            f"completion-marker 预览边界校验未通过："
+            f"{completion_marker_preview_validation.get('failures') if isinstance(completion_marker_preview_validation, dict) else 'missing validation'}"
+        )
     if failures:
         final_prism = {
             "schema_id": "redcap-e2e-final-prism-review",
@@ -8747,6 +8892,8 @@ def finalize_e2e_acceptance(
             "independent_observer_verification": load_optional_json(evidence / "independent-observer-verification.json"),
             "visual_independence_report": visual_independence,
             "pre_final_readiness": pre_final_readiness,
+            "completion_marker_preview": completion_marker_preview,
+            "completion_marker_preview_validation": completion_marker_preview_validation,
             "final_marker_validation": load_optional_json(evidence / "final-marker-validation.json"),
             "file_browser_inspection": load_optional_json(evidence / "file-browser-inspection.json"),
             "self_referential_boundary": load_optional_json(evidence / "self-referential-boundary.json"),
@@ -8970,6 +9117,9 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("file-browser-inspection.launch_mode 必须是 local-file-protocol")
         if not file_browser_inspection.get("screenshot"):
             failures.append("file-browser-inspection 必须记录截图证据")
+        file_context = file_browser_inspection.get("browser_context")
+        if not isinstance(file_context, dict) or file_context.get("viewport") != FILE_BROWSER_INSPECTION_VIEWPORT:
+            failures.append("file-browser-inspection 必须使用独立视口，避免与 HTTP 浏览器截图像素完全相同")
     behavioral_verification = load_optional_json(evidence / "behavioral-browser-verification.json")
     if behavioral_verification is not None:
         if behavioral_verification.get("ok") is not True:
@@ -9045,6 +9195,18 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
         disclosure = self_referential_boundary.get("completion_marker_disclosure")
         if not isinstance(disclosure, dict) or disclosure.get("must_copy_this_boundary") is not True:
             failures.append("self-referential-boundary 必须要求 completion-marker 复制边界披露")
+    completion_marker_preview = load_optional_json(evidence / "completion-marker-preview.json")
+    completion_marker_preview_validation = load_optional_json(evidence / "completion-marker-preview-validation.json")
+    if completion_marker_preview is not None:
+        if completion_marker_preview.get("preview_only") is not True:
+            failures.append("completion-marker-preview 必须声明 preview_only=true")
+        if completion_marker_preview.get("will_write_only_after_final_prism_pass") is not True:
+            failures.append("completion-marker-preview 必须声明只有最终棱镜通过后才写正式 completion-marker")
+        marker_payload = completion_marker_preview.get("marker_payload")
+        if not isinstance(marker_payload, dict):
+            failures.append("completion-marker-preview 必须包含 marker_payload")
+    if completion_marker_preview_validation is not None and completion_marker_preview_validation.get("ok") is not True:
+        failures.append(f"completion-marker-preview-validation 必须通过：{completion_marker_preview_validation.get('failures')}")
     role_risk = load_optional_json(evidence / "role-execution-risk.json")
     if role_risk is not None and role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("role-execution-risk 必须说明本轮角色执行风险已被约束")
@@ -9066,7 +9228,10 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 "final-prism-review.json",
                 "failure-backlog.json",
                 "iteration-verdict.json",
+                "completion-marker-boundary-validation.json",
                 "completion-marker.json",
+                "completion-marker-preview.json",
+                "completion-marker-preview-validation.json",
             }
             for item in files:
                 if not isinstance(item, dict):
@@ -9098,6 +9263,14 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
         file_browser = completion_marker.get("file_browser_inspection")
         if not isinstance(file_browser, dict) or file_browser.get("ok") is not True:
             failures.append("completion-marker 必须引用通过的 file-browser-inspection")
+        if self_referential_boundary is not None:
+            marker_boundary_validation = completion_marker_boundary_validation(
+                completion_marker,
+                self_referential_boundary,
+                preview=False,
+            )
+            if marker_boundary_validation.get("ok") is not True:
+                failures.append(f"completion-marker 必须逐字复制边界披露：{marker_boundary_validation.get('failures')}")
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is not None:
         open_items = backlog.get("open_items")
@@ -11803,9 +11976,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 path.write_bytes(payload)
                 return evidence_file_record(path, base=visual_evidence)
 
-            same_static_render = b"same-static-render"
-            browser_record = write_visual_probe("browser-inspection.png", same_static_render)
-            file_record = write_visual_probe("file-browser-inspection.png", same_static_render)
+            browser_record = write_visual_probe("browser-inspection.png", b"http-static-render")
+            file_record = write_visual_probe("file-browser-inspection.png", b"file-static-render")
             behavioral_record = write_visual_probe("behavioral-browser-verification.png", b"behavioral-render")
             relation_record = write_visual_probe("behavioral-relation-probe.png", b"behavioral-render")
             independent_record = write_visual_probe("independent-browser-verification.png", b"independent-render")
@@ -11829,11 +12001,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "browser_context": {
                     "process_pid": 2,
                     "browser_version": "self-check",
-                    "viewport": common_viewport,
+                    "viewport": FILE_BROWSER_INSPECTION_VIEWPORT,
                     "server_port": 0,
                     "capture_role": "file-browser-inspection",
                     "screenshot_phase": "file_protocol_render",
                     "protocol": "file",
+                    "visual_independence_strategy": "different_viewport_from_http_browser_inspection",
                 },
             })
             write_json(visual_evidence / "behavioral-browser-verification.json", {
@@ -11894,17 +12067,17 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             })
             visual_report = build_visual_independence_report(visual_evidence)
             if visual_report.get("ok") is not True:
-                failures.append(f"视觉独立报告不能接受带解释的 HTTP/file 同像素渲染：{visual_report.get('failures')}")
+                failures.append(f"视觉独立报告不能通过已区分 HTTP/file 截图的夹具：{visual_report.get('failures')}")
             visual_source_ids = {item.get("source_id") for item in visual_report.get("sources", []) if isinstance(item, dict)}
             if "file-browser-inspection" not in visual_source_ids:
                 failures.append("视觉独立报告没有纳入 file-browser-inspection 截图来源")
-            if not visual_report.get("allowed_duplicate_screenshot_hashes"):
-                failures.append("视觉独立报告没有记录 HTTP/file 同像素渲染的允许重复说明")
             allowed_duplicate_sources = {
                 tuple(item.get("sources") or [])
                 for item in visual_report.get("allowed_duplicate_screenshot_hashes", [])
                 if isinstance(item, dict)
             }
+            if ("browser-inspection", "file-browser-inspection") in allowed_duplicate_sources:
+                failures.append("视觉独立报告不应再允许 HTTP/file 截图同像素作为常规通过路径")
             if ("behavioral-browser-verification", "behavioral-relation-probe") not in allowed_duplicate_sources:
                 failures.append("视觉独立报告没有记录行为截图与关系探针同状态截图的允许重复说明")
             if visual_report.get("unreported_png_files"):
