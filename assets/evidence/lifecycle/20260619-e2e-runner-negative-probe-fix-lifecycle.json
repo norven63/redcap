@@ -76,8 +76,11 @@
       "当验证命令把领域失败写入 verification-results.json 而不是 stdout/stderr 时，运行器必须仍能识别目标合同失败。",
       "Loom 角色完成谓词必须要求本轮新写 role-artifact，避免 repair round 被旧产物立即短路。",
       "关系探针截图必须记录 relation_visual_focus，并在已验证的真实关系容器上滚动到专用视口后采集；browser-inspection.png 与 behavioral-relation-probe.png 同像素必须被视为未解释重复。",
-      "relation_visual_focus 必须用可见面积比例、视口下限和 MutationObserver 证明不是精确滚动坐标或样式注入侥幸通过；relation_probe_reset 必须证明截图后默认视口和滚动位置已恢复；behavioral-relation-container-crop.png 必须作为关系容器内容像素证据纳入 visual-independence-report。",
-      "Loom 角色提示必须明确要求 role-artifacts/<role>.json.status 精确为 completed，避免独立角色写 implemented 等近义状态后被运行器判失败。"
+            "relation_visual_focus 必须用可见面积比例、视口下限和 MutationObserver 证明不是精确滚动坐标或样式注入侥幸通过；relation_probe_reset 必须证明截图后默认视口和滚动位置已恢复；behavioral-relation-container-crop.png 必须作为关系容器内容像素证据纳入 visual-independence-report。",
+            "Loom 角色提示必须明确要求 role-artifacts/<role>.json.status 精确为 completed，避免独立角色写 implemented 等近义状态后被运行器判失败。",
+            "E2E harness 只允许处理 runner_pid 与当前 worker pid 匹配的独立观察者请求；旧运行目录遗留请求必须被记录为跳过，不能污染本轮验收。",
+            "E2E harness 遇到尚不可读、被并发删除或尚未原子替换完成的 observer-request.json 时，不得把该路径永久标记为已处理，必须保持可重试。",
+            "E2E harness 的 skipped_observer_requests 只能作为诊断信息，不能替代当前轮 observer_commands，也不能把旧请求失败计入当前轮失败。"
     ],
     "status": "implemented",
     "task_type": "e2e_runner_verification_hardening",
@@ -181,9 +184,12 @@
     "runtime/core/complete_revival_e2e.py recursive top_level_data_list_candidates",
     "runtime/core/complete_revival_e2e.py domain_failure_detected_in_payload",
     "runtime/core/complete_revival_e2e.py role_completion_ready min_role_artifact_mtime",
-    "runtime/core/complete_revival_e2e.py:focus_relation_container_for_screenshot",
-    "assets/contracts/complete-revival-e2e-acceptance-design.json relation_visual_focus contract update",
-    ".redcap/evidence/prism/20260619-relation-visual-focus-review/kimi-review.json -> concern about CSS-only visual focus",
+        "runtime/core/complete_revival_e2e.py:focus_relation_container_for_screenshot",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json relation_visual_focus contract update",
+        "runtime/core/complete_revival_e2e.py:observer_request_routing_decision",
+        "runtime/core/complete_revival_e2e.py:run_e2e_harness current-worker observer routing",
+        "runtime/core/test_e2e_layered_preflight.py:test_observer_request_routing_ignores_stale_and_retries_unreadable",
+        ".redcap/evidence/prism/20260619-relation-visual-focus-review/kimi-review.json -> concern about CSS-only visual focus",
     ".redcap/evidence/prism/20260619-relation-visual-focus-review/claude-code-review.json -> concern about CSS-only visual focus",
     ".redcap/evidence/prism/20260619-relation-visual-focus-review/kimi-review-round2.json -> concern about viewport scroll reset and full E2E",
     ".redcap/evidence/prism/20260619-relation-visual-focus-review/claude-code-review-round2.json -> concern about visible-area tolerance and DOM mutation evidence"
@@ -215,9 +221,11 @@
     "targeted retest on run-20260619T104850Z-73264 after relation crop hardening: relation_container_crop_written true, behavioral-relation-container-crop.png sha256=07044fe1..., visual-independence-report sources include behavioral-relation-container-crop and duplicate_hashes null",
     "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after prepare-stage crop placeholder and runtime crop overwrite path",
     "runtime/bin/redcap check -> REDCAP_CHECK_OK 69/69 after relation crop hardening",
-    "complete-revival-e2e run after relation crop hardening exposed developer role artifact status drift: developer wrote status=implemented while validator requires completed; source workspace guard stayed ok",
-    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after role status exact completed prompt and self-check guard"
-  ],
+        "complete-revival-e2e run after relation crop hardening exposed developer role artifact status drift: developer wrote status=implemented while validator requires completed; source workspace guard stayed ok",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after role status exact completed prompt and self-check guard",
+        "python3 -m unittest runtime.core.test_e2e_layered_preflight -v -> observer request routing regression ok",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after observer request routing guard"
+    ],
   "self_purification": {
     "task_type": "runtime_change",
     "task_weight": "standard",

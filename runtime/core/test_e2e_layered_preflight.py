@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import pathlib
 import tempfile
 import unittest
@@ -96,6 +97,32 @@ class LayeredPreflightTests(unittest.TestCase):
             self.assertTrue(result["blocked_before_project_run"])
             self.assertEqual(result["long_task_active_run"]["lifecycle_state"], "blocked")
             self.assertIn("RedCap E2E 分层前置检查失败", result["failures"][0])
+
+    def test_observer_request_routing_ignores_stale_and_retries_unreadable(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="redcap-observer-route-unit-") as raw:
+            evidence = pathlib.Path(raw) / "project" / ".redcap" / "evidence" / "e2e"
+            evidence.mkdir(parents=True)
+            request = evidence / "observer-request.json"
+            output = evidence / "independent-observer.json"
+
+            unreadable = e2e.observer_request_routing_decision(request, worker_pid=222)
+            self.assertFalse(unreadable["ready"])
+            self.assertEqual(unreadable["reason"], "unreadable")
+
+            request.write_text(json.dumps({"runner_pid": 111, "output": str(output)}), encoding="utf-8")
+            stale = e2e.observer_request_routing_decision(request, worker_pid=222)
+            self.assertFalse(stale["ready"])
+            self.assertEqual(stale["reason"], "stale-runner-pid")
+
+            request.write_text(json.dumps({"runner_pid": 222, "output": str(output)}), encoding="utf-8")
+            current = e2e.observer_request_routing_decision(request, worker_pid=222)
+            self.assertTrue(current["ready"])
+            self.assertEqual(current["reason"], "current-worker-request")
+
+            output.write_text("{}", encoding="utf-8")
+            already_done = e2e.observer_request_routing_decision(request, worker_pid=222)
+            self.assertFalse(already_done["ready"])
+            self.assertEqual(already_done["reason"], "output-already-exists")
 
 
 if __name__ == "__main__":

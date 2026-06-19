@@ -7291,6 +7291,55 @@ def run_observer_request_as_harness(request_path: pathlib.Path, runner_pid: int,
     return command
 
 
+def observer_request_payload_sha256(request: dict[str, Any]) -> str:
+    return sha256_text(json.dumps(request, ensure_ascii=False, sort_keys=True))
+
+
+def observer_request_routing_decision(request_path: pathlib.Path, worker_pid: int) -> dict[str, Any]:
+    request = load_optional_json(request_path)
+    if request is None:
+        return {
+            "ok": False,
+            "ready": False,
+            "reason": "unreadable",
+            "request_path": str(request_path),
+            "request_sha256": None,
+        }
+    request_sha256 = observer_request_payload_sha256(request)
+    request_runner_pid = request.get("runner_pid")
+    if request_runner_pid != worker_pid:
+        return {
+            "ok": True,
+            "ready": False,
+            "reason": "stale-runner-pid",
+            "request_path": str(request_path),
+            "request_sha256": request_sha256,
+            "request_runner_pid": request_runner_pid,
+            "worker_pid": worker_pid,
+        }
+    output = pathlib.Path(str(request.get("output") or ""))
+    if output.exists():
+        return {
+            "ok": True,
+            "ready": False,
+            "reason": "output-already-exists",
+            "request_path": str(request_path),
+            "request_sha256": request_sha256,
+            "request_runner_pid": request_runner_pid,
+            "worker_pid": worker_pid,
+            "output": str(output),
+        }
+    return {
+        "ok": True,
+        "ready": True,
+        "reason": "current-worker-request",
+        "request_path": str(request_path),
+        "request_sha256": request_sha256,
+        "request_runner_pid": request_runner_pid,
+        "worker_pid": worker_pid,
+    }
+
+
 def request_independent_observer(project: pathlib.Path, evidence: pathlib.Path, bundle: dict[str, Any]) -> dict[str, Any]:
     output = evidence / "independent-observer.json"
     if output.exists():
@@ -10298,8 +10347,10 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         worker_identity,
         worker_deadline_epoch,
     )
-    observer_requests: set[pathlib.Path] = set()
+    observer_requests: set[str] = set()
     observer_commands: list[dict[str, Any]] = []
+    skipped_observer_requests: list[dict[str, Any]] = []
+    skipped_observer_request_keys: set[str] = set()
     timed_out = False
     interrupted = False
     interrupt_reason: str | None = None
@@ -10324,9 +10375,19 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         while worker.poll() is None:
             for request_path in sorted(work_root.glob("**/.redcap/evidence/e2e/observer-request.json")):
                 resolved = request_path.resolve()
-                if resolved in observer_requests:
+                decision = observer_request_routing_decision(resolved, worker.pid)
+                request_key = f"{resolved}:{decision.get('request_sha256')}"
+                if request_key in observer_requests:
                     continue
-                observer_requests.add(resolved)
+                if decision.get("ready") is not True:
+                    if decision.get("reason") != "unreadable":
+                        observer_requests.add(request_key)
+                    skipped_key = f"{resolved}:{decision.get('reason')}:{decision.get('request_sha256')}"
+                    if skipped_key not in skipped_observer_request_keys:
+                        skipped_observer_request_keys.add(skipped_key)
+                        skipped_observer_requests.append(decision)
+                    continue
+                observer_requests.add(request_key)
                 observer_commands.append(run_observer_request_as_harness(resolved, runner_pid=worker.pid, harness_pid=os.getpid()))
             if time.monotonic() > worker_deadline_monotonic:
                 timed_out = True
@@ -10391,7 +10452,7 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         harness_failures.append("E2E worker 停止后收集输出超时")
     if worker.returncode != 0 and parsed.get("ok") is True:
         harness_failures.append(f"E2E worker 退出码非 0：{worker.returncode}")
-    if not observer_requests:
+    if not observer_commands:
         harness_failures.append("E2E worker 没有发出 observer-request.json")
     if any(command.get("ok") is not True for command in observer_commands):
         harness_failures.append("至少一个独立观察者命令失败")
@@ -10429,6 +10490,7 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         "stale_watchdog_cleanup": stale_watchdog_cleanup,
         "observer_request_count": len(observer_requests),
         "observer_commands": observer_commands,
+        "skipped_observer_requests": skipped_observer_requests[-80:],
         "stdout_tail": stdout[-4000:],
         "stderr_tail": stderr[-4000:],
     }
@@ -12707,6 +12769,16 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
                 failures.append("E2E 自检没有覆盖 harness/worker 兄弟进程运行结构")
             harness_source = inspect.getsource(run_e2e_harness)
+            for required_token in [
+                "observer_request_routing_decision",
+                "request_runner_pid != worker_pid",
+                "stale-runner-pid",
+                "unreadable",
+                "skipped_observer_requests",
+                "observer_commands",
+            ]:
+                if required_token not in harness_source and required_token not in current_source:
+                    failures.append(f"E2E harness 观察者请求路由缺少本轮隔离防线：{required_token}")
             legacy_deadline_pattern = "timeout_seconds" + " + OBSERVER_TIMEOUT_SECONDS + 600"
             if legacy_deadline_pattern in current_source:
                 failures.append("E2E harness 不能继续把用户硬超时叠加观察者超时和隐藏余量")
