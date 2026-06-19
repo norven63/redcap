@@ -1,5 +1,6 @@
 .DS_Store
 .codex/
+.redcap/
 assets/evidence/*
 !assets/evidence/
 !assets/evidence/README.md

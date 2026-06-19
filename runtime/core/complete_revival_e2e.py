@@ -1552,6 +1552,33 @@ def source_workspace_guard_negative_probe() -> dict[str, Any]:
     }
 
 
+def source_workspace_prism_ledger_isolation_probe() -> dict[str, Any]:
+    before = source_workspace_snapshot()
+    result = run_command([
+        str(REDCAP),
+        "gate",
+        "--task",
+        "source workspace prism ledger isolation probe",
+        "--risk-level",
+        "low",
+        "--tag",
+        "source-workspace-guard-probe",
+    ], timeout_seconds=60)
+    guard = compare_source_workspace(before)
+    failures: list[str] = []
+    if result.get("ok") is not True:
+        failures.append("redcap gate isolation probe command failed")
+    if guard.get("ok") is not True:
+        failures.append(f"redcap gate changed source workspace status: {guard.get('failures')}")
+    return {
+        "schema_id": "redcap-source-workspace-prism-ledger-isolation-probe",
+        "ok": not failures,
+        "command": command_receipt(result),
+        "source_workspace_guard": guard,
+        "failures": failures,
+    }
+
+
 def resolve_work_root(raw: str | None) -> pathlib.Path:
     if raw:
         return pathlib.Path(raw).expanduser().resolve()
@@ -12270,6 +12297,9 @@ def cmd_self_check(args: argparse.Namespace) -> int:
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")
+        prism_ledger_isolation_probe = source_workspace_prism_ledger_isolation_probe()
+        if prism_ledger_isolation_probe.get("ok") is not True:
+            failures.append(f"棱镜流水隔离探针失败：{prism_ledger_isolation_probe.get('failures')}")
         if not args.skip_carrier_probe:
             probe = carrier_probe(work_root / "carrier", args.timeout_seconds)
             if probe.get("ok") is not True:

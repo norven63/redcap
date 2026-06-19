@@ -363,6 +363,7 @@
   ],
   "ignored_names": [
     ".DS_Store",
+    ".redcap",
     ".git",
     "__pycache__"
   ],

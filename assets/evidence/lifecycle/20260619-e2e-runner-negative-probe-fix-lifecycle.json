@@ -3,8 +3,8 @@
   "task_id": "20260619-e2e-runner-negative-probe-fix",
   "fsm_state": "IMPLEMENTING",
   "requirement_review": {
-    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。 进一步处理完整 E2E 最终棱镜 concern：评审方需要在正式 completion-marker 写入前看到边界复制预览，同时 file:// 浏览器证据需要可区分视觉截图。",
-    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。 最终棱镜前必须存在 completion-marker-preview.json 与 preview validation；HTTP 与 file:// 截图必须可区分，不能把像素相同作为常规独立证据。",
+    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。 进一步处理完整 E2E 最终棱镜 concern：评审方需要在正式 completion-marker 写入前看到边界复制预览，同时 file:// 浏览器证据需要可区分视觉截图。 最新完整 E2E 已经通过项目交付、Loom、钩子、自我净化和最终收口，但源工作区保护发现棱镜流水写入 tracked 源码文件；这必须作为运行时边界缺陷修复。",
+    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。 最终棱镜前必须存在 completion-marker-preview.json 与 preview validation；HTTP 与 file:// 截图必须可区分，不能把像素相同作为常规独立证据。 棱镜流水必须默认写入运行时 .redcap/evidence/prism，不再污染 tracked assets/evidence/prism；RedCap 源工作区作为自开发项目时允许被忽略的 .redcap 运行时目录，但不允许任何 .redcap 文件进入 Git 跟踪。",
     "non_goals": [
       "不把本次修复说成 RedCap 完整复活已经终局完成",
       "不降低最终棱镜 strictest_verdict 必须为 pass 的要求",
@@ -17,7 +17,7 @@
   "technical_review": {
     "runtime_boundary_checked": true,
     "prism_gate_decision": "required",
-    "rollback_plan": "回滚 runtime/core/complete_revival_e2e.py、assets/contracts/complete-revival-e2e-acceptance-design.json 和本任务新增证据；外部 E2E 运行目录可作为失败证据保留，不写回 RedCap 源码区。",
+    "rollback_plan": "回滚 runtime/core/complete_revival_e2e.py、runtime/prism/lib/prism_ledger.py、runtime/core/runtime_boundary_consumers.py、runtime/core/layout_guard.py、assets/contracts/directory-structure.json、.gitignore、assets/docs/prism-task-ledger.md、assets/contracts/complete-revival-e2e-acceptance-design.json 和本任务新增证据；外部 E2E 运行目录可作为失败证据保留，不写回 RedCap 源码区。",
     "verification_plan": [
       "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260619-e2e-runner-negative-probe-fix-lifecycle.json",
       "runtime/bin/redcap gate --task \"恢复并继续推进 RedCap E2E 负向探针修复、生命周期验证与完整端到端验收\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260619-e2e-runner-negative-probe-fix-lifecycle.json",
@@ -26,6 +26,10 @@
       "python3 runtime/audit/e2e_negative_probe_external_audit.py --regression-json assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-regression-test.json --independent-audit-json assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-independent-audit.json --contract assets/contracts/complete-revival-e2e-acceptance-design.json",
       "runtime/bin/redcap complete-revival-e2e design-check",
       "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap prism-ledger self-check",
+      "runtime/bin/redcap boundary-consumers check",
+      "runtime/bin/redcap layout-check",
+      "python3 - <<source_workspace_prism_ledger_isolation_probe>> -> ok true",
       "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json --resolution assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json --review assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/kimi-review.json --review assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/claude-code-review.json --manifest assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/session.json",
       "runtime/bin/redcap check",
       "重新运行完整 E2E，确认最终棱镜不再因负向探针语法损坏给出 concern"
@@ -48,8 +52,8 @@
     }
   },
   "task_body": {
-    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。 并补强最终收口前完成标记预览与 file:// 视觉独立性。",
-    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。 追加 completion-marker 预览、边界复制校验、file:// 独立视口和视觉报告收紧。",
+    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。 并补强最终收口前完成标记预览与 file:// 视觉独立性。 并修复完整 E2E 被源工作区棱镜流水污染的问题，确保 gate 流水落在运行时边界内。",
+    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。 追加 completion-marker 预览、边界复制校验、file:// 独立视口和视觉报告收紧。 追加棱镜流水运行时落点、源工作区 .redcap ignore 策略、边界消费者检查升级和 E2E 自检隔离探针。",
     "acceptance_criteria": [
       "运行器负向探针必须保持 data/seed-data.js 语法有效。",
       "signup 探针必须通过清空某个活动的 signups 与 signupIntent 触发合同失败。",
@@ -64,7 +68,10 @@
       "最终棱镜复核前必须生成 completion-marker-preview.json 和 completion-marker-preview-validation.json，且预览不能替代正式 completion-marker.json。",
       "completion-marker-preview-validation 和 completion-marker-boundary-validation 必须证明完成标记逐字复制 self-referential-boundary 的核心边界披露。",
       "file-browser-inspection 必须使用独立视口或独立状态，使 file:// 截图与 HTTP 截图可区分。",
-      "visual-independence-report 不得再把 HTTP/file 同像素截图作为常规通过路径。"
+      "visual-independence-report 不得再把 HTTP/file 同像素截图作为常规通过路径。",
+      "redcap gate、prism session-init 和 session-update 默认不得写入 tracked assets/evidence/prism/task-ledger.jsonl 或 task-health.json。",
+      "源工作区 .redcap 必须被 .gitignore 和目录策略识别为运行时目录；允许存在，但不得被 Git 跟踪。",
+      "E2E 自检必须包含 source_workspace_prism_ledger_isolation_probe，证明运行 gate 后源工作区状态哈希不变。"
     ],
     "status": "implemented",
     "task_type": "e2e_runner_verification_hardening",
@@ -85,7 +92,14 @@
       "runtime/bin/redcap check -> REDCAP_CHECK_OK",
       "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json",
       "runtime/core/complete_revival_e2e.py:write_completion_marker_preview",
-      "runtime/core/complete_revival_e2e.py:FILE_BROWSER_INSPECTION_VIEWPORT"
+      "runtime/core/complete_revival_e2e.py:FILE_BROWSER_INSPECTION_VIEWPORT",
+      "runtime/prism/lib/prism_ledger.py",
+      "runtime/core/runtime_boundary_consumers.py",
+      "runtime/core/layout_guard.py",
+      "assets/contracts/directory-structure.json",
+      "assets/docs/prism-task-ledger.md",
+      ".gitignore",
+      "assets/evidence/self-purification/20260619-prism-ledger-runtime-boundary-fix/runner-self-purification-resolution.json"
     ]
   },
   "review_tracks": {
@@ -116,13 +130,17 @@
       "findings": [
         "完整复活 E2E 合同已经补充负向探针别名覆盖、独立重建和 setup_error 控制组要求；当前修复只关闭负向探针质量缺陷，不关闭 RedCap 完整复活父目标。",
         "行为级关系探针合同已要求 relation_view_control；关系验证不能只看扁平文本，也不能因未点击关系视图而误杀真实能力。",
-        "最终收口合同已要求 completion-marker-preview、preview validation、正式 boundary validation 和 file:// 可区分视觉证据。"
+        "最终收口合同已要求 completion-marker-preview、preview validation、正式 boundary validation 和 file:// 可区分视觉证据。",
+        "棱镜流水默认落点已从 tracked assets/evidence/prism 迁到运行时 .redcap/evidence/prism；边界消费者检查允许被忽略的源工作区 .redcap，但拒绝任何 .redcap 跟踪文件。"
       ],
       "evidence": [
         "assets/contracts/complete-revival-e2e-acceptance-design.json",
         "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-negative-probe-external-audit.json",
         "runtime/core/complete_revival_e2e.py",
-        "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json"
+        "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json",
+        "runtime/prism/lib/prism_ledger.py",
+        "runtime/core/runtime_boundary_consumers.py",
+        "assets/docs/prism-task-ledger.md"
       ]
     }
   },
@@ -144,7 +162,12 @@
     "runtime/core/complete_revival_e2e.py:build_completion_marker_payload",
     "runtime/core/complete_revival_e2e.py:write_completion_marker_preview",
     "runtime/core/complete_revival_e2e.py:completion_marker_boundary_validation",
-    "assets/contracts/complete-revival-e2e-acceptance-design.json completion marker preview and file visual independence contract update"
+    "assets/contracts/complete-revival-e2e-acceptance-design.json completion marker preview and file visual independence contract update",
+    "runtime/prism/lib/prism_ledger.py default runtime ledger boundary",
+    "runtime/core/runtime_boundary_consumers.py source .redcap ignore policy",
+    "runtime/core/complete_revival_e2e.py:source_workspace_prism_ledger_isolation_probe",
+    "assets/contracts/directory-structure.json ignored_names includes .redcap",
+    ".gitignore ignores .redcap/"
   ],
   "verification_evidence": [
     "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/audit/e2e_negative_probe_external_audit.py",
@@ -159,7 +182,12 @@
     "runtime/bin/redcap check -> REDCAP_CHECK_OK",
     "runtime/bin/redcap complete-revival-e2e design-check -> REDCAP_AI_E2E_DESIGN_OK",
     "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK",
-    "targeted retest on run-20260619T090739Z-63176: HTTP/file screenshot hashes differ and preview validation ok"
+    "targeted retest on run-20260619T090739Z-63176: HTTP/file screenshot hashes differ and preview validation ok",
+    "runtime/bin/redcap prism-ledger self-check -> PRISM_LEDGER_SELF_CHECK_OK",
+    "source_workspace_prism_ledger_isolation_probe -> ok true",
+    "runtime/bin/redcap boundary-consumers check -> REDCAP_RUNTIME_BOUNDARY_CONSUMERS_OK",
+    "runtime/bin/redcap layout-check -> REDCAP_LAYOUT_OK",
+    "runtime/bin/redcap check -> REDCAP_CHECK_OK after runtime ledger boundary fix"
   ],
   "self_purification": {
     "task_type": "runtime_change",
@@ -181,6 +209,10 @@
     "latest_e2e_final_marker_preview_fix": {
       "decision": "no_promote",
       "evidence": "assets/evidence/self-purification/20260619-e2e-final-marker-preview-and-file-visual-fix/runner-self-purification-resolution.json"
+    },
+    "latest_prism_ledger_runtime_boundary_fix": {
+      "decision": "no_promote",
+      "evidence": "assets/evidence/self-purification/20260619-prism-ledger-runtime-boundary-fix/runner-self-purification-resolution.json"
     }
   },
   "completion_claim": {

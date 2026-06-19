@@ -8,8 +8,14 @@ health summary for routine observation.
 
 - Entrypoint: `runtime/prism/bin/prism-ledger`
 - Library: `runtime/prism/lib/prism_ledger.py`
-- Ledger: `assets/evidence/prism/task-ledger.jsonl`
-- Health summary: `assets/evidence/prism/task-health.json`
+- Runtime ledger: `.redcap/evidence/prism/task-ledger.jsonl` in the source workspace, or `evidence/prism/task-ledger.jsonl` inside an installed project `.redcap/` package
+- Runtime health summary: `.redcap/evidence/prism/task-health.json` in the source workspace, or `evidence/prism/task-health.json` inside an installed project `.redcap/` package
+- Optional overrides: `REDCAP_PRISM_LEDGER` and `REDCAP_PRISM_HEALTH`
+
+The ledger is runtime health data, not a stable source artifact. Historical
+evidence under `assets/evidence/prism/` may be kept as bounded review evidence,
+but live `gate`, `session-init`, and `session-update` calls must not mutate
+tracked files in the RedCap source workspace.
 
 `runtime/prism/bin/prism session-init` and `session-update` append session
 records after writing the session manifest. `runtime/prism/bin/prism gate`

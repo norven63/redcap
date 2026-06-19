@@ -57,6 +57,39 @@ def assert_under(path: pathlib.Path, parent: pathlib.Path, label: str, failures:
         failures.append(f"{label} 未落在项目级 .redcap 内：{path}")
 
 
+def source_runtime_root_policy() -> dict[str, Any]:
+    runtime_root = REPO_ROOT / ".redcap"
+    check_ignore = run(["git", "check-ignore", "-q", ".redcap/evidence/prism/task-ledger.jsonl"])
+    tracked = run(["git", "ls-files", ".redcap"])
+    failures: list[str] = []
+    if check_ignore["exit_code"] != 0:
+        failures.append("RedCap 源工作区 .redcap 运行时目录必须被 git ignore 覆盖")
+    tracked_lines = [line for line in tracked["stdout"].splitlines() if line.strip()]
+    if tracked_lines:
+        failures.append(f"RedCap 源工作区 .redcap 不能被 git 跟踪：{tracked_lines}")
+    return {
+        "schema_id": "redcap-source-runtime-root-policy",
+        "ok": not failures,
+        "runtime_root": str(runtime_root),
+        "runtime_root_exists": runtime_root.exists(),
+        "check_ignore": {
+            "argv": check_ignore["argv"],
+            "exit_code": check_ignore["exit_code"],
+            "ok": check_ignore["exit_code"] == 0,
+            "stdout_tail": check_ignore["stdout"][-1200:],
+            "stderr_tail": check_ignore["stderr"][-1200:],
+        },
+        "tracked": {
+            "argv": tracked["argv"],
+            "exit_code": tracked["exit_code"],
+            "ok": tracked["exit_code"] == 0 and not tracked_lines,
+            "stdout_tail": tracked["stdout"][-1200:],
+            "stderr_tail": tracked["stderr"][-1200:],
+        },
+        "failures": failures,
+    }
+
+
 def external_project_probe() -> dict[str, Any]:
     failures: list[str] = []
     command_results: dict[str, dict[str, Any]] = {}
@@ -157,8 +190,9 @@ def external_project_probe() -> dict[str, Any]:
 
         if not (redcap_dir / ".gitignore").is_file():
             failures.append("外部项目 .redcap 缺少 .gitignore 保护")
-        if (REPO_ROOT / ".redcap").exists():
-            failures.append("探针不应在 RedCap 仓库根目录创建 .redcap")
+        source_runtime_policy = source_runtime_root_policy()
+        if source_runtime_policy.get("ok") is not True:
+            failures.extend(source_runtime_policy.get("failures", []))
 
         return {
             "schema_id": "redcap-runtime-boundary-consumer-check",
@@ -166,6 +200,7 @@ def external_project_probe() -> dict[str, Any]:
             "project_workspace": str(project),
             "project_runtime_root": str(redcap_dir),
             "commands_checked": sorted(command_results),
+            "source_runtime_root_policy": source_runtime_policy,
             "command_results": {
                 name: {
                     "argv": result["argv"],

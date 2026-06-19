@@ -19,8 +19,27 @@ REPO_ROOT = ROOT.parents[1]
 sys.path.insert(0, str(ROOT / "lib"))
 from prism_lock import file_lock, write_json_atomic  # noqa: E402
 
-DEFAULT_LEDGER = REPO_ROOT / "assets" / "evidence" / "prism" / "task-ledger.jsonl"
-DEFAULT_HEALTH = REPO_ROOT / "assets" / "evidence" / "prism" / "task-health.json"
+def prism_runtime_evidence_root() -> pathlib.Path:
+    if REPO_ROOT.name == ".redcap":
+        return REPO_ROOT / "evidence" / "prism"
+    return REPO_ROOT / ".redcap" / "evidence" / "prism"
+
+
+def configured_path(env_name: str, default: pathlib.Path) -> pathlib.Path:
+    raw = os.environ.get(env_name)
+    if raw and raw.strip():
+        return pathlib.Path(raw).expanduser().resolve()
+    return default.resolve()
+
+
+DEFAULT_LEDGER = configured_path(
+    "REDCAP_PRISM_LEDGER",
+    prism_runtime_evidence_root() / "task-ledger.jsonl",
+)
+DEFAULT_HEALTH = configured_path(
+    "REDCAP_PRISM_HEALTH",
+    prism_runtime_evidence_root() / "task-health.json",
+)
 DEFAULT_TASK_FACTS = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
 PASSING_VERDICTS = {None, "pass"}
 SUCCESS_STATES = {"converged", "main-decided"}
@@ -732,6 +751,17 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         active_record = build_record(active_manifest_path)
         if active_record.get("success") is not False or active_record.get("outcome") != "active":
             failures.append("active unresolved task should be classified as active")
+        expected_root = prism_runtime_evidence_root().resolve()
+        ledger_overridden = bool(os.environ.get("REDCAP_PRISM_LEDGER", "").strip())
+        health_overridden = bool(os.environ.get("REDCAP_PRISM_HEALTH", "").strip())
+        if not ledger_overridden and DEFAULT_LEDGER.parent != expected_root:
+            failures.append("default ledger path should live under the runtime evidence root")
+        if not health_overridden and DEFAULT_HEALTH.parent != expected_root:
+            failures.append("default health path should live under the runtime evidence root")
+        if "assets/evidence/prism" in DEFAULT_LEDGER.as_posix():
+            failures.append("default ledger path must not target tracked assets/evidence/prism")
+        if "assets/evidence/prism" in DEFAULT_HEALTH.as_posix():
+            failures.append("default health path must not target tracked assets/evidence/prism")
         print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
         if failures:
             return 1
