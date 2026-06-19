@@ -216,6 +216,10 @@ GIT_IN_PROGRESS_MARKERS = [
     "rebase-apply",
 ]
 OBSERVER_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_OBSERVER_TIMEOUT_SECONDS", "300"))
+HARNESS_WATCHDOG_ROOT = pathlib.Path(os.environ.get("REDCAP_E2E_HARNESS_WATCHDOG_ROOT", "/tmp/redcap-harness-watchdog"))
+HARNESS_WORKER_COMMUNICATE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_E2E_WORKER_COMMUNICATE_TIMEOUT_SECONDS", "8"))
+HARNESS_WATCHDOG_GRACE_SECONDS = float(os.environ.get("REDCAP_E2E_WATCHDOG_GRACE_SECONDS", "10"))
+HARNESS_WATCHDOG_POLL_SECONDS = float(os.environ.get("REDCAP_E2E_WATCHDOG_POLL_SECONDS", "0.5"))
 BROWSER_INSPECTION_VIEWPORT = {"width": 1280, "height": 900}
 BEHAVIORAL_BROWSER_VIEWPORT = {"width": 1280, "height": 900}
 INDEPENDENT_BROWSER_VIEWPORT = {"width": 1176, "height": 820}
@@ -727,12 +731,175 @@ def run_command_pty(
     }
 
 
-def kill_process_group(process: subprocess.Popen[str] | None, grace_seconds: float = 2.0) -> bool:
+def process_exists(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+
+
+def ps_field(pid: int, field: str) -> str | None:
+    try:
+        completed = subprocess.run(
+            ["ps", "-ww", "-p", str(pid), "-o", f"{field}="],
+            text=True,
+            capture_output=True,
+            timeout=3,
+            check=False,
+        )
+    except Exception:
+        return None
+    if completed.returncode != 0:
+        return None
+    value = completed.stdout.strip()
+    return value or None
+
+
+def process_is_zombie(pid: int) -> bool:
+    state = ps_field(pid, "stat")
+    return bool(state and state.startswith("Z"))
+
+
+def process_identity(pid: int, command_substrings: list[str] | None = None) -> dict[str, Any]:
+    identity: dict[str, Any] = {
+        "pid": pid,
+        "exists": process_exists(pid),
+        "command_substrings": command_substrings or [],
+    }
+    if not identity["exists"]:
+        return identity
+    try:
+        identity["pgid"] = os.getpgid(pid)
+    except OSError:
+        identity["pgid"] = None
+    identity["lstart"] = ps_field(pid, "lstart")
+    identity["command"] = ps_field(pid, "command")
+    identity["stat"] = ps_field(pid, "stat")
+    return identity
+
+
+def process_matches_identity(
+    pid: int,
+    expected_identity: dict[str, Any] | None,
+    command_substrings: list[str] | None = None,
+) -> bool:
+    if not expected_identity:
+        return process_exists(pid)
+    current = process_identity(pid, command_substrings)
+    if current.get("exists") is not True:
+        return False
+    expected_lstart = expected_identity.get("lstart")
+    current_lstart = current.get("lstart")
+    if expected_lstart and current_lstart and expected_lstart != current_lstart:
+        return False
+    expected_pgid = expected_identity.get("pgid")
+    current_pgid = current.get("pgid")
+    if expected_pgid is not None and current_pgid is not None and int(expected_pgid) != int(current_pgid):
+        return False
+    command = str(current.get("command") or "")
+    required_substrings = command_substrings or expected_identity.get("command_substrings") or []
+    for required in required_substrings:
+        if required and required not in command:
+            return False
+    return True
+
+
+def worker_command_substrings(argv: list[str], work_root: pathlib.Path) -> list[str]:
+    script = str(pathlib.Path(__file__).resolve())
+    return [
+        script,
+        "run",
+        "--work-root",
+        str(work_root),
+    ]
+
+
+def kill_recorded_process_group(record: dict[str, Any], reason: str, grace_seconds: float = 2.0) -> dict[str, Any]:
+    worker_pid = int(record.get("worker_pid") or 0)
+    worker_pgid = int(record.get("worker_pgid") or worker_pid or 0)
+    command_substrings = [str(item) for item in record.get("worker_command_substrings", []) if str(item)]
+    identity = record.get("worker_identity") if isinstance(record.get("worker_identity"), dict) else None
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-recorded-process-cleanup",
+        "ok": False,
+        "reason": reason,
+        "worker_pid": worker_pid,
+        "worker_pgid": worker_pgid,
+        "identity_matched": False,
+        "terminated": False,
+        "killed": False,
+        "failures": [],
+        "recorded_at": iso_now(),
+    }
+    if worker_pid <= 0:
+        result["failures"].append("缺少 worker_pid")
+        return result
+    if not process_matches_identity(worker_pid, identity, command_substrings):
+        result["failures"].append("worker 身份校验失败，拒绝清理，避免误杀无关进程")
+        return result
+    result["identity_matched"] = True
+    try:
+        current_pgid = os.getpgid(worker_pid)
+    except OSError:
+        result["ok"] = True
+        result["failures"].append("worker 已不存在")
+        return result
+    if worker_pgid and current_pgid != worker_pgid:
+        result["failures"].append("worker 进程组与记录不一致，拒绝清理")
+        return result
+    try:
+        os.killpg(current_pgid, signal.SIGTERM)
+        result["terminated"] = True
+    except ProcessLookupError:
+        result["ok"] = True
+        return result
+    except OSError as exc:
+        result["failures"].append(f"发送 SIGTERM 失败：{exc}")
+        return result
+    deadline = time.monotonic() + grace_seconds
+    while time.monotonic() < deadline:
+        if not process_exists(worker_pid) or process_is_zombie(worker_pid):
+            result["ok"] = True
+            return result
+        time.sleep(0.05)
+    try:
+        os.killpg(current_pgid, signal.SIGKILL)
+        result["killed"] = True
+    except ProcessLookupError:
+        result["ok"] = True
+        return result
+    except OSError as exc:
+        result["failures"].append(f"发送 SIGKILL 失败：{exc}")
+        return result
+    deadline = time.monotonic() + grace_seconds
+    while time.monotonic() < deadline:
+        if not process_exists(worker_pid) or process_is_zombie(worker_pid):
+            result["ok"] = True
+            return result
+        time.sleep(0.05)
+    result["failures"].append("SIGKILL 后 worker 仍存在")
+    return result
+
+
+def kill_process_group(
+    process: subprocess.Popen[str] | None,
+    grace_seconds: float = 2.0,
+    expected_identity: dict[str, Any] | None = None,
+    command_substrings: list[str] | None = None,
+) -> bool:
     if process is None or process.poll() is not None:
+        return False
+    if expected_identity and not process_matches_identity(process.pid, expected_identity, command_substrings):
         return False
     killed = False
     try:
-        os.killpg(process.pid, signal.SIGTERM)
+        pgid = os.getpgid(process.pid)
+        os.killpg(pgid, signal.SIGTERM)
         killed = True
     except ProcessLookupError:
         return killed
@@ -748,7 +915,8 @@ def kill_process_group(process: subprocess.Popen[str] | None, grace_seconds: flo
             return killed
         time.sleep(0.05)
     try:
-        os.killpg(process.pid, signal.SIGKILL)
+        pgid = os.getpgid(process.pid)
+        os.killpg(pgid, signal.SIGKILL)
         killed = True
     except ProcessLookupError:
         return killed
@@ -759,6 +927,347 @@ def kill_process_group(process: subprocess.Popen[str] | None, grace_seconds: flo
         except OSError:
             pass
     return killed
+
+
+class HarnessInterrupted(Exception):
+    def __init__(self, signal_name: str):
+        super().__init__(signal_name)
+        self.signal_name = signal_name
+
+
+def harness_watchdog_path(work_root: pathlib.Path, parent_pid: int, worker_pid: int) -> pathlib.Path:
+    digest = sha256_text(str(work_root.resolve()))[:12]
+    return HARNESS_WATCHDOG_ROOT / f"{digest}-{parent_pid}-{worker_pid}.json"
+
+
+def write_harness_watchdog_record(
+    path: pathlib.Path,
+    work_root: pathlib.Path,
+    argv: list[str],
+    timeout_seconds: int,
+    worker: subprocess.Popen[str],
+    worker_identity: dict[str, Any],
+    deadline_epoch: float,
+    command_substrings: list[str] | None = None,
+) -> dict[str, Any]:
+    required_substrings = command_substrings or worker_command_substrings(argv, work_root)
+    record = {
+        "schema_id": "redcap-e2e-harness-watchdog-record",
+        "created_at": iso_now(),
+        "record_path": str(path),
+        "parent_pid": os.getpid(),
+        "parent_identity": process_identity(os.getpid()),
+        "worker_pid": worker.pid,
+        "worker_pgid": worker_identity.get("pgid"),
+        "worker_identity": worker_identity,
+        "worker_command_substrings": required_substrings,
+        "work_root": str(work_root),
+        "argv_sha256": sha256_text("\n".join(argv)),
+        "timeout_seconds": timeout_seconds,
+        "worker_deadline_epoch": deadline_epoch,
+        "watchdog_grace_seconds": HARNESS_WATCHDOG_GRACE_SECONDS,
+        "cleanup_path": str(path.with_suffix(".cleanup.json")),
+    }
+    write_json(path, record)
+    return record
+
+
+def cleanup_harness_watchdog_record(path: pathlib.Path) -> dict[str, Any]:
+    record = load_optional_json(path)
+    if not isinstance(record, dict):
+        return {"ok": True, "path": str(path), "reason": "record-missing"}
+    worker_pid = int(record.get("worker_pid") or 0)
+    if worker_pid > 0 and process_matches_identity(
+        worker_pid,
+        record.get("worker_identity") if isinstance(record.get("worker_identity"), dict) else None,
+        [str(item) for item in record.get("worker_command_substrings", []) if str(item)],
+    ):
+        return {"ok": False, "path": str(path), "reason": "worker-still-running"}
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        return {"ok": False, "path": str(path), "reason": f"unlink-failed:{exc}"}
+    return {"ok": True, "path": str(path), "reason": "worker-finished"}
+
+
+def start_harness_watchdog(
+    work_root: pathlib.Path,
+    argv: list[str],
+    timeout_seconds: int,
+    worker: subprocess.Popen[str],
+    worker_identity: dict[str, Any],
+    deadline_epoch: float,
+    command_substrings: list[str] | None = None,
+) -> dict[str, Any]:
+    HARNESS_WATCHDOG_ROOT.mkdir(parents=True, exist_ok=True)
+    path = harness_watchdog_path(work_root, os.getpid(), worker.pid)
+    record = write_harness_watchdog_record(
+        path,
+        work_root,
+        argv,
+        timeout_seconds,
+        worker,
+        worker_identity,
+        deadline_epoch,
+        command_substrings=command_substrings,
+    )
+    watchdog_argv = [
+        sys.executable,
+        str(pathlib.Path(__file__).resolve()),
+        "harness-watchdog",
+        "--record",
+        str(path),
+    ]
+    try:
+        watchdog = subprocess.Popen(
+            watchdog_argv,
+            cwd=str(REPO_ROOT),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            start_new_session=True,
+        )
+        record["watchdog_pid"] = watchdog.pid
+        record["watchdog_argv_sha256"] = sha256_text("\n".join(watchdog_argv))
+        write_json(path, record)
+    except Exception as exc:
+        record["watchdog_start_error"] = str(exc)
+        write_json(path, record)
+    return record
+
+
+def cleanup_stale_harness_watchdogs(work_root: pathlib.Path) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    if not HARNESS_WATCHDOG_ROOT.exists():
+        return results
+    for record_path in sorted(HARNESS_WATCHDOG_ROOT.glob("*.json")):
+        record = load_optional_json(record_path)
+        if not isinstance(record, dict):
+            continue
+        if str(record.get("work_root") or "") != str(work_root):
+            continue
+        parent_pid = int(record.get("parent_pid") or 0)
+        parent_alive = parent_pid > 0 and process_matches_identity(
+            parent_pid,
+            record.get("parent_identity") if isinstance(record.get("parent_identity"), dict) else None,
+        )
+        worker_pid = int(record.get("worker_pid") or 0)
+        worker_alive = worker_pid > 0 and process_matches_identity(
+            worker_pid,
+            record.get("worker_identity") if isinstance(record.get("worker_identity"), dict) else None,
+            [str(item) for item in record.get("worker_command_substrings", []) if str(item)],
+        )
+        if parent_alive and worker_alive:
+            continue
+        cleanup: dict[str, Any]
+        if worker_alive:
+            cleanup = kill_recorded_process_group(record, reason="stale-parent-missing", grace_seconds=HARNESS_WATCHDOG_GRACE_SECONDS)
+        else:
+            cleanup = {"schema_id": "redcap-e2e-recorded-process-cleanup", "ok": True, "reason": "worker-already-gone"}
+        try:
+            write_json(record_path.with_suffix(".cleanup.json"), cleanup)
+        except Exception:
+            pass
+        try:
+            record_path.unlink()
+        except OSError:
+            pass
+        results.append({
+            "record": str(record_path),
+            "parent_alive": parent_alive,
+            "worker_alive": worker_alive,
+            "cleanup": cleanup,
+        })
+    return results
+
+
+def run_harness_watchdog(record_path: pathlib.Path) -> dict[str, Any]:
+    started = iso_now()
+    while True:
+        record = load_optional_json(record_path)
+        if not isinstance(record, dict):
+            return {"ok": True, "reason": "record-removed", "record_path": str(record_path), "started_at": started, "finished_at": iso_now()}
+        worker_pid = int(record.get("worker_pid") or 0)
+        worker_alive = worker_pid > 0 and process_matches_identity(
+            worker_pid,
+            record.get("worker_identity") if isinstance(record.get("worker_identity"), dict) else None,
+            [str(item) for item in record.get("worker_command_substrings", []) if str(item)],
+        )
+        if not worker_alive:
+            try:
+                record_path.unlink()
+            except OSError:
+                pass
+            return {"ok": True, "reason": "worker-finished", "record_path": str(record_path), "started_at": started, "finished_at": iso_now()}
+        parent_pid = int(record.get("parent_pid") or 0)
+        parent_alive = parent_pid > 0 and process_matches_identity(
+            parent_pid,
+            record.get("parent_identity") if isinstance(record.get("parent_identity"), dict) else None,
+        )
+        now_epoch = time.time()
+        deadline_epoch = float(record.get("worker_deadline_epoch") or 0)
+        cleanup_reason = None
+        if not parent_alive:
+            cleanup_reason = "parent-missing"
+        elif deadline_epoch and now_epoch > deadline_epoch + HARNESS_WATCHDOG_GRACE_SECONDS:
+            cleanup_reason = "worker-deadline-exceeded"
+        if cleanup_reason:
+            cleanup = kill_recorded_process_group(record, reason=cleanup_reason, grace_seconds=HARNESS_WATCHDOG_GRACE_SECONDS)
+            cleanup.update({
+                "watchdog_started_at": started,
+                "watchdog_finished_at": iso_now(),
+                "record_path": str(record_path),
+            })
+            try:
+                write_json(record_path.with_suffix(".cleanup.json"), cleanup)
+            except Exception:
+                pass
+            if cleanup.get("ok") is True:
+                try:
+                    record_path.unlink()
+                except OSError:
+                    pass
+            return cleanup
+        time.sleep(HARNESS_WATCHDOG_POLL_SECONDS)
+
+
+def communicate_worker_after_stop(worker: subprocess.Popen[str], timeout_seconds: float) -> tuple[str, str, bool]:
+    try:
+        stdout, stderr = worker.communicate(timeout=timeout_seconds)
+        return stdout or "", stderr or "", False
+    except subprocess.TimeoutExpired as exc:
+        kill_process_group(worker, grace_seconds=1.0)
+        try:
+            stdout, stderr = worker.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            try:
+                worker.kill()
+            except OSError:
+                pass
+            stdout, stderr = "", ""
+        return (
+            stdout if isinstance(stdout, str) else (exc.stdout if isinstance(exc.stdout, str) else ""),
+            stderr if isinstance(stderr, str) else (exc.stderr if isinstance(exc.stderr, str) else ""),
+            True,
+        )
+
+
+def run_harness_timeout_regression_test(work_root: pathlib.Path) -> dict[str, Any]:
+    work_root.mkdir(parents=True, exist_ok=True)
+    failures: list[str] = []
+    cases: list[dict[str, Any]] = []
+
+    timeout_root = work_root / "hard-timeout"
+    timeout_root.mkdir(parents=True, exist_ok=True)
+    timeout_argv = [sys.executable, "-c", "import time; time.sleep(30)"]
+    timeout_worker = subprocess.Popen(
+        timeout_argv,
+        cwd=str(timeout_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    timeout_substrings = ["time.sleep(30)"]
+    timeout_identity = process_identity(timeout_worker.pid, timeout_substrings)
+    timeout_started = time.monotonic()
+    timeout_deadline = time.monotonic() + 1
+    timeout_watchdog = start_harness_watchdog(
+        timeout_root,
+        timeout_argv,
+        1,
+        timeout_worker,
+        timeout_identity,
+        time.time() + 1,
+        command_substrings=timeout_substrings,
+    )
+    timed_out = False
+    process_group_killed = False
+    while timeout_worker.poll() is None:
+        if time.monotonic() > timeout_deadline:
+            timed_out = True
+            process_group_killed = kill_process_group(
+                timeout_worker,
+                grace_seconds=1.0,
+                expected_identity=timeout_identity,
+                command_substrings=timeout_substrings,
+            )
+            break
+        time.sleep(0.05)
+    stdout, stderr, communicate_timed_out = communicate_worker_after_stop(timeout_worker, 2)
+    timeout_cleanup = cleanup_harness_watchdog_record(pathlib.Path(str(timeout_watchdog.get("record_path"))))
+    timeout_elapsed = time.monotonic() - timeout_started
+    timeout_case = {
+        "id": "hard-timeout-kills-worker",
+        "ok": timed_out and process_group_killed and timeout_worker.poll() is not None and timeout_elapsed < 8,
+        "timed_out": timed_out,
+        "process_group_killed": process_group_killed,
+        "worker_exit_code": timeout_worker.returncode,
+        "communicate_timed_out": communicate_timed_out,
+        "elapsed_seconds": round(timeout_elapsed, 3),
+        "watchdog_cleanup": timeout_cleanup,
+        "stdout_tail": stdout[-200:],
+        "stderr_tail": stderr[-200:],
+    }
+    if not timeout_case["ok"]:
+        failures.append("硬超时回归探针没有在短时间内清理 fake worker")
+    cases.append(timeout_case)
+
+    watchdog_root = work_root / "watchdog-parent-missing"
+    watchdog_root.mkdir(parents=True, exist_ok=True)
+    watchdog_argv = [sys.executable, "-c", "import time; time.sleep(30)"]
+    watchdog_worker = subprocess.Popen(
+        watchdog_argv,
+        cwd=str(watchdog_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    watchdog_substrings = ["time.sleep(30)"]
+    watchdog_identity = process_identity(watchdog_worker.pid, watchdog_substrings)
+    record_path = harness_watchdog_path(watchdog_root, 999999, watchdog_worker.pid)
+    record = write_harness_watchdog_record(
+        record_path,
+        watchdog_root,
+        watchdog_argv,
+        60,
+        watchdog_worker,
+        watchdog_identity,
+        time.time() + 60,
+        command_substrings=watchdog_substrings,
+    )
+    record["parent_pid"] = 999999
+    record["parent_identity"] = {"pid": 999999, "exists": False}
+    write_json(record_path, record)
+    watchdog_started = time.monotonic()
+    watchdog_result = run_harness_watchdog(record_path)
+    _, _, watchdog_communicate_timed_out = communicate_worker_after_stop(watchdog_worker, 2)
+    watchdog_elapsed = time.monotonic() - watchdog_started
+    watchdog_case = {
+        "id": "watchdog-cleans-parent-missing-worker",
+        "ok": watchdog_result.get("ok") is True and watchdog_worker.poll() is not None and watchdog_elapsed < 8,
+        "watchdog_result": watchdog_result,
+        "worker_exit_code": watchdog_worker.returncode,
+        "communicate_timed_out": watchdog_communicate_timed_out,
+        "elapsed_seconds": round(watchdog_elapsed, 3),
+    }
+    if not watchdog_case["ok"]:
+        failures.append("看门狗没有在父进程缺失时清理 fake worker")
+    cases.append(watchdog_case)
+
+    result = {
+        "schema_id": "redcap-e2e-harness-timeout-regression-test",
+        "ok": not failures,
+        "work_root": str(work_root),
+        "cases": cases,
+        "failures": failures,
+    }
+    write_json(work_root / "redcap-e2e-harness-timeout-regression-test.json", result)
+    return result
 
 
 def command_receipt(result: dict[str, Any]) -> dict[str, Any]:
@@ -1271,6 +1780,7 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         "runtime/bin/redcap complete-revival-e2e preflight-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
+        "runtime/bin/redcap complete-revival-e2e harness-timeout-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e self-check",
     ]:
         if required not in commands:
@@ -1325,6 +1835,27 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         for required_fragment in ["blocked_before_project_run=true", "auto_rerun_allowed=false", "禁止启动 Loom 角色"]:
             if required_fragment not in failure_behavior:
                 failures.append(f"codex_cli_hook_carrier_preflight.failure_behavior 缺少：{required_fragment}")
+    harness_timeout = contract.get("harness_timeout_and_cleanup")
+    if not isinstance(harness_timeout, dict):
+        failures.append("E2E 合同缺少 harness_timeout_and_cleanup 硬运行门禁")
+    else:
+        if harness_timeout.get("status") != "hard_runtime_guard":
+            failures.append("harness_timeout_and_cleanup.status 必须为 hard_runtime_guard")
+        worker_deadline_rule = str(harness_timeout.get("worker_deadline_rule") or "")
+        if "timeout_seconds" not in worker_deadline_rule or "不得延长 worker 截止时间" not in worker_deadline_rule:
+            failures.append("harness_timeout_and_cleanup.worker_deadline_rule 必须声明 timeout_seconds 是唯一硬截止且观察者不得延长")
+        for key, fragment in {
+            "interrupt_cleanup_rule": "worker_exit_reason=interrupt",
+            "watchdog_rule": "独立看门狗",
+            "identity_safety_rule": "身份校验",
+            "failure_evidence_rule": "redcap-e2e-harness-summary.json",
+        }.items():
+            if fragment not in str(harness_timeout.get(key) or ""):
+                failures.append(f"harness_timeout_and_cleanup.{key} 缺少关键约束：{fragment}")
+        exit_values = harness_timeout.get("exit_reason_values")
+        for expected in ["completed", "timeout", "interrupt", "crash"]:
+            if not isinstance(exit_values, list) or expected not in exit_values:
+                failures.append(f"harness_timeout_and_cleanup.exit_reason_values 缺少：{expected}")
     layered_preflight = contract.get("redcap_layered_preflight")
     if not isinstance(layered_preflight, dict):
         failures.append("E2E 合同缺少 redcap_layered_preflight 硬入口")
@@ -8728,7 +9259,10 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         "--timeout-seconds",
         str(timeout_seconds),
     ]
+    stale_watchdog_cleanup = cleanup_stale_harness_watchdogs(work_root)
     started = iso_now()
+    worker_deadline_monotonic = time.monotonic() + timeout_seconds
+    worker_deadline_epoch = time.time() + timeout_seconds
     worker = subprocess.Popen(
         argv,
         cwd=str(REPO_ROOT),
@@ -8738,23 +9272,92 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         start_new_session=True,
         env=env,
     )
+    worker_substrings = worker_command_substrings(argv, work_root)
+    worker_identity = process_identity(worker.pid, worker_substrings)
+    watchdog_record = start_harness_watchdog(
+        work_root,
+        argv,
+        timeout_seconds,
+        worker,
+        worker_identity,
+        worker_deadline_epoch,
+    )
     observer_requests: set[pathlib.Path] = set()
     observer_commands: list[dict[str, Any]] = []
-    deadline = time.monotonic() + timeout_seconds + OBSERVER_TIMEOUT_SECONDS + 600
     timed_out = False
-    while worker.poll() is None:
-        for request_path in sorted(work_root.glob("**/.redcap/evidence/e2e/observer-request.json")):
-            resolved = request_path.resolve()
-            if resolved in observer_requests:
-                continue
-            observer_requests.add(resolved)
-            observer_commands.append(run_observer_request_as_harness(resolved, runner_pid=worker.pid, harness_pid=os.getpid()))
-        if time.monotonic() > deadline:
-            timed_out = True
-            kill_process_group(worker, grace_seconds=2.0)
-            break
-        time.sleep(0.5)
-    stdout, stderr = worker.communicate()
+    interrupted = False
+    interrupt_reason: str | None = None
+    process_group_killed = False
+    exit_reason = "completed"
+    old_signal_handlers: dict[int, Any] = {}
+
+    def harness_signal_handler(signum: int, _frame: Any) -> None:
+        try:
+            signal_name = signal.Signals(signum).name
+        except ValueError:
+            signal_name = f"signal-{signum}"
+        raise HarnessInterrupted(signal_name)
+
+    for handled_signal in (signal.SIGTERM, signal.SIGHUP):
+        try:
+            old_signal_handlers[int(handled_signal)] = signal.getsignal(handled_signal)
+            signal.signal(handled_signal, harness_signal_handler)
+        except (OSError, ValueError):
+            pass
+    try:
+        while worker.poll() is None:
+            for request_path in sorted(work_root.glob("**/.redcap/evidence/e2e/observer-request.json")):
+                resolved = request_path.resolve()
+                if resolved in observer_requests:
+                    continue
+                observer_requests.add(resolved)
+                observer_commands.append(run_observer_request_as_harness(resolved, runner_pid=worker.pid, harness_pid=os.getpid()))
+            if time.monotonic() > worker_deadline_monotonic:
+                timed_out = True
+                exit_reason = "timeout"
+                process_group_killed = kill_process_group(
+                    worker,
+                    grace_seconds=2.0,
+                    expected_identity=worker_identity,
+                    command_substrings=worker_substrings,
+                ) or process_group_killed
+                break
+            time.sleep(0.5)
+    except HarnessInterrupted as exc:
+        interrupted = True
+        interrupt_reason = exc.signal_name
+        exit_reason = "interrupt"
+        process_group_killed = kill_process_group(
+            worker,
+            grace_seconds=2.0,
+            expected_identity=worker_identity,
+            command_substrings=worker_substrings,
+        ) or process_group_killed
+    except KeyboardInterrupt:
+        interrupted = True
+        interrupt_reason = "KeyboardInterrupt"
+        exit_reason = "interrupt"
+        process_group_killed = kill_process_group(
+            worker,
+            grace_seconds=2.0,
+            expected_identity=worker_identity,
+            command_substrings=worker_substrings,
+        ) or process_group_killed
+    finally:
+        for signum, previous_handler in old_signal_handlers.items():
+            try:
+                signal.signal(signum, previous_handler)
+            except (OSError, ValueError):
+                pass
+        if (timed_out or interrupted) and worker.poll() is None:
+            process_group_killed = kill_process_group(
+                worker,
+                grace_seconds=2.0,
+                expected_identity=worker_identity,
+                command_substrings=worker_substrings,
+            ) or process_group_killed
+    stdout, stderr, communicate_timed_out = communicate_worker_after_stop(worker, HARNESS_WORKER_COMMUNICATE_TIMEOUT_SECONDS)
+    watchdog_cleanup = cleanup_harness_watchdog_record(pathlib.Path(str(watchdog_record.get("record_path"))))
     parsed = parse_leading_json(stdout)
     if parsed is None:
         parsed = {
@@ -8765,13 +9368,19 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         }
     harness_failures: list[str] = []
     if timed_out:
-        harness_failures.append("E2E harness 等待 worker 超时")
+        harness_failures.append(f"E2E harness worker 达到硬超时 {timeout_seconds} 秒；观察者超时没有延长 worker 截止时间")
+    if interrupted:
+        harness_failures.append(f"E2E harness 被中断：{interrupt_reason or 'unknown'}，已请求清理 worker 进程组")
+    if communicate_timed_out:
+        harness_failures.append("E2E worker 停止后收集输出超时")
     if worker.returncode != 0 and parsed.get("ok") is True:
         harness_failures.append(f"E2E worker 退出码非 0：{worker.returncode}")
     if not observer_requests:
         harness_failures.append("E2E worker 没有发出 observer-request.json")
     if any(command.get("ok") is not True for command in observer_commands):
         harness_failures.append("至少一个独立观察者命令失败")
+    if exit_reason == "completed" and (worker.returncode is not None and worker.returncode < 0):
+        exit_reason = "crash"
     parsed.setdefault("failures", [])
     if harness_failures:
         parsed["ok"] = False
@@ -8783,13 +9392,35 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         "started_at": started,
         "finished_at": iso_now(),
         "worker_pid": worker.pid,
+        "worker_pgid": worker_identity.get("pgid"),
         "worker_exit_code": worker.returncode,
+        "worker_exit_reason": exit_reason,
         "worker_timed_out": timed_out,
+        "interrupted": interrupted,
+        "interrupt_reason": interrupt_reason,
+        "process_group_killed": process_group_killed,
+        "communicate_timed_out": communicate_timed_out,
+        "timeout_seconds": timeout_seconds,
+        "worker_deadline_policy": {
+            "type": "hard_timeout_seconds",
+            "worker_deadline_epoch": worker_deadline_epoch,
+            "observer_timeout_extends_worker_deadline": False,
+            "observer_timeout_seconds": OBSERVER_TIMEOUT_SECONDS,
+        },
+        "worker_identity": worker_identity,
+        "watchdog_record": watchdog_record,
+        "watchdog_cleanup": watchdog_cleanup,
+        "stale_watchdog_cleanup": stale_watchdog_cleanup,
         "observer_request_count": len(observer_requests),
         "observer_commands": observer_commands,
         "stdout_tail": stdout[-4000:],
         "stderr_tail": stderr[-4000:],
     }
+    try:
+        write_json(work_root / "redcap-e2e-harness-summary.json", parsed["harness"])
+        write_json(work_root / "redcap-e2e-run-summary.json", parsed)
+    except Exception:
+        pass
     evidence_root = parsed.get("evidence_root")
     if isinstance(evidence_root, str):
         try:
@@ -8959,6 +9590,21 @@ def cmd_long_task_integration_dry_run(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_harness_timeout_regression_test(args: argparse.Namespace) -> int:
+    result = run_harness_timeout_regression_test(resolve_work_root(args.work_root))
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_HARNESS_TIMEOUT_REGRESSION_OK")
+        return 0
+    return 1
+
+
+def cmd_harness_watchdog(args: argparse.Namespace) -> int:
+    result = run_harness_watchdog(pathlib.Path(args.record).expanduser().resolve())
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result.get("ok") is True else 1
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     result = run_e2e_harness(direction_from_args(args), resolve_work_root(args.work_root), args.timeout_seconds)
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -9065,6 +9711,9 @@ def cmd_self_check(args: argparse.Namespace) -> int:
         preflight_regression = run_layered_preflight_regression_test(work_root / "layered-preflight-regression")
         if preflight_regression.get("ok") is not True:
             failures.append(f"E2E 分层前置回归测试失败：{preflight_regression.get('failures')}")
+        harness_timeout_regression = run_harness_timeout_regression_test(work_root / "harness-timeout-regression")
+        if harness_timeout_regression.get("ok") is not True:
+            failures.append(f"E2E harness 硬超时回归测试失败：{harness_timeout_regression.get('failures')}")
         missing_direction = prepare_project("", work_root / "missing")
         if missing_direction.get("ok") is True:
             failures.append("缺失 direction 的 prepare 没有失败")
@@ -10424,6 +11073,25 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
                 failures.append("E2E 自检没有覆盖 harness/worker 兄弟进程运行结构")
             harness_source = inspect.getsource(run_e2e_harness)
+            legacy_deadline_pattern = "timeout_seconds" + " + OBSERVER_TIMEOUT_SECONDS + 600"
+            if legacy_deadline_pattern in current_source:
+                failures.append("E2E harness 不能继续把用户硬超时叠加观察者超时和隐藏余量")
+            if "worker_deadline_monotonic = time.monotonic() + timeout_seconds" not in harness_source:
+                failures.append("E2E harness 没有把 timeout_seconds 作为 worker 唯一硬截止时间")
+            for required_token in [
+                "HarnessInterrupted",
+                "signal.SIGTERM",
+                "signal.SIGHUP",
+                "start_harness_watchdog",
+                "worker_exit_reason",
+                "observer_timeout_extends_worker_deadline",
+                "communicate_worker_after_stop",
+            ]:
+                if required_token not in harness_source and required_token not in current_source:
+                    failures.append(f"E2E harness 硬超时与中断清理缺少：{required_token}")
+            for required_token in ["process_matches_identity", "kill_recorded_process_group", "run_harness_timeout_regression_test", "harness-timeout-regression-test"]:
+                if required_token not in current_source:
+                    failures.append(f"E2E harness 清理安全自检缺少：{required_token}")
             if "run_layered_preflight(work_root)" not in harness_source:
                 failures.append("E2E harness 必须在 Codex CLI 承载探针和 Loom 角色启动前运行 RedCap 分层前置检查")
             if "carrier_probe(work_root / \"carrier-preflight\"" not in harness_source:
@@ -10558,6 +11226,12 @@ def build_parser() -> argparse.ArgumentParser:
     integration_dry_run.add_argument("--work-root")
     integration_dry_run.add_argument("--out")
     integration_dry_run.set_defaults(func=cmd_long_task_integration_dry_run)
+    harness_timeout_regression = sub.add_parser("harness-timeout-regression-test")
+    harness_timeout_regression.add_argument("--work-root")
+    harness_timeout_regression.set_defaults(func=cmd_harness_timeout_regression_test)
+    watchdog = sub.add_parser("harness-watchdog", help=argparse.SUPPRESS)
+    watchdog.add_argument("--record", required=True)
+    watchdog.set_defaults(func=cmd_harness_watchdog)
     run = sub.add_parser("run")
     run.add_argument("--direction")
     run.add_argument("--direction-file")

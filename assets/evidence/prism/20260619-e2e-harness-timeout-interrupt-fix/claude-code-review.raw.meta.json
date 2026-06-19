@@ -1,0 +1,30 @@
+{
+  "schema_id": "prism-provider-raw-metadata",
+  "provider": "claude-code",
+  "raw_kind": "provider-output",
+  "raw_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/claude-code-review.raw.json",
+  "raw_size_bytes": 15659,
+  "raw_sha256": "7438246a61fef37bfc43caada715288ea8eccd4820f007581b40e51a41bff75c",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 180.0,
+  "total_timeout_seconds": 240.0,
+  "task_total_timeout_seconds": 360.0,
+  "task_elapsed_timeout_seconds": 110.923,
+  "task_remaining_timeout_seconds": 249.077,
+  "max_retries": 5,
+  "attempts_count": 1,
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_scope": null,
+      "stdout_bytes": 5978,
+      "stderr_bytes": 0,
+      "captured_session_handle": null,
+      "recovery": null
+    }
+  ],
+  "review_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/claude-code-review.json"
+}

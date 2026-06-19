@@ -1,0 +1,30 @@
+{
+  "schema_id": "prism-provider-raw-metadata",
+  "provider": "kimi",
+  "raw_kind": "provider-output",
+  "raw_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/kimi-review.raw.json",
+  "raw_size_bytes": 54532,
+  "raw_sha256": "c48efd4a4e7be42c5231cdc0088d65eeaf5ca31735664b8ac9d668bcb698165a",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 180.0,
+  "total_timeout_seconds": 240.0,
+  "task_total_timeout_seconds": 360.0,
+  "task_elapsed_timeout_seconds": 110.831,
+  "task_remaining_timeout_seconds": 249.169,
+  "max_retries": 5,
+  "attempts_count": 1,
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_scope": null,
+      "stdout_bytes": 23175,
+      "stderr_bytes": 0,
+      "captured_session_handle": null,
+      "recovery": null
+    }
+  ],
+  "review_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/kimi-review.json"
+}

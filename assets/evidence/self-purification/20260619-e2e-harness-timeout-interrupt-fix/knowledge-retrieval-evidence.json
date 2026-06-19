@@ -1,0 +1,11 @@
+{
+  "adopted_entries": [],
+  "matches": [],
+  "no_relevant_entry_reason": "知识库没有命中；任务后必须评估是否产生新候选。",
+  "query": "E2E 执行器 硬超时 看门狗 孤儿进程",
+  "recorded_at": "2026-06-19T06:32:30+00:00",
+  "result_handling": "record_no_relevant_entry",
+  "schema_id": "redcap-self-purification-knowledge-retrieval",
+  "task_decision_effects": [],
+  "task_summary": "修复完整复活 E2E 执行器硬超时与中断清理"
+}

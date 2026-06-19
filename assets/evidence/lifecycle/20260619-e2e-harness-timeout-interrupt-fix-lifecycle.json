@@ -1,0 +1,149 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260619-e2e-harness-timeout-interrupt-fix",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven 在网络中断后要求恢复并继续推进 RedCap 复活目标。本轮从第二次完整复活 E2E 暴露出的执行器问题继续：用户设定的硬超时不能被执行器静默放大，父进程中断时也不能留下孤儿 worker 继续运行。",
+    "target_reality": "完整复活 E2E 执行器必须严格尊重用户传入的 timeout_seconds，超时或中断时必须清理子进程组并写入失败证据；后续才能可信地继续多轮 E2E，而不是靠人工发现残留进程。",
+    "non_goals": [
+      "不把本轮执行器修复说成 RedCap 完整复活已经完成",
+      "不绕过 E2E 的 Loom、Hook、自我净化、棱镜和收口验收要求",
+      "不把超时扩大为隐形长时间等待",
+      "不因中断清理失败而留下继续写入临时项目的孤儿进程",
+      "不把第二轮 E2E 产物能生成等同于终局验收通过"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回滚 runtime/core/complete_revival_e2e.py、complete-revival-e2e-acceptance-design.json 和本任务新增证据；若第二轮 E2E 临时目录仍有残留进程，只清理本任务启动的 E2E worker，不触碰其他用户进程。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260619-e2e-harness-timeout-interrupt-fix-lifecycle.json",
+      "runtime/bin/redcap prism-dispatch --provider kimi --manifest assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/session.json --request assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/request.json --review-out assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/kimi-review.json --raw-out assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/kimi-review.raw.json --raw-meta assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/kimi-review.raw.meta.json",
+      "runtime/bin/redcap prism-dispatch --provider claude-code --manifest assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/session.json --request assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/request.json --review-out assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/claude-code-review.json --raw-out assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/claude-code-review.raw.json --raw-meta assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/claude-code-review.raw.meta.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py",
+      "runtime/bin/redcap complete-revival-e2e design-check",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap check",
+      "runtime/bin/redcap complete-revival-check",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "继续推进任务目标，修复第二轮 E2E 暴露出的硬超时与中断清理问题，然后继续完整复活任务。",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "抱歉，刚才网络受阻了，你的任务被中断，现在尝试是否恢复，如果恢复，请继续推进任务目标"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "修复完整复活 E2E 执行器的硬超时和中断清理缺陷，确保第二轮 E2E 后续运行不会再因执行器自身缺陷陷入长时间等待或残留孤儿进程。",
+    "primary_deliverable": "执行器代码修复、合同更新、棱镜评审证据、检查回执和可继续二次 E2E 的阶段结论。",
+    "acceptance_criteria": [
+      "父执行器必须以 timeout_seconds 作为 worker 硬截止时间，不能再静默叠加 OBSERVER_TIMEOUT_SECONDS 与 600 秒余量。",
+      "观察者命令只能使用自己的短超时，不能延长 worker 的硬截止时间。",
+      "父执行器收到 KeyboardInterrupt 或异常退出时，必须清理 worker 进程组。",
+      "超时或中断必须写入可读的 harness 失败证据，不能表现为无响应或挂起。",
+      "self-check 必须有静态断言防止旧的 timeout_seconds + OBSERVER_TIMEOUT_SECONDS + 600 逻辑回归。",
+      "终局完整复活仍未验证时，必须保持阶段口径。"
+    ],
+    "status": "verified",
+    "task_type": "e2e_harness_hardening",
+    "task_weight": "standard",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/evidence/lifecycle/20260619-e2e-harness-timeout-interrupt-fix-lifecycle.json",
+      "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/request.json",
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/bin/redcap",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/resolution.json",
+      "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/check-receipts/harness-timeout-regression-test.receipt.json"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/merge.json",
+    "resolution_path": "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/session.json"
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "worker 硬截止时间已与 observer 超时解耦；父执行器中断路径、独立看门狗和身份校验清理已经进入运行器代码。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "两方棱镜 concern 已接受并通过 prism-resolution 验证；本轮只关闭 E2E 执行器硬超时与中断清理修复，不关闭完整复活终局。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/merge.json",
+        "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/resolution.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "complete-revival-e2e 合同已增加 harness_timeout_and_cleanup，design-check 和 self-check 已消费该规则。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed",
+      "harness_timeout_regression_passed",
+      "prism_resolution_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/evidence/lifecycle/20260619-e2e-harness-timeout-interrupt-fix-lifecycle.json",
+    "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/request.json",
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/bin/redcap",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/resolution.json"
+  ],
+  "verification_evidence": [
+    "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/check-receipts/harness-timeout-regression-test.receipt.json",
+    "assets/evidence/prism/20260619-e2e-harness-timeout-interrupt-fix/resolution.json",
+    "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/runner-self-purification-resolution.json"
+  ],
+  "self_purification": {
+    "task_type": "runtime_change",
+    "task_weight": "standard",
+    "purification_required": true,
+    "knowledge_retrieval_evidence": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/knowledge-retrieval-evidence.json",
+    "post_task_harvest": {
+      "candidates_path": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/self-purification-candidates.json"
+    },
+    "review_decision": {
+      "decision": "no_promote",
+      "reason": "本轮经验已证明对 E2E 执行器有效，但仍是单轮样本，暂不晋升公共知识库，等待更多长任务样本稳定后再评估。"
+    },
+    "promotion_or_no_promote_result": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/runner-self-purification-resolution.json",
+    "persona_boundary_evidence": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/persona-distillation-decision.json"
+  },
+  "completion_claim": {
+    "present": true,
+    "scope": "20260619-e2e-harness-timeout-interrupt-fix",
+    "evidence_kind": "runtime-change",
+    "claim": "本轮 E2E 执行器硬超时与中断清理修复已通过验证；RedCap 完整复活终局仍未关闭。"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "candidates": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/self-purification-candidates.json",
+  "decision": "no_promote",
+  "ok": true,
+  "persona_boundary": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/persona-distillation-decision.json",
+  "promotion_result": null,
+  "retrieval": "assets/evidence/self-purification/20260619-e2e-harness-timeout-interrupt-fix/knowledge-retrieval-evidence.json",
+  "schema_id": "redcap-self-purification-resolution",
+  "task_summary": "修复完整复活 E2E 执行器硬超时与中断清理"
+}

@@ -45,6 +45,21 @@
     "current_verified_status": "2026-06-19 的隔离承载探针显示：Codex CLI 子进程在隔离 CODEX_HOME、复制认证文件、显式启用 hooks、使用项目 trust 覆盖时，可以触发项目 .codex/hooks.json 中的 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop，并产生真实文件副作用，且不会写入用户全局 config.toml。该能力仍必须在每轮完整 E2E 启动 Loom 角色前重新探测，不得用历史探针替代当轮证据。",
     "global_config_isolation": "承载探针和 Loom 角色必须使用项目 .redcap/codex-home 作为隔离 CODEX_HOME；允许子 Codex 在该隔离目录内写入 trust，不允许写入用户真实 ~/.codex/config.toml。每次 carrier-probe 必须记录用户真实 Codex Home 的 config.toml、auth.json、logs 前后状态；隔离 CODEX_HOME 模式不得下发 mcp_servers.*.enabled=false 覆盖，因为干净 config.toml 没有 MCP transport 定义，非隔离模式才保留该覆盖以隔离用户全局 MCP 噪音。"
   },
+  "harness_timeout_and_cleanup": {
+    "status": "hard_runtime_guard",
+    "why": "完整 E2E 是长任务，但长任务不能靠隐形延长等待来伪装推进；父执行器也不能在中断后留下孤儿 worker 持续写临时项目。",
+    "worker_deadline_rule": "run 命令传入的 timeout_seconds 是 worker 唯一硬截止时间；observer_timeout_seconds 只约束独立观察者命令自身，不得延长 worker 截止时间。",
+    "interrupt_cleanup_rule": "父执行器收到 KeyboardInterrupt、SIGTERM 或 SIGHUP 时，必须先校验 worker 身份，再清理 worker 进程组，并写入 worker_exit_reason=interrupt 的 harness-summary.json。",
+    "watchdog_rule": "父执行器启动 worker 后必须写入独立 watchdog 记录并启动独立看门狗；若父进程消失或 worker 超过硬截止时间加短宽限，看门狗必须在校验 worker 身份后清理进程组。",
+    "identity_safety_rule": "任何进程组清理都必须基于 worker pid、pgid、启动时间和命令行片段做身份校验；校验失败时宁可记录失败，也不能误杀无关进程。",
+    "failure_evidence_rule": "超时、中断、观察者失败或 worker 崩溃都必须写入 redcap-e2e-harness-summary.json 和 redcap-e2e-run-summary.json；不能表现为无输出、无状态的挂起。",
+    "exit_reason_values": [
+      "completed",
+      "timeout",
+      "interrupt",
+      "crash"
+    ]
+  },
   "redcap_layered_preflight": {
     "status": "hard_entry_gate",
     "why": "E2E 的目标是验证 RedCap 能不能稳定推动工程，而不只是让某个目标应用看起来可运行；因此启动 Codex CLI 承载探针和 Loom 角色前，必须先确认 RedCap 自身关键能力可运行。",
@@ -217,6 +232,10 @@
     {
       "name": "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
       "purpose": "执行完整 AI 内部 E2E：准备外部项目后启动 Codex CLI 承接方。"
+    },
+    {
+      "name": "runtime/bin/redcap complete-revival-e2e harness-timeout-regression-test --work-root <external-dir>",
+      "purpose": "轻量验证 E2E 父执行器硬超时、进程组清理和独立看门狗兜底能力。"
     },
     {
       "name": "runtime/bin/redcap complete-revival-e2e self-check",
