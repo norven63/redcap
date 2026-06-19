@@ -117,6 +117,72 @@ class LayeredPreflightTests(unittest.TestCase):
             missing_failures = e2e.validate_reviewer_outputs(evidence)
             self.assertTrue(any("顶层记录运行器统一调度棱镜的请求" in item for item in missing_failures))
 
+    def test_watchdog_deadline_cleanup_classifies_timeout_only_when_trusted(self) -> None:
+        trusted = e2e.harness_watchdog_exit_classification({
+            "ok": True,
+            "reason": "worker-deadline-exceeded",
+            "identity_matched": True,
+            "terminated": True,
+        })
+        self.assertTrue(trusted["applied"])
+        self.assertEqual(trusted["exit_reason"], "timeout")
+        self.assertTrue(trusted["timed_out"])
+
+        mismatched = e2e.harness_watchdog_exit_classification({
+            "ok": True,
+            "reason": "worker-deadline-exceeded",
+            "identity_matched": False,
+            "terminated": True,
+        })
+        self.assertFalse(mismatched["applied"])
+
+        unknown = e2e.harness_watchdog_exit_classification({
+            "ok": True,
+            "reason": "worker-finished",
+            "identity_matched": True,
+            "terminated": True,
+        })
+        self.assertFalse(unknown["applied"])
+
+    def test_failed_e2e_active_run_is_terminal_with_completion_boundary(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="redcap-failed-active-run-unit-") as raw:
+            work_root = pathlib.Path(raw)
+            evidence = work_root / "failure-summary.json"
+            evidence.write_text(json.dumps({
+                "schema_id": "redcap-e2e-failure-summary",
+                "ok": False,
+                "command": "runtime/bin/redcap complete-revival-e2e run",
+                "exit_code": 1,
+                "failures": ["watchdog deadline classification failed before fix"],
+            }, ensure_ascii=False, indent=2), encoding="utf-8")
+            active_run = e2e.write_e2e_long_task_active_run(
+                work_root,
+                direction="单元测试方向",
+                iteration=1,
+                status="failed",
+                action_evidence=[str(evidence)],
+                objective_delta="本轮 E2E 已产生结构化失败证据，必须终态收口而不是残留 running。",
+                blocker_signature="watchdog-deadline-classification",
+                auto_rerun_allowed=True,
+                failures=["watchdog deadline classification failed before fix"],
+            )
+            self.assertTrue(active_run["ok"], active_run.get("check_receipt", {}).get("stdout"))
+            self.assertEqual(active_run["lifecycle_state"], "failed")
+            self.assertTrue(active_run["completion_boundary_present"])
+            self.assertEqual(active_run["completion_boundary_outcome"], "failed")
+
+            discovery = e2e.discover_e2e_long_task_active_run(
+                work_root,
+                expected_lifecycle_state="failed",
+                require_completion_boundary=True,
+            )
+            self.assertTrue(discovery["ok"], discovery.get("failures"))
+            self.assertEqual(e2e.e2e_active_run_final_failures_via_boundary_check(
+                active_run,
+                parsed_ok=False,
+                final_status="failed",
+            ), [])
+
     def test_preflight_records_command_failure_without_test_injection(self) -> None:
         def fake_run_command(argv, **_kwargs):
             command = " ".join(argv)

@@ -41,7 +41,7 @@ FAST_PATH_SIGNALS = {
 }
 RISK_LEVELS = {"low", "medium", "high", "critical"}
 ITERATION_STATUSES = {"planned", "running", "passed", "failed", "blocked", "arbitrated"}
-ACTIVE_RUN_STATES = {"running", "completed", "blocked", "human_decision"}
+ACTIVE_RUN_STATES = {"running", "completed", "failed", "blocked", "human_decision"}
 CAPABILITY_LAYERS = {
     "task_entry_decision",
     "generic_active_run_entry",
@@ -824,7 +824,7 @@ def validate_enabled_contract(contract: dict[str, Any], failures: list[str], *, 
 def validate_active_run_contract(contract: dict[str, Any], failures: list[str]) -> None:
     state = contract.get("lifecycle_state")
     if state not in ACTIVE_RUN_STATES:
-        failures.append("active_run.lifecycle_state must be one of running, completed, blocked, human_decision")
+        failures.append("active_run.lifecycle_state must be one of running, completed, failed, blocked, human_decision")
         return
     validate_failure_backlog(contract.get("failure_backlog"), failures)
     boundary = contract.get("completion_boundary")
@@ -1397,11 +1397,11 @@ def _complete_long_task_unlocked(
     final_summary: str,
     blocker_signature: str,
 ) -> dict[str, Any]:
-    if outcome not in {"completed", "blocked", "human_decision"}:
+    if outcome not in {"completed", "failed", "blocked", "human_decision"}:
         return {
             "schema_id": "redcap-long-task-complete-result",
             "ok": False,
-            "failures": ["outcome must be one of completed, blocked, human_decision"],
+            "failures": ["outcome must be one of completed, failed, blocked, human_decision"],
         }
     packet = load_json(packet_path)
     if packet.get("contract_kind") != "active_run":
@@ -1481,6 +1481,7 @@ def _complete_long_task_unlocked(
             }
     status_by_outcome = {
         "completed": "passed",
+        "failed": "failed",
         "blocked": "blocked",
         "human_decision": "arbitrated",
     }
@@ -1955,6 +1956,41 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             )
             if irrelevant_complete.get("ok") is not False or not any("task-relevant completion markers" in item for item in irrelevant_complete.get("failures", [])):
                 failures.append("long-task complete accepted structurally valid but irrelevant evidence")
+            failed_start = start_long_task(
+                "持续推进 RedCap 自开发 E2E 巡检，验证失败轮次可以终态收口且不会冒充完成。",
+                risk_level="medium",
+                run_dir=tmp / "failed-complete",
+                action_evidence=["runtime/bin/redcap long-task start self-check failed completion"],
+            )
+            failed_receipt = tmp / "failed-complete" / "failed-receipt.json"
+            failed_receipt.write_text(json.dumps({
+                "schema_id": "fixture-failed-check",
+                "command": "runtime/bin/redcap complete-revival-e2e run",
+                "exit_code": 1,
+                "ok": False,
+                "stdout": "failed with structured evidence",
+                "stderr": "",
+                "failures": ["E2E harness timeout classification failed before fix"],
+                "evidence": "失败命令使用结构化回执收口当前 active_run。",
+            }, ensure_ascii=False, indent=2), encoding="utf-8")
+            failed_complete = complete_long_task(
+                pathlib.Path(failed_start["active_run"]),
+                outcome="failed",
+                final_objective_delta="最终结构化失败回执证明当前 active_run 已达到失败终止条件，可以关闭并保留未解决问题。",
+                completion_evidence=[str(failed_receipt)],
+                final_summary="当前 active_run 已用结构化失败证据关闭；这不代表 RedCap 完整复活。",
+                blocker_signature="self-check-failed-terminal",
+            )
+            if failed_complete.get("ok") is not True:
+                failures.append("long-task complete did not accept failed terminal outcome")
+            else:
+                failed_packet = load_json(pathlib.Path(failed_start["active_run"]))
+                if failed_packet.get("lifecycle_state") != "failed":
+                    failures.append("failed complete did not set lifecycle_state=failed")
+                if failed_packet.get("completion_boundary", {}).get("outcome") != "failed":
+                    failures.append("failed complete did not set completion_boundary.outcome=failed")
+                if not failed_packet.get("failure_backlog", {}).get("open"):
+                    failures.append("failed active_run should keep an open failure backlog item")
             tampered_start = start_long_task(
                 "持续推进 RedCap 自开发 E2E 巡检，验证直接篡改 lifecycle_state 不能通过合同。",
                 risk_level="medium",
@@ -2029,7 +2065,7 @@ def build_parser() -> argparse.ArgumentParser:
     record.set_defaults(func=cmd_record)
     complete = sub.add_parser("complete")
     complete.add_argument("--packet", required=True)
-    complete.add_argument("--outcome", required=True, choices=["completed", "blocked", "human_decision"])
+    complete.add_argument("--outcome", required=True, choices=["completed", "failed", "blocked", "human_decision"])
     complete.add_argument("--final-objective-delta", required=True)
     complete.add_argument("--completion-evidence", action="append", required=True)
     complete.add_argument("--final-summary", required=True)

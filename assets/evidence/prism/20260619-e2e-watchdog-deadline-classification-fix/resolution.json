@@ -1,0 +1,56 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260619-e2e-watchdog-deadline-classification-fix",
+  "merge_path": "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/kimi.review.json",
+    "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi concern 有效：原方案直接使用 failed 作为 active_run 终态，但长任务合同当时没有 failed 状态。本轮没有硬写非法状态，而是把 failed 正式加入 long_task_contract 的终态集合、完成命令和自检；failed 终态保留 open failure backlog，不能冒充 completed 或 blocked。",
+      "implementation_evidence": [
+        "runtime/core/long_task_contract.py",
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/test_e2e_layered_preflight.py",
+        "assets/contracts/long-task-contract.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/unit-layered-preflight.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/harness-timeout-regression-test.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code concern 有效：不能先把负退出码定为 crash 再模糊修正，也不能无条件覆盖真实崩溃。本轮新增 harness_watchdog_exit_classification，只有 cleanup.ok=true、identity_matched=true、terminated=true 且 reason=worker-deadline-exceeded 时才归因 timeout；parent-missing 归因 interrupt；其他情况保留 crash fallback。failed active_run 的发现和边界检查已改为终态并要求 completion_boundary。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/test_e2e_layered_preflight.py",
+        "runtime/core/long_task_contract.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/unit-layered-preflight.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/harness-timeout-regression-test.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/check-receipts/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两份 concern 均已接受并落实：长任务合同正式支持 failed 终态；E2E harness 先消费可信 watchdog cleanup，再决定 timeout、interrupt 或 crash；失败轮次不再残留 running。该决议只关闭本轮执行器缺陷修复，不声明 RedCap 完整复活终局完成。"
+  }
+}

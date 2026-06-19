@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260619-e2e-watchdog-deadline-classification-fix",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-19T14:31:20+00:00",
+  "task_started_at": "2026-06-19T14:31:20+00:00",
+  "updated_at": "2026-06-19T14:57:23+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "84990c10-4bd8-4b59-aa6c-cc600a9cb360",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_89c82cdf-adba-4828-833a-391b147f7318",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "accepted both Prism concerns; failed active_run state added to long-task contract and watchdog cleanup classification implemented"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": " proposed_design 要求 failed 轮次的 active_run expected_lifecycle_state=failed，但 authorized bundle 中的 long_task_contract.py 明确定义 ACTIVE_RUN_STATES = {\"running\", \"completed\", \"blocked\", \"human_decision\"}，并不包含 \"failed\"。若不先更新合同或改用已有终态（如 completed + failure completion_boundary），实现后会直接违反长任务合同校验，造成另一类残留/失败。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "分类顺序和 fallback 逻辑未在 proposed_design 中明确。若实现先判断 exit_code 产生 crash 再事后修正，中间状态可能被 patrol/convergence 消费导致误判传播。正确做法是在处理 exit_code 之前先消费 watchdog cleanup record，以 cleanup reason 为 primary signal，仅在 terminated=true AND identity_matched=true AND reason 可识别时覆盖分类，否则回退到 exit_code 分析。同时 lifecycle_state 从 running 改为 failed 对 patrol 模块的副作用完全未评估——若 patrol 依赖 running 筛选待巡检任务，改为 failed 后需确认 patrol 有对应的终态处理分支。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "1) 在实施前先在 long_task_contract.py 中明确失败终态：要么把 \"failed\" 加入 ACTIVE_RUN_STATES 并配套 completion_boundary 规则，要么规定 failed E2E 轮次使用 \"completed\" 或 \"blocked\" 并附加失败 evidence。2) 实现 harness_watchdog_exit_classification 时保留原始 cleanup.json 路径和 reason 字段作为不可变证据，确保真实 crash（无 watchdog cleanup 或 reason 不符）仍归因为 crash。3) 新增回归测试，验证三种 cleanup reason 的归因字段和 failed active_run 的 completion_boundary 均正确写入。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在 proposed_design 基础上必须补充 4 项：(1) 分类前置——在处理 exit_code 前消费 watchdog cleanup，以 cleanup reason 为 primary signal；(2) 三级门控——terminated=true AND identity_matched=true AND reason=worker-deadline-exceeded 三者同时满足才覆盖 crash→timeout；(3) patrol 影响评估——确认 patrol 能正确处理 lifecycle_state=failed 终态，至少生成巡检结论而非报错或跳过；(4) fallback 测试——补充 cleanup record 缺失/损坏/身份不匹配时 crash fallback 的测试用例。"
+    }
+  ],
+  "anti_loop_detected": true
+}

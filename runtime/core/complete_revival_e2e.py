@@ -987,6 +987,11 @@ def write_harness_watchdog_record(
 def cleanup_harness_watchdog_record(path: pathlib.Path) -> dict[str, Any]:
     record = load_optional_json(path)
     if not isinstance(record, dict):
+        cleanup_payload = load_optional_json(path.with_suffix(".cleanup.json"))
+        if isinstance(cleanup_payload, dict):
+            cleanup_payload.setdefault("path", str(path))
+            cleanup_payload["record_missing_after_watchdog_cleanup"] = True
+            return cleanup_payload
         return {"ok": True, "path": str(path), "reason": "record-missing"}
     worker_pid = int(record.get("worker_pid") or 0)
     if worker_pid > 0 and process_matches_identity(
@@ -1002,6 +1007,45 @@ def cleanup_harness_watchdog_record(path: pathlib.Path) -> dict[str, Any]:
     except OSError as exc:
         return {"ok": False, "path": str(path), "reason": f"unlink-failed:{exc}"}
     return {"ok": True, "path": str(path), "reason": "worker-finished"}
+
+
+def harness_watchdog_exit_classification(cleanup: dict[str, Any]) -> dict[str, Any]:
+    """Classify worker exit from trusted watchdog cleanup evidence."""
+    reason = str(cleanup.get("reason") or "")
+    trusted_cleanup = (
+        cleanup.get("ok") is True
+        and cleanup.get("identity_matched") is True
+        and cleanup.get("terminated") is True
+    )
+    if trusted_cleanup and reason == "worker-deadline-exceeded":
+        return {
+            "applied": True,
+            "exit_reason": "timeout",
+            "timed_out": True,
+            "interrupted": False,
+            "process_group_killed": True,
+            "failure": "E2E harness worker 被独立看门狗按硬截止时间终止；已按 timeout 归因。",
+            "source_reason": reason,
+        }
+    if trusted_cleanup and reason in {"parent-missing", "stale-parent-missing"}:
+        return {
+            "applied": True,
+            "exit_reason": "interrupt",
+            "timed_out": False,
+            "interrupted": True,
+            "process_group_killed": True,
+            "failure": "E2E harness 父进程缺失，独立看门狗已清理 worker；已按 interrupt 归因。",
+            "source_reason": reason,
+        }
+    return {
+        "applied": False,
+        "exit_reason": None,
+        "timed_out": False,
+        "interrupted": False,
+        "process_group_killed": False,
+        "failure": None,
+        "source_reason": reason,
+    }
 
 
 def start_harness_watchdog(
@@ -1270,6 +1314,58 @@ def run_harness_timeout_regression_test(work_root: pathlib.Path) -> dict[str, An
     if not watchdog_case["ok"]:
         failures.append("看门狗没有在父进程缺失时清理 fake worker")
     cases.append(watchdog_case)
+
+    deadline_root = work_root / "watchdog-deadline-exceeded"
+    deadline_root.mkdir(parents=True, exist_ok=True)
+    deadline_argv = [sys.executable, "-c", "import time; time.sleep(30)"]
+    deadline_worker = subprocess.Popen(
+        deadline_argv,
+        cwd=str(deadline_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    deadline_substrings = ["time.sleep(30)"]
+    deadline_identity = process_identity(deadline_worker.pid, deadline_substrings)
+    deadline_record_path = harness_watchdog_path(deadline_root, os.getpid(), deadline_worker.pid)
+    write_harness_watchdog_record(
+        deadline_record_path,
+        deadline_root,
+        deadline_argv,
+        1,
+        deadline_worker,
+        deadline_identity,
+        time.time() - HARNESS_WATCHDOG_GRACE_SECONDS - 1,
+        command_substrings=deadline_substrings,
+    )
+    deadline_started = time.monotonic()
+    deadline_watchdog_result = run_harness_watchdog(deadline_record_path)
+    _, _, deadline_communicate_timed_out = communicate_worker_after_stop(deadline_worker, 2)
+    deadline_cleanup = cleanup_harness_watchdog_record(deadline_record_path)
+    deadline_classification = harness_watchdog_exit_classification(deadline_cleanup)
+    deadline_elapsed = time.monotonic() - deadline_started
+    deadline_case = {
+        "id": "watchdog-deadline-exceeded-classifies-timeout",
+        "ok": (
+            deadline_watchdog_result.get("ok") is True
+            and deadline_watchdog_result.get("reason") == "worker-deadline-exceeded"
+            and deadline_worker.poll() is not None
+            and deadline_cleanup.get("reason") == "worker-deadline-exceeded"
+            and deadline_classification.get("exit_reason") == "timeout"
+            and deadline_classification.get("timed_out") is True
+            and deadline_elapsed < 8
+        ),
+        "watchdog_result": deadline_watchdog_result,
+        "watchdog_cleanup": deadline_cleanup,
+        "watchdog_classification": deadline_classification,
+        "worker_exit_code": deadline_worker.returncode,
+        "communicate_timed_out": deadline_communicate_timed_out,
+        "elapsed_seconds": round(deadline_elapsed, 3),
+    }
+    if not deadline_case["ok"]:
+        failures.append("看门狗 deadline cleanup 未被正确保留并归因为 timeout")
+    cases.append(deadline_case)
 
     result = {
         "schema_id": "redcap-e2e-harness-timeout-regression-test",
@@ -7852,7 +7948,7 @@ def build_e2e_long_task_active_run(
         for index, item in enumerate(failures, start=1)
         if str(item).strip()
     ]
-    lifecycle_state = "completed" if status == "passed" else ("blocked" if status == "blocked" else "running")
+    lifecycle_state = "completed" if status == "passed" else ("blocked" if status == "blocked" else ("failed" if status == "failed" else "running"))
     terminal_boundary = None
     if lifecycle_state != "running":
         terminal_boundary = {
@@ -8070,8 +8166,8 @@ def e2e_active_run_boundary_failures(
         if completion_boundary_present:
             failures.append("E2E 长任务 active_run 入口不能带 completion_boundary。")
     elif phase == "final":
-        expected_lifecycle_state = "completed" if parsed_ok else ("blocked" if final_status == "blocked" else "running")
-        require_completion_boundary = parsed_ok is True
+        expected_lifecycle_state = "completed" if parsed_ok else ("blocked" if final_status == "blocked" else ("failed" if final_status == "failed" else "running"))
+        require_completion_boundary = expected_lifecycle_state != "running"
         if lifecycle_state != expected_lifecycle_state:
             failures.append(
                 f"E2E 长任务 active_run 收束状态错误：期望 {expected_lifecycle_state}，实际 {lifecycle_state}"
@@ -10455,6 +10551,14 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
             ) or process_group_killed
     stdout, stderr, communicate_timed_out = communicate_worker_after_stop(worker, HARNESS_WORKER_COMMUNICATE_TIMEOUT_SECONDS)
     watchdog_cleanup = cleanup_harness_watchdog_record(pathlib.Path(str(watchdog_record.get("record_path"))))
+    watchdog_classification = harness_watchdog_exit_classification(watchdog_cleanup if isinstance(watchdog_cleanup, dict) else {})
+    if watchdog_classification.get("applied") is True:
+        exit_reason = str(watchdog_classification.get("exit_reason") or exit_reason)
+        timed_out = timed_out or watchdog_classification.get("timed_out") is True
+        interrupted = interrupted or watchdog_classification.get("interrupted") is True
+        if interrupted and not interrupt_reason and watchdog_classification.get("source_reason"):
+            interrupt_reason = str(watchdog_classification.get("source_reason"))
+        process_group_killed = process_group_killed or watchdog_classification.get("process_group_killed") is True
     parsed = parse_leading_json(stdout)
     if parsed is None:
         parsed = {
@@ -10470,6 +10574,8 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         harness_failures.append(f"E2E harness 被中断：{interrupt_reason or 'unknown'}，已请求清理 worker 进程组")
     if communicate_timed_out:
         harness_failures.append("E2E worker 停止后收集输出超时")
+    if watchdog_classification.get("failure"):
+        harness_failures.append(str(watchdog_classification["failure"]))
     if worker.returncode != 0 and parsed.get("ok") is True:
         harness_failures.append(f"E2E worker 退出码非 0：{worker.returncode}")
     if not observer_commands:
@@ -10507,6 +10613,7 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         "worker_identity": worker_identity,
         "watchdog_record": watchdog_record,
         "watchdog_cleanup": watchdog_cleanup,
+        "watchdog_exit_classification": watchdog_classification,
         "stale_watchdog_cleanup": stale_watchdog_cleanup,
         "observer_request_count": len(observer_requests),
         "observer_commands": observer_commands,
@@ -10563,11 +10670,11 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         failures=parsed_failures,
     )
     parsed["long_task_active_run"] = active_run_final
-    expected_lifecycle_state = "completed" if parsed.get("ok") is True else ("blocked" if final_status == "blocked" else "running")
+    expected_lifecycle_state = "completed" if parsed.get("ok") is True else ("blocked" if final_status == "blocked" else ("failed" if final_status == "failed" else "running"))
     discovery = discover_e2e_long_task_active_run(
         work_root,
         expected_lifecycle_state=expected_lifecycle_state,
-        require_completion_boundary=parsed.get("ok") is True,
+        require_completion_boundary=expected_lifecycle_state != "running",
     )
     parsed["long_task_active_run_discovery"] = discovery
     final_failures = e2e_active_run_final_failures_via_boundary_check(

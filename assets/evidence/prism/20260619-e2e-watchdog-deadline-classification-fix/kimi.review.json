@@ -1,0 +1,32 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "方案正确识别了真实问题：watchdog cleanup 是一等证据，harness 必须用它修正 timeout/interrupt/crash 归因，并把失败轮次推入终态。但方案仍处于设计阶段，尚未产生可运行的代码或测试；且终态状态名与现有 long_task_contract.py 的 ACTIVE_RUN_STATES 存在明显不一致，可能让“修复”引入新的合同校验失败。",
+  "main_concern": " proposed_design 要求 failed 轮次的 active_run expected_lifecycle_state=failed，但 authorized bundle 中的 long_task_contract.py 明确定义 ACTIVE_RUN_STATES = {\"running\", \"completed\", \"blocked\", \"human_decision\"}，并不包含 \"failed\"。若不先更新合同或改用已有终态（如 completed + failure completion_boundary），实现后会直接违反长任务合同校验，造成另一类残留/失败。",
+  "top_risks": [
+    "终态状态名与 long_task_contract.py 的 ACTIVE_RUN_STATES 不一致，导致 active_run 合同校验失败。",
+    "缺少针对 worker-deadline-exceeded、parent-missing、真实 crash 三类场景的回归测试，难以防止回归。",
+    "修改 676KB 的 complete_revival_e2e.py 可能意外影响 patrol、convergence 或 observer-request 的状态消费路径。"
+  ],
+  "missing_evidence": [
+    "harness_watchdog_exit_classification 函数的实际实现或 diff，无法验证 reason 映射是否完整。",
+    "long_task_contract.py 中 ACTIVE_RUN_STATES 是否应新增 \"failed\"，或失败轮次应映射到哪个已有终态的明确约定。",
+    "覆盖 deadline / parent-missing / real-crash 三种归因的新增回归测试用例。"
+  ],
+  "minimum_fix": "1) 在实施前先在 long_task_contract.py 中明确失败终态：要么把 \"failed\" 加入 ACTIVE_RUN_STATES 并配套 completion_boundary 规则，要么规定 failed E2E 轮次使用 \"completed\" 或 \"blocked\" 并附加失败 evidence。2) 实现 harness_watchdog_exit_classification 时保留原始 cleanup.json 路径和 reason 字段作为不可变证据，确保真实 crash（无 watchdog cleanup 或 reason 不符）仍归因为 crash。3) 新增回归测试，验证三种 cleanup reason 的归因字段和 failed active_run 的 completion_boundary 均正确写入。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "上一轮已修复 reviewer 顶层棱镜请求契约；本轮必须限定在 E2E 主控执行器的超时归因与终态收口，禁止再绕回 reviewer 合同，也禁止把本次执行器修复宣称为 RedCap 完整复活完成。"
+  },
+  "user_intent_alignment": "与 Norven 的核心意图一致：防止执行器缺陷导致误判和状态残留。但当前方案若直接采用 \"failed\" 状态而未与合同对齐，反而可能制造新的校验失败，削弱长任务父目标的可靠性。",
+  "risk_notes": "review_mode=implementation_plan，因此本次评审针对的是计划而非已实现代码。计划方向正确，但材料化前必须解决合同状态一致性问题。另外，complete_revival_e2e.py 体积极大，任何新增函数都应避免与现有的 harness summary、patrol ledger、observer-request 生成逻辑产生隐式耦合。",
+  "evidence_reviewed": [
+    "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/kimi.review.brief.files.json",
+    "runtime/core/complete_revival_e2e.py（bundle 截断片段）",
+    "runtime/core/test_e2e_layered_preflight.py",
+    "runtime/core/long_task_contract.py",
+    "assets/evidence/lifecycle/20260619-e2e-watchdog-deadline-classification-fix-lifecycle.json",
+    "assets/evidence/prism/20260619-e2e-watchdog-deadline-classification-fix/request.json"
+  ]
+}
