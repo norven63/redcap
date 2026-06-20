@@ -1,0 +1,20 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap knowledge-gateway search self-purification --require-hit",
+  "argv": [
+    "runtime/bin/redcap",
+    "knowledge-gateway",
+    "search",
+    "self-purification",
+    "--require-hit"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T05:48:45.864465+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "ok": true,
+  "stdout_sha256": "f996ce0ce7a7fe57d136bac93ceb12094260e2bdb7eab1aece7fd9ee1c6cdb61",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "{\n  \"query\": \"self-purification\",\n  \"matches\": [\n    {\n      \"id\": \"self-purification-runtime-loop\",\n      \"title\": \"自我净化运行闭环\",\n      \"route\": \"active-local-index\",\n      \"summary\": \"自我净化必须把任务前检索、任务后候选、评审决策和后续召回串成闭环，不能停留在合同检查。\",\n      \"first_read\": \"assets/knowledge/entries/self-purification-runtime-loop.md\",\n      \"body_read_rule\": \"index-first\"\n    }\n  ],\n  \"ok\": true,\n  \"read_policy\": \"index-first; read first_read before body; raw archives require explicit task need\"\n}\n",
+  "stderr_tail": ""
+}

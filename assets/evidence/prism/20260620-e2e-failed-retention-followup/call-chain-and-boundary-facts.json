@@ -1,0 +1,46 @@
+{
+  "schema_id": "redcap-prism-call-chain-facts",
+  "task_id": "20260620-e2e-failed-retention-followup",
+  "call_chain": [
+    {
+      "step": "complete-revival-e2e run 入口",
+      "evidence": "runtime/core/complete_revival_e2e.py:11846 定义 cmd_run。"
+    },
+    {
+      "step": "执行 E2E 主运行器",
+      "evidence": "runtime/core/complete_revival_e2e.py:11848 调用 run_e2e_harness(direction, work_root, timeout)。"
+    },
+    {
+      "step": "外层 E2E 收尾接入缓存治理",
+      "evidence": "runtime/core/complete_revival_e2e.py:11849-11850 在 REDCAP_E2E_WORKER != 1 时调用 attach_e2e_run_retention_result。"
+    },
+    {
+      "step": "生成保留计划",
+      "evidence": "runtime/core/complete_revival_e2e.py:8384 调用 plan_e2e_run_retention。"
+    },
+    {
+      "step": "传入失败运行目录治理参数",
+      "evidence": "runtime/core/complete_revival_e2e.py:8387-8393 传入 keep_latest_failed、delete_old_failed、old_failed_seconds、old_failed_delete_max。"
+    },
+    {
+      "step": "执行删除计划",
+      "evidence": "runtime/core/complete_revival_e2e.py:8404-8406 在 execute=true 时调用 execute_e2e_run_retention，并把结果写回 e2e_run_retention。"
+    },
+    {
+      "step": "持久化运行摘要与 retention 结果",
+      "evidence": "runtime/core/complete_revival_e2e.py:8408-8409 写 redcap-e2e-run-retention-after-run.json；runtime/core/complete_revival_e2e.py:8419-8428 写 redcap-e2e-run-summary.json 和 evidence/run-summary.json。"
+    }
+  ],
+  "revival_followthrough_role": {
+    "file": "runtime/core/revival_followthrough.py",
+    "role": "只负责未闭环队列、公共人格边界和后续跟进规则检查，不负责 E2E 缓存清理执行。",
+    "evidence": [
+      "runtime/core/revival_followthrough.py:234 定义 validate_open_loop_queue。",
+      "runtime/core/revival_followthrough.py:301 定义 open_loop_closeout_rules。",
+      "runtime/core/revival_followthrough.py:769 定义 cmd_open_loop_check。",
+      "runtime/core/revival_followthrough.py:774 定义 cmd_rule_report。"
+    ],
+    "boundary": "E2E 缓存清理逻辑不应迁入 revival_followthrough.py；该文件只为 OL-06/OL-10 等未闭环项提供检查和规则报告。"
+  },
+  "current_scope": "这些事实解决 Claude Code 第二轮 concern 中的调用链和文件角色疑问；OL-10 仍保持 pending-full-e2e，不允许因此关闭完整成功路径验收。"
+}

@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap loom-runtime self-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "loom-runtime",
+    "self-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T05:47:31.072431+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "ok": true,
+  "stdout_sha256": "f0db9d4b268b19945ab1ccbc2411e5b095209b83ba9597a9e4014248518cc522",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_LOOM_RUNTIME_SELF_CHECK_OK\n",
+  "stderr_tail": ""
+}

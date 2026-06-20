@@ -65,7 +65,7 @@
       "id": "OL-02-loom-independent-role-runtime",
       "title": "Loom 独立 AI 角色与会话接续",
       "priority": "P0",
-      "status": "open",
+      "status": "runtime-verified-pending-full-e2e",
       "root_cause": "如果多个角色共享同一上下文，Loom 会退化成一个 AI 填表，无法实现角色隔离、上下游协作和对抗评审。",
       "required_change": [
         "每个 Loom 角色必须由独立 Codex CLI 或经批准的角色承载方执行。",
@@ -91,13 +91,25 @@
         "至少产品经理、架构师、开发者、测试者、评审者五类角色进入会话清单。",
         "角色间交接记录包含上游输入、下游输出和执行回执。",
         "棱镜复核确认该链路没有退化为单一 AI 填表。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/loom_runtime.py",
+        "assets/contracts/loom-workflow.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-runtime-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-workflow-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-workflow-self-check.receipt.json"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 必须证明各 Loom 角色由独立 Codex CLI 会话承载，且角色间交付物被真实消费。",
+        "棱镜仍需复核外部 E2E 证据，确认 Loom 未退化为单一 AI 填表。"
       ]
     },
     {
       "id": "OL-03-loom-failure-loop-consumption",
       "title": "Loom 失败回流真实消费",
       "priority": "P0",
-      "status": "open",
+      "status": "runtime-verified-pending-full-e2e",
       "root_cause": "失败路由已经有基础，但还需要证明测试或评审失败会被对应角色消费，并从正确节点继续推进。",
       "required_change": [
         "tester 或 reviewer 发现缺陷时只生成 defect_route。",
@@ -122,13 +134,24 @@
         "failure-route check 通过正向和负向样例。",
         "外部端到端证据包包含至少一次真实失败回流消费。",
         "失败回流后的重新交付通过对应测试或评审。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/loom_runtime.py",
+        "assets/contracts/loom-workflow.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-runtime-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-workflow-check.receipt.json"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 必须包含至少一次真实失败回流：tester 或 reviewer 只生成路由，目标角色接收、修复并重新向下游交付。",
+        "Cap 不得替目标角色直接修改目标项目。"
       ]
     },
     {
       "id": "OL-04-self-purification-natural-trigger",
       "title": "自我净化自然触发闭环",
       "priority": "P0",
-      "status": "open",
+      "status": "runtime-verified-pending-full-e2e",
       "root_cause": "自我净化机制存在，但还没有证明真实质疑、失败、偏航和修复会自动进入候选、评审、晋升或不晋升流程。",
       "required_change": [
         "任务前必须检索知识或写明不可执行理由。",
@@ -154,13 +177,28 @@
         "self-purification run-loop 在真实任务证据目录中产出候选和裁决。",
         "至少包含一次 no_promote 且写明理由的负向样例。",
         "Cap 私有人格候选只进入私有边界，不进入公共知识资产。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/self_purification.py",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/self-purification-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/self-purification-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/self-purification-run-loop-no-promote.receipt.json",
+        "assets/evidence/self-purification/20260620-open-loop-cache-retention/knowledge-retrieval-evidence.json",
+        "assets/evidence/self-purification/20260620-open-loop-cache-retention/self-purification-candidates.json",
+        "assets/evidence/self-purification/20260620-open-loop-cache-retention/runner-self-purification-resolution.json",
+        "assets/evidence/self-purification/20260620-open-loop-cache-retention/persona-distillation-decision.json"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 必须证明自我净化在项目开发任务后自然触发，而不是只由 Cap 手动补跑。",
+        "必须同时验证 promote_public、keep_private 或 no_promote 中至少一个真实裁决，并保持 Cap 私有人格边界。"
       ]
     },
     {
       "id": "OL-05-knowledge-affects-decisions",
       "title": "知识召回真实影响任务决策",
       "priority": "P0",
-      "status": "open",
+      "status": "runtime-verified-pending-full-e2e",
       "root_cause": "知识检索已增强，但还要证明命中的经验会改变计划、实现或验收裁决。",
       "required_change": [
         "角色计划必须引用命中知识及采用方式。",
@@ -184,6 +222,20 @@
         "外部端到端证据包包含 knowledge-retrieval-evidence.json。",
         "至少一个角色产物引用命中知识并说明采用方式。",
         "验收证据明确指出该知识对某个实现或验收决策的影响。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/knowledge_gateway.py",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-gateway-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-gateway-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-search-self-purification.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-search-loom.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-search-mixed-loop.receipt.json",
+        "assets/evidence/self-purification/20260620-open-loop-cache-retention/knowledge-retrieval-evidence.json"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 必须证明知识命中改变了角色计划、实现或验收裁决，而不是只留下检索日志。",
+        "若知识检索 0 命中，必须记录继续执行理由。"
       ]
     },
     {
@@ -234,7 +286,7 @@
       "id": "OL-07-project-install-release-proof",
       "title": "项目级发布安装真实证明",
       "priority": "P1",
-      "status": "open",
+      "status": "runtime-verified-pending-full-e2e",
       "root_cause": "发布安装已有检查，但还需在外部项目证明 .redcap 解压、init、项目级 Hook、运行目录和证据目录能稳定工作。",
       "required_change": [
         "发布包必须能在外部项目初始化。",
@@ -258,6 +310,17 @@
         "project-install release-check 通过。",
         "carrier-probe 在外部项目目录通过。",
         "外部项目 .redcap 目录包含运行证据且没有写回 RedCap 源仓库。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/project_install.py",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/project-install-release-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/project-install-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/project-install-check.receipt.json"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 必须在外部项目目录证明 .redcap 初始化、项目级 Hook 和运行时证据目录真实可用。",
+        "carrier-probe 必须在外部项目目录通过，且不得污染 RedCap 源码区。"
       ]
     },
     {

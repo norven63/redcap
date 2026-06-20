@@ -1,0 +1,10 @@
+{
+  "candidates": "assets/evidence/self-purification/20260620-open-loop-cache-retention/self-purification-candidates.json",
+  "decision": "no_promote",
+  "ok": true,
+  "persona_boundary": "assets/evidence/self-purification/20260620-open-loop-cache-retention/persona-distillation-decision.json",
+  "promotion_result": null,
+  "retrieval": "assets/evidence/self-purification/20260620-open-loop-cache-retention/knowledge-retrieval-evidence.json",
+  "schema_id": "redcap-self-purification-resolution",
+  "task_summary": "E2E 缓存旧失败目录治理与未闭环队列收窄"
+}

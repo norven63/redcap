@@ -1,0 +1,11 @@
+{
+  "adopted_entries": [],
+  "matches": [],
+  "no_relevant_entry_reason": "知识库没有命中；任务后必须评估是否产生新候选。",
+  "query": "E2E 缓存治理 failed-run 保留 完整验收",
+  "recorded_at": "2026-06-20T05:49:48+00:00",
+  "result_handling": "record_no_relevant_entry",
+  "schema_id": "redcap-self-purification-knowledge-retrieval",
+  "task_decision_effects": [],
+  "task_summary": "E2E 缓存旧失败目录治理与未闭环队列收窄"
+}

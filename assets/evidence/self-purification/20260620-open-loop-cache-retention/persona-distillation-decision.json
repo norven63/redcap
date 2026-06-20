@@ -1,0 +1,14 @@
+{
+  "candidate_id": "e2e-failed-retention-pending-full-e2e",
+  "counts": {
+    "lesson_chars": 62
+  },
+  "decision": "not_persona",
+  "hash": "40ee05a54b37b10b2024558551abab7a18fbb867bc84eb2ad1eeed69ccb1b35c",
+  "private_body_written": false,
+  "public_body_written": false,
+  "reason": "Cap 私有人格不得自动写入公共仓库；本文件只记录边界和哈希摘要。",
+  "recorded_at": "2026-06-20T05:49:48+00:00",
+  "schema_id": "redcap-cap-persona-boundary-decision",
+  "source_task": "E2E 缓存旧失败目录治理与未闭环队列收窄"
+}

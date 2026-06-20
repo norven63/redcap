@@ -1288,7 +1288,8 @@ def mark_session_expired(manifest: pathlib.Path, provider: str, handle: str | No
 
 
 def provider_success_raw(run_dir: pathlib.Path, provider: str, max_age_hours: float | None) -> bool:
-    raw_files = sorted(run_dir.glob("*.raw.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    raw_candidates = [*run_dir.glob("*.raw.json"), *run_dir.glob("*.raw.txt")]
+    raw_files = sorted(raw_candidates, key=lambda path: path.stat().st_mtime, reverse=True)
     now = time.time()
     for path in raw_files:
         if max_age_hours is not None and now - path.stat().st_mtime > max_age_hours * 3600:
@@ -2610,6 +2611,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         sample_meta_ok, sample_meta_failures, _ = verify_raw_meta(sample_meta)
         if not sample_meta_ok:
             failures.append(f"raw metadata verification failed: {'; '.join(sample_meta_failures)}")
+        sample_txt_raw = tmp / "sample-text.raw.txt"
+        write_raw_and_meta(sample_txt_raw, sample_payload, "claude-code", raw_kind="self-check")
+        if not provider_success_raw(tmp, "claude-code", max_age_hours=1):
+            failures.append("provider_success_raw did not accept .raw.txt evidence")
         forged_raw = tmp / "forged.raw.json"
         write_raw_and_meta(forged_raw, sample_payload, "kimi", raw_kind="self-check")
         forged_meta_path = raw_meta_path(forged_raw)

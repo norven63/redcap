@@ -400,7 +400,7 @@
       "repeated_route_effect": "mark_escalated_and_stop_auto_rerun",
       "no_blind_rerun_without_source_or_evidence_delta": true
     },
-    "retention_policy_reference": "complete-revival-e2e prune-runs keeps failed, interrupted, and unknown runs while pruning only older successful runs outside the active run."
+    "retention_policy_reference": "complete-revival-e2e prune-runs 与每轮 run 收尾会保留最近 failed 样本、保留 interrupted 和 unknown 证据，并在显式阈值与安全上限内清理旧 success、陈旧 active 和旧 failed 目录。"
   },
   "completion_rules": {
     "closeout_requires_all_roles": true,

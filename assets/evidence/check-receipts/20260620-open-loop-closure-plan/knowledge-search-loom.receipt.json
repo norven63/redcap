@@ -1,0 +1,20 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap knowledge-gateway search loom --require-hit",
+  "argv": [
+    "runtime/bin/redcap",
+    "knowledge-gateway",
+    "search",
+    "loom",
+    "--require-hit"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T05:48:45.903455+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "ok": true,
+  "stdout_sha256": "7859ff2946f7acfd39358bd7e808d499b9fbb495b10c44c7ab188df435732bd4",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "{\n  \"query\": \"loom\",\n  \"matches\": [\n    {\n      \"id\": \"loom-runtime-session-continuity\",\n      \"title\": \"Loom 角色会话连续性\",\n      \"route\": \"active-local-index\",\n      \"summary\": \"Loom 必须在普通项目中记录角色会话、续接关系、丢失报警和上下游交付证据，不能由共享上下文冒充多角色。\",\n      \"first_read\": \"assets/knowledge/entries/loom-runtime-session-continuity.md\",\n      \"body_read_rule\": \"index-first\"\n    }\n  ],\n  \"ok\": true,\n  \"read_policy\": \"index-first; read first_read before body; raw archives require explicit task need\"\n}\n",
+  "stderr_tail": ""
+}

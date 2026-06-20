@@ -1,0 +1,30 @@
+{
+  "candidates": [
+    {
+      "created_at": "2026-06-20T05:49:48+00:00",
+      "evidence": {
+        "knowledge_retrieval": "assets/evidence/self-purification/20260620-open-loop-cache-retention/knowledge-retrieval-evidence.json",
+        "lesson_chars": 62,
+        "lesson_sha256": "40ee05a54b37b10b2024558551abab7a18fbb867bc84eb2ad1eeed69ccb1b35c"
+      },
+      "id": "e2e-failed-retention-pending-full-e2e",
+      "lesson": "旧失败运行目录不能无限累积，但在完整成功路径 E2E 证明之前，不应把本轮治理沉淀为公共最佳实践；应先保留为待验收经验候选。",
+      "privacy_class": "public",
+      "proposed_destination": "assets/knowledge/entries",
+      "source_task": "E2E 缓存旧失败目录治理与未闭环队列收窄",
+      "trigger": "e2e_failure"
+    }
+  ],
+  "decisions": [
+    {
+      "candidate_id": "e2e-failed-retention-pending-full-e2e",
+      "decided_at": "2026-06-20T05:49:48+00:00",
+      "decision": "no_promote",
+      "reason": "候选暂不晋升；本轮只保留证据，避免把未经验证的经验写入公共知识库。"
+    }
+  ],
+  "promotion_result": null,
+  "recorded_at": "2026-06-20T05:49:48+00:00",
+  "schema_id": "redcap-self-purification-candidates",
+  "task_summary": "E2E 缓存旧失败目录治理与未闭环队列收窄"
+}

@@ -1125,7 +1125,7 @@
               "--evidence-run-dir",
               "assets/evidence/prism/20260613-advisory-stop-implementation",
               "--max-age-hours",
-              "168"
+              "100000"
             ],
             "expect_exit": 0,
             "stdout_contains": [

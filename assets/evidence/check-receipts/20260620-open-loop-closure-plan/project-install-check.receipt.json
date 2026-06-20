@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap project-install check",
+  "argv": [
+    "runtime/bin/redcap",
+    "project-install",
+    "check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T05:50:57.133285+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "ok": true,
+  "stdout_sha256": "be645cf44501fb2faed3c08f5fe6c1e47d759bd0771af96e542e57efca87dafb",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "{\n  \"schema_id\": \"redcap-project-installation-check\",\n  \"ok\": true,\n  \"contract\": \"/Users/norven/workspace/AI Era/redcap/assets/contracts/project-installation.json\",\n  \"package_root\": \".redcap\",\n  \"package_file_count\": 217,\n  \"failures\": []\n}\nREDCAP_PROJECT_INSTALL_OK\n",
+  "stderr_tail": ""
+}

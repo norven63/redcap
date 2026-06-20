@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap project-install self-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "project-install",
+    "self-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T05:50:57.089322+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "ok": true,
+  "stdout_sha256": "0e979362db193475f626f9f013745a5efadf921a8d37a5b0ea88527e329979ff",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_PROJECT_INSTALL_SELF_CHECK_OK\n",
+  "stderr_tail": ""
+}
