@@ -1,0 +1,22 @@
+{
+  "task": "Re-review the corrected package Prism timeout policy using full package prism check samples.",
+  "user_intent": "Norven requires root-cause repair and forbids lossy bypasses. The E2E package Prism check must run the real package command, remain mandatory, remain bounded, and fail on real performance drift.",
+  "main_claim": "The previous 95/150/80 proposal was based on direct enforcement-check samples and is insufficient for the actual E2E target command. New live samples in the third E2E package project show: full .redcap/runtime/prism/bin/prism check fails with child timeout 95 after 95.348 seconds; succeeds with child timeout 150 in 134.039 seconds; succeeds with child timeout 240 in 133.337 seconds. Revised policy: child timeout 150 seconds, outer timeout 210 seconds, hard performance budget 170 seconds, outer margin 60 seconds. This keeps the real package prism check mandatory, gives enough room for the observed healthy full command, and fails future drift before the hard child timeout.",
+  "changed_reality": [
+    "Initial direct enforcement-check samples remain useful but are not sufficient for the actual E2E target command.",
+    "Full package prism check through the package command takes about 133-134 seconds in the real E2E project.",
+    "Child timeout 95 is insufficient; child timeout 150 passed twice through the full package prism path.",
+    "The implementation must be revised away from 95/150/80 to 150/210/170 and must document why the target command, not direct enforcement-check alone, is the calibration basis."
+  ],
+  "review_mode": "risk_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "questions": [
+    "Does 150 child / 210 outer / 170 hard performance budget preserve strict checking while preventing false package Prism failures?",
+    "Is the shift from direct enforcement-check calibration to full package prism check calibration correct?",
+    "Are there any remaining blockers before implementing this revised policy?"
+  ]
+}

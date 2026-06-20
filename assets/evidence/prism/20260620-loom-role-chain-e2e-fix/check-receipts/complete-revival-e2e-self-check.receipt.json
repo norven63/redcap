@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap complete-revival-e2e self-check --timeout-seconds 300",
+  "executed_at": "2026-06-20T08:47:50+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "stdout_sha256": "0efa91b4c7abd0b2ff4ea07137f862370aa70ccf9fe0b562f45624c1ed0cd6a1",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

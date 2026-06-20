@@ -11,6 +11,7 @@ import fcntl
 import hashlib
 import inspect
 import json
+import math
 import os
 import pathlib
 import pty
@@ -116,6 +117,14 @@ CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS
 LOOM_DEVELOPER_REPAIR_MAX_ROUNDS = int(os.environ.get("REDCAP_E2E_LOOM_DEVELOPER_REPAIR_MAX_ROUNDS", "2"))
 E2E_PATROL_MAX_ITERATIONS = 3
 E2E_SINGLE_RUN_TIMEOUT_HARD_CAP_SECONDS = 1800
+PACKAGE_PRISM_OBSERVED_MAX_SECONDS = 37.241
+PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS = 30
+PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS = int(os.environ.get(
+    "REDCAP_E2E_PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS",
+    str(math.ceil(max(PACKAGE_PRISM_OBSERVED_MAX_SECONDS * 1.5, PACKAGE_PRISM_OBSERVED_MAX_SECONDS + PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS))),
+))
+PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS", "120"))
+PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS = int(os.environ.get("REDCAP_E2E_PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS", "55"))
 CODEX_CLI_READINESS_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_CODEX_READINESS_TIMEOUT_SECONDS", "120"))
 CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
     "responses_websocket",
@@ -502,9 +511,14 @@ def run_command(
     cwd: pathlib.Path = REPO_ROOT,
     timeout_seconds: int = 180,
     stdin: str | None = None,
+    env_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     started = dt.datetime.now(dt.timezone.utc)
+    started_monotonic = time.monotonic()
     process: subprocess.Popen[str] | None = None
+    env = os.environ.copy()
+    if env_overrides:
+        env.update(env_overrides)
     try:
         process = subprocess.Popen(
             argv,
@@ -514,6 +528,7 @@ def run_command(
             stderr=subprocess.PIPE,
             text=True,
             start_new_session=True,
+            env=env,
         )
         stdout, stderr = process.communicate(input=stdin, timeout=timeout_seconds)
         return {
@@ -523,10 +538,12 @@ def run_command(
             "ok": process.returncode == 0,
             "timed_out": False,
             "timeout_seconds": timeout_seconds,
+            "duration_seconds": round(time.monotonic() - started_monotonic, 3),
             "started_at": started.replace(microsecond=0).isoformat(),
             "finished_at": iso_now(),
             "stdout": stdout,
             "stderr": stderr,
+            "env_overrides": sorted((env_overrides or {}).keys()),
         }
     except subprocess.TimeoutExpired:
         killed = kill_process_group(process)
@@ -541,11 +558,13 @@ def run_command(
             "ok": False,
             "timed_out": True,
             "timeout_seconds": timeout_seconds,
+            "duration_seconds": round(time.monotonic() - started_monotonic, 3),
             "process_group_killed": killed,
             "started_at": started.replace(microsecond=0).isoformat(),
             "finished_at": iso_now(),
             "stdout": stdout,
             "stderr": stderr,
+            "env_overrides": sorted((env_overrides or {}).keys()),
         }
 
 
@@ -1425,6 +1444,8 @@ def command_receipt(result: dict[str, Any]) -> dict[str, Any]:
         "ok": result.get("ok"),
         "timed_out": result.get("timed_out"),
         "timeout_seconds": result.get("timeout_seconds"),
+        "duration_seconds": result.get("duration_seconds"),
+        "env_overrides": result.get("env_overrides"),
         "process_group_killed": result.get("process_group_killed"),
         "cleanup_wait_timed_out": result.get("cleanup_wait_timed_out"),
         "pty": result.get("pty"),
@@ -1441,6 +1462,77 @@ def command_receipt(result: dict[str, Any]) -> dict[str, Any]:
         "stdout_tail": stdout[-2000:],
         "stderr_tail": stderr[-2000:],
     }
+
+
+def package_prism_timeout_policy() -> dict[str, Any]:
+    formula_child = math.ceil(max(
+        PACKAGE_PRISM_OBSERVED_MAX_SECONDS * 1.5,
+        PACKAGE_PRISM_OBSERVED_MAX_SECONDS + PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS,
+    ))
+    return {
+        "schema_id": "redcap-e2e-package-prism-timeout-policy",
+        "observed_max_seconds": PACKAGE_PRISM_OBSERVED_MAX_SECONDS,
+        "calibration_source": "optimized full prism check samples collected on 2026-06-20 after probe timing, duplicate command cache, and host-hook-audit nested self-check separation",
+        "formula": "child_timeout_seconds = ceil(max(observed_max_seconds * 1.5, observed_max_seconds + margin_seconds))",
+        "margin_seconds": PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS,
+        "formula_child_timeout_seconds": formula_child,
+        "child_timeout_seconds": PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS,
+        "outer_timeout_seconds": PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS,
+        "outer_minimum_seconds": PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS + PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS,
+        "performance_budget_seconds": PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS,
+        "performance_budget_mode": "hard_fail",
+    }
+
+
+def package_prism_timeout_policy_failures(policy: dict[str, Any] | None = None) -> list[str]:
+    policy = policy or package_prism_timeout_policy()
+    failures: list[str] = []
+    child = int(policy.get("child_timeout_seconds") or 0)
+    formula_child = int(policy.get("formula_child_timeout_seconds") or 0)
+    outer = int(policy.get("outer_timeout_seconds") or 0)
+    margin = int(policy.get("margin_seconds") or 0)
+    budget = float(policy.get("performance_budget_seconds") or 0)
+    observed = float(policy.get("observed_max_seconds") or 0)
+    if child != formula_child:
+        failures.append(f"package prism child timeout must equal formula result: child={child}, formula={formula_child}")
+    if outer < child + margin:
+        failures.append(f"package prism outer timeout must be at least child + margin: outer={outer}, child={child}, margin={margin}")
+    if not (observed < budget < child):
+        failures.append(f"package prism performance budget must be between observed max and child timeout: observed={observed}, budget={budget}, child={child}")
+    if policy.get("performance_budget_mode") != "hard_fail":
+        failures.append("package prism performance budget must be hard_fail")
+    return failures
+
+
+def enforce_package_prism_policy(result: dict[str, Any]) -> dict[str, Any]:
+    result = dict(result)
+    policy = package_prism_timeout_policy()
+    duration = result.get("duration_seconds")
+    performance_budget = {
+        "ok": isinstance(duration, (int, float)) and float(duration) <= PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS,
+        "duration_seconds": duration,
+        "budget_seconds": PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS,
+        "mode": "hard_fail",
+    }
+    result["timeout_policy"] = policy
+    result["performance_budget"] = performance_budget
+    policy_failures = package_prism_timeout_policy_failures(policy)
+    if policy_failures:
+        result["ok"] = False
+        result["timeout_policy_failures"] = policy_failures
+    if performance_budget["ok"] is not True:
+        result["ok"] = False
+        result["performance_budget_exceeded"] = True
+    return result
+
+
+def package_prism_receipt(result: dict[str, Any]) -> dict[str, Any]:
+    receipt = command_receipt(result)
+    receipt["timeout_policy"] = result.get("timeout_policy") or package_prism_timeout_policy()
+    receipt["performance_budget"] = result.get("performance_budget")
+    receipt["timeout_policy_failures"] = result.get("timeout_policy_failures")
+    receipt["performance_budget_exceeded"] = result.get("performance_budget_exceeded")
+    return receipt
 
 
 def extract_codex_session_id(stderr: str) -> str | None:
@@ -2549,6 +2641,10 @@ def build_role_prompt(
         "tester": """
         你的任务：
         1. 如果项目根目录存在 blocked-package.json，立即读取它，写 test-results.json、negative-probes.json 和 role-artifacts/tester.json，标记 status="blocked_by_upstream"，passed=false，然后停止；不要等待、不要修复。
+           上游阻塞时这三份文件仍是 tester 的有效阶段产物，必须使用以下结构：
+           - test-results.json：role="tester"，status="blocked_by_upstream"，passed=false，commands=[]，positive_checks=[]；
+           - negative-probes.json：role="tester"，status="blocked_by_upstream"，passed=false，probes=[]；
+           - role-artifacts/tester.json：role="tester"，status="completed"，evidence_files 列出上述两个文件，并在 upstream_challenges 中说明阻塞来源。
         2. 如果没有上游阻塞，先写进行中证据，再运行任何验证：
            - test-results.json：role="tester"，status="in_progress"，passed=false，commands=[]，positive_checks=[]；
            - negative-probes.json：role="tester"，status="in_progress"，passed=false，probes=[]；
@@ -2627,6 +2723,15 @@ def extract_role_sessions(project: pathlib.Path) -> dict[str, list[dict[str, Any
                 "recorded_at": event.get("recorded_at"),
             })
     return sessions
+
+
+def latest_observed_role_session_id(project: pathlib.Path, role: str) -> str | None:
+    entries = extract_role_sessions(project).get(role, [])
+    for entry in reversed(entries):
+        session_id = entry.get("session_id")
+        if isinstance(session_id, str) and session_id.strip():
+            return session_id.strip()
+    return None
 
 
 def provider_state_dirs_for_role(role: str) -> list[pathlib.Path]:
@@ -2836,15 +2941,18 @@ def validate_tester_outputs(evidence: pathlib.Path) -> list[str]:
     else:
         if test_results.get("role") != "tester":
             failures.append("test-results.json.role 必须是 tester")
-        if test_results.get("status") != "completed":
-            failures.append("test-results.json.status 必须是 completed，不能停留在 in_progress")
-        if test_results.get("passed") is not True:
-            failures.append("test-results.json.passed 必须为 true")
+        status = test_results.get("status")
+        if status not in {"completed", "failed", "blocked_by_upstream"}:
+            failures.append("test-results.json.status 必须是 completed、failed 或 blocked_by_upstream，不能停留在 in_progress")
+        if status == "completed" and test_results.get("passed") is not True:
+            failures.append("test-results.json status=completed 时 passed 必须为 true")
+        if status in {"failed", "blocked_by_upstream"} and test_results.get("passed") is not False:
+            failures.append("test-results.json 失败或上游阻塞时 passed 必须为 false")
         commands = test_results.get("commands")
-        if not isinstance(commands, list) or not commands:
+        if status != "blocked_by_upstream" and (not isinstance(commands, list) or not commands):
             failures.append("test-results.json.commands 必须记录至少一个正向验证命令")
         positive_checks = test_results.get("positive_checks")
-        if not isinstance(positive_checks, list) or not positive_checks:
+        if status != "blocked_by_upstream" and (not isinstance(positive_checks, list) or not positive_checks):
             failures.append("test-results.json.positive_checks 必须记录至少一个正向检查")
 
     negative_probes = load_optional_json(evidence / "negative-probes.json")
@@ -2853,13 +2961,27 @@ def validate_tester_outputs(evidence: pathlib.Path) -> list[str]:
     else:
         if negative_probes.get("role") != "tester":
             failures.append("negative-probes.json.role 必须是 tester")
-        if negative_probes.get("status") != "completed":
-            failures.append("negative-probes.json.status 必须是 completed，不能停留在 in_progress")
-        if negative_probes.get("passed") is not True:
-            failures.append("negative-probes.json.passed 必须为 true")
+        status = negative_probes.get("status")
+        if status not in {"completed", "failed", "blocked_by_upstream"}:
+            failures.append("negative-probes.json.status 必须是 completed、failed 或 blocked_by_upstream，不能停留在 in_progress")
+        if status == "completed" and negative_probes.get("passed") is not True:
+            failures.append("negative-probes.json status=completed 时 passed 必须为 true")
+        if status in {"failed", "blocked_by_upstream"} and negative_probes.get("passed") is not False:
+            failures.append("negative-probes.json 失败或上游阻塞时 passed 必须为 false")
         probes = negative_probes.get("probes")
-        if not isinstance(probes, list) or not probes:
+        if status != "blocked_by_upstream" and (not isinstance(probes, list) or not probes):
             failures.append("negative-probes.json.probes 必须记录至少一个负向或静态探针")
+    return failures
+
+
+def tester_outcome_failures(evidence: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    test_results = load_optional_json(evidence / "test-results.json")
+    if isinstance(test_results, dict) and test_results.get("passed") is not True:
+        failures.append(f"tester 正向验证未通过：status={test_results.get('status')!r}")
+    negative_probes = load_optional_json(evidence / "negative-probes.json")
+    if isinstance(negative_probes, dict) and negative_probes.get("passed") is not True:
+        failures.append(f"tester 负向探针未通过：status={negative_probes.get('status')!r}")
     return failures
 
 
@@ -3153,6 +3275,41 @@ def write_developer_repair_feedback(
     return feedback_path
 
 
+def write_blocked_package(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    *,
+    target_role: str,
+    source: str,
+    failure_set: set[str],
+    developer_gate: dict[str, Any] | None,
+    decision: dict[str, Any],
+    feedback_packet: pathlib.Path | None,
+) -> pathlib.Path:
+    payload = {
+        "schema_id": "redcap-e2e-blocked-package",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target_role": target_role,
+        "source": source,
+        "status": "blocked_by_upstream",
+        "lossless_rule": "This packet carries failure facts only; it must not prescribe a code fix or let the runner replace a Loom role.",
+        "contract_violation_signals": sorted(failure_set),
+        "developer_readiness_gate": developer_gate,
+        "decision": decision,
+        "feedback_packet": str(feedback_packet) if feedback_packet is not None else None,
+        "required_role_action": {
+            "tester": "记录上游阻塞并产出 test-results.json、negative-probes.json、role-artifacts/tester.json；不得修复项目。",
+            "reviewer": "审核上游阻塞链路并产出 failure-backlog.json、review-verdict.json、自我净化候选与人格沉淀裁决；不得自证终局完成。",
+        },
+    }
+    project_path = project / "blocked-package.json"
+    evidence_path = evidence / "blocked-package.json"
+    write_json(project_path, payload)
+    write_json(evidence_path, payload)
+    return project_path
+
+
 def snapshot_role_round(evidence: pathlib.Path, role: str, round_name: str) -> None:
     target = evidence / "role-round-snapshots" / round_name / role
     target.mkdir(parents=True, exist_ok=True)
@@ -3294,16 +3451,24 @@ def build_role_session_manifest(
         entries = sessions.get(role, [])
         session_ids = [str(item.get("session_id") or "") for item in entries if item.get("session_id")]
         unique_sessions = sorted(set(session_ids))
-        command_ok = role_results.get(role, {}).get("ok") is True
+        role_result = role_results.get(role, {})
+        command_ok = role_result.get("ok") is True
+        role_execution_ok = role_result.get("role_execution_ok")
+        if not isinstance(role_execution_ok, bool):
+            role_execution_ok = command_ok
         recorded_session_id = str(role_results.get(role, {}).get("session_id") or "")
         attempt_count = int(role_results.get(role, {}).get("attempt_count") or 0)
         selected_session_id: str | None = None
         if command_ok and recorded_session_id and recorded_session_id in unique_sessions:
             selected_session_id = recorded_session_id
+        elif role_execution_ok and recorded_session_id and recorded_session_id in unique_sessions:
+            selected_session_id = recorded_session_id
         elif len(unique_sessions) == 1:
             selected_session_id = unique_sessions[0]
+        elif role == "developer" and attempt_count > 1 and unique_sessions:
+            selected_session_id = unique_sessions[-1]
         retry_sessions_allowed = (
-            command_ok
+            role == "developer"
             and attempt_count > 1
             and selected_session_id in unique_sessions
         )
@@ -3317,7 +3482,7 @@ def build_role_session_manifest(
             alarm = "missing_session_id"
         elif len(unique_sessions) > 1 and not retry_sessions_allowed:
             alarm = "multiple_sessions_for_single_role"
-        elif not command_ok:
+        elif not role_execution_ok:
             alarm = "role_command_failed"
         if alarm:
             alarms.append({"role": role, "alarm": alarm})
@@ -3326,7 +3491,11 @@ def build_role_session_manifest(
             "session_id": selected_session_id,
             "observed_session_ids": unique_sessions,
             "retry_session_ids": [item for item in unique_sessions if item != selected_session_id],
+            "session_chain_mode": "repair-chain" if retry_sessions_allowed else "single-session",
+            "session_id_source": role_result.get("session_id_source"),
             "attempt_count": role_results.get(role, {}).get("attempt_count"),
+            "role_execution_ok": role_execution_ok,
+            "role_workflow_ok": command_ok,
             "provider": "codex-cli",
             "started_at": entries[0].get("recorded_at") if entries else None,
             "last_seen_at": entries[-1].get("recorded_at") if entries else None,
@@ -3453,9 +3622,12 @@ def run_loom_role_pipeline(
             interactive_gate_marker = role_interactive_gate_marker(result)
             actionable_marker = actionable_interactive_gate_marker(result, artifact_exists)
             retry_reason = role_failure_retry_reason(result, artifact_exists)
+            observed_session_id = latest_observed_role_session_id(project, role)
+            parsed_session_id = extract_codex_session_id(f"{result.get('stdout') or ''}\n{result.get('stderr') or ''}")
             attempt_receipt.update({
                 "attempt": attempt_index,
-                "session_id": extract_codex_session_id(f"{result.get('stdout') or ''}\n{result.get('stderr') or ''}"),
+                "session_id": parsed_session_id or observed_session_id,
+                "session_id_source": "codex-output" if parsed_session_id else ("project-hook-events" if observed_session_id else None),
                 "raw_stdout": str(attempt_stdout),
                 "raw_stderr": str(attempt_stderr),
                 "expected_artifact_exists": artifact_exists,
@@ -3484,6 +3656,9 @@ def run_loom_role_pipeline(
         raw_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
         raw_stderr.write_text(str(result.get("stderr") or ""), encoding="utf-8")
         receipt = command_receipt(result)
+        final_parsed_session_id = extract_codex_session_id(f"{result.get('stdout') or ''}\n{result.get('stderr') or ''}")
+        final_observed_session_id = latest_observed_role_session_id(project, role)
+        final_session_id = final_parsed_session_id or final_observed_session_id
         boundary_failures = role_provider_boundary_failures(evidence, role)
         receipt.update({
             "schema_id": "redcap-e2e-loom-role-run",
@@ -3499,7 +3674,9 @@ def run_loom_role_pipeline(
             "attempt_count": len(attempts),
             "max_attempts": max(1, CODEX_ROLE_MAX_ATTEMPTS),
             "attempts": attempts,
-            "session_id": extract_codex_session_id(f"{result.get('stdout') or ''}\n{result.get('stderr') or ''}"),
+            "role_execution_ok": receipt.get("ok") is True,
+            "session_id": final_session_id,
+            "session_id_source": "codex-output" if final_parsed_session_id else ("project-hook-events" if final_observed_session_id else None),
             "prompt_path": str(prompt_path),
             "last_message": str(message_path),
             "expected_artifact": str(role_artifact_path(evidence, role)),
@@ -3515,6 +3692,11 @@ def run_loom_role_pipeline(
         if artifact_failures:
             receipt["ok"] = False
             receipt["failures"] = [*receipt.get("failures", []), *artifact_failures]
+        if role == "tester":
+            outcome_failures = tester_outcome_failures(evidence)
+            if outcome_failures:
+                receipt["ok"] = False
+                receipt["failures"] = [*receipt.get("failures", []), *outcome_failures]
         if boundary_failures:
             receipt["ok"] = False
             receipt["failures"] = [*receipt.get("failures", []), *boundary_failures]
@@ -3606,7 +3788,33 @@ def run_loom_role_pipeline(
             developer_receipt["developer_readiness_gate"] = readiness
             write_json(evidence / "role-runs" / "developer.json", developer_receipt)
             role_results["developer"] = developer_receipt
-            pipeline_stopped = True
+            terminal_feedback_packet = write_developer_repair_feedback(
+                evidence,
+                repair_round=repair_rounds_used + 1,
+                source="developer-readiness",
+                failure_set=failure_set,
+                developer_gate=readiness,
+                tester_receipt=None,
+                decision=decision,
+            )
+            feedback_packet = terminal_feedback_packet
+            blocked_packet = write_blocked_package(
+                project,
+                evidence,
+                target_role="tester",
+                source="developer-readiness",
+                failure_set=failure_set,
+                developer_gate=readiness,
+                decision=decision,
+                feedback_packet=terminal_feedback_packet,
+            )
+            tester_round_name = f"tester-blocked-round-{repair_rounds_used + 1}"
+            tester_receipt = execute_role("tester", feedback_packet=blocked_packet, round_name=tester_round_name)
+            tester_attempt_total += int(tester_receipt.get("attempt_count") or 0)
+            tester_receipt["attempt_count"] = tester_attempt_total
+            tester_receipt["repair_rounds_used"] = repair_rounds_used
+            role_results["tester"] = tester_receipt
+            write_json(evidence / "role-runs" / "tester.json", tester_receipt)
             break
 
         if previous_failure_set is not None:
@@ -3659,17 +3867,16 @@ def run_loom_role_pipeline(
                 previous_failure_set = set(failure_set)
                 role_results.pop("tester", None)
                 continue
-            pipeline_stopped = True
             break
 
         if previous_failure_set is not None:
             resolved_failures.update(previous_failure_set)
             previous_failure_set = None
-        pre_review_manifest = build_role_session_manifest(project, evidence, role_results, include_pending=True)
-        write_json(evidence / "loom-role-session-manifest-pre-review.json", pre_review_manifest)
         break
 
-    if not pipeline_stopped and role_results.get("tester", {}).get("ok") is True:
+    if not pipeline_stopped and "tester" in role_results:
+        pre_review_manifest = build_role_session_manifest(project, evidence, role_results, include_pending=True)
+        write_json(evidence / "loom-role-session-manifest-pre-review.json", pre_review_manifest)
         reviewer_receipt = execute_role("reviewer", round_name="reviewer-final")
         role_results["reviewer"] = reviewer_receipt
         if not reviewer_receipt["ok"]:
@@ -5856,7 +6063,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
     def event_title(value: Any) -> str:
         if not isinstance(value, dict):
             return ""
-        for key in ["title", "name", "label"]:
+        for key in ["title", "name", "label", "displayName", "display_name"]:
             raw = value.get(key)
             if isinstance(raw, str) and raw.strip():
                 return raw.strip()
@@ -5889,12 +6096,26 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
             for player in players
             if isinstance(player, dict) and player.get("id") and person_name(player)
         } if isinstance(players, list) else {}
-        activities = event.get("activities")
-        activity_title_by_id = {
-            str(activity.get("id")): event_title(activity)
-            for activity in activities
-            if isinstance(activity, dict) and activity.get("id") and event_title(activity)
-        } if isinstance(activities, list) else {}
+        related_title_by_id: dict[str, str] = {}
+        related_title_keys = {
+            "activities",
+            "rooms",
+            "campaigns",
+            "events",
+            "sessions",
+            "encounters",
+            "scenes",
+        }
+        for related_key in related_title_keys:
+            related_items = event.get(related_key)
+            if not isinstance(related_items, list):
+                continue
+            for related_item in related_items:
+                if not isinstance(related_item, dict) or not related_item.get("id"):
+                    continue
+                title_value = event_title(related_item)
+                if title_value:
+                    related_title_by_id[str(related_item.get("id"))] = title_value
         title = parent_titles[-1] if parent_titles else event_title(event)
         record_title = event_title(event)
         for character_index, character in enumerate(characters):
@@ -5904,15 +6125,38 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
             player_name = player_by_id.get(str(character.get("playerId") or character.get("player_id") or ""))
             if not player_name:
                 player_name = str(character.get("player") or character.get("playerName") or character.get("player_name") or "")
-            character_activity_title = activity_title_by_id.get(str(character.get("activityId") or character.get("activity_id") or ""))
-            candidate_title = title or character_activity_title or record_title
-            candidate_record_title = character_activity_title or record_title
+            related_title = ""
+            for reference_key in [
+                "activityId",
+                "activity_id",
+                "roomId",
+                "room_id",
+                "campaignId",
+                "campaign_id",
+                "eventId",
+                "event_id",
+                "sessionId",
+                "session_id",
+                "encounterId",
+                "encounter_id",
+                "sceneId",
+                "scene_id",
+            ]:
+                related_title = related_title_by_id.get(str(character.get(reference_key) or ""))
+                if related_title:
+                    break
+            candidate_title = title or related_title or record_title
+            candidate_record_title = related_title or record_title
             if character_name and player_name:
+                fallback_title = data_path.stem
+                title_source = "payload" if candidate_title else "filename-fallback"
                 candidates.append({
                     "data_file": data_path.relative_to(project).as_posix(),
                     "list_key": list_key,
                     "event_index": event_index,
-                    "event_title": candidate_title or data_path.stem,
+                    "event_title": candidate_title or "",
+                    "event_title_source": title_source,
+                    "event_title_fallback": fallback_title if title_source == "filename-fallback" else None,
                     "record_title": candidate_record_title or None,
                     "path_indexes": path_indexes,
                     "character_index": character_index,
@@ -5994,17 +6238,33 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
         )
     if not candidates:
         return None
-    # Prefer a non-first path when available so the browser proof must perform
-    # a real selection before checking the character-player relation. For nested
-    # data, path_indexes catches cases like campaigns[1].sessions[0].
-    for candidate in candidates:
+
+    generic_titles = {"app", "data", "index", "main", "script", "bundle"}
+
+    def relation_candidate_score(indexed_candidate: tuple[int, dict[str, Any]]) -> tuple[int, int, int, int, int, int]:
+        original_index, candidate = indexed_candidate
+        data_file = str(candidate.get("data_file") or "")
+        stem = pathlib.Path(data_file).stem.lower()
+        event_title_value = str(candidate.get("event_title") or "").strip().lower()
         indexes = candidate.get("path_indexes")
-        if isinstance(indexes, list) and any(isinstance(index, int) and index > 0 for index in indexes):
-            return candidate
-    for candidate in candidates:
-        if isinstance(candidate.get("event_index"), int) and candidate["event_index"] > 0:
-            return candidate
-    return candidates[0]
+        non_first_path = int(isinstance(indexes, list) and any(isinstance(item, int) and item > 0 for item in indexes))
+        non_first_event = int(isinstance(candidate.get("event_index"), int) and candidate["event_index"] > 0)
+        explicit_title = int(candidate.get("event_title_source") == "payload")
+        business_title = int(bool(explicit_title and event_title_value and event_title_value not in generic_titles and event_title_value != stem))
+        has_record_title = int(bool(candidate.get("record_title")))
+        data_source_hint = int(any(part in data_file.lower() for part in ["/data/", "sample-data", "campaign", "event", "activity"]))
+        # Preserve discovery order only as the last tiebreaker. Earlier probes
+        # must not beat a later but semantically stronger business-data match.
+        return (
+            business_title,
+            explicit_title,
+            non_first_path or non_first_event,
+            data_source_hint,
+            has_record_title,
+            -original_index,
+        )
+
+    return max(enumerate(candidates), key=relation_candidate_score)[1]
 
 
 def browser_observable_snapshot(page: Any) -> dict[str, Any]:
@@ -6623,8 +6883,8 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                 player_name = str(relation_probe["player_name"])
                 relation_view_control = click_relation_view_control(page, character_name, player_name)
                 relation_text = page.locator("body").inner_text(timeout=5_000)
-                character_index = relation_text.find(character_name)
-                player_index = relation_text.find(player_name)
+                character_text_index = relation_text.find(character_name)
+                player_text_index = relation_text.find(player_name)
                 dom_relation = page.evaluate(
                     """({ characterName, playerName }) => {
                         const textOf = (element) => (element.innerText || element.textContent || "").replace(/\\s+/g, " ").trim();
@@ -6703,9 +6963,17 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     "dom_mutation": relation_visual_focus.get("dom_mutation"),
                 }
                 relation_probe_reset = reset_relation_probe_page_state(page)
+                relation_event_title_visibility_required = bool(
+                    relation_event_title
+                    and relation_probe.get("event_title_source") == "payload"
+                )
                 relation_event_title_visible = bool(relation_event_title and relation_event_title in relation_text)
                 relation_record_title_visible = bool(relation_record_title and relation_record_title in relation_text)
-                event_state_matched = not relation_event_title or relation_event_control.get("clicked") is True or relation_event_title_visible
+                event_state_matched = (
+                    not relation_event_title_visibility_required
+                    or relation_event_control.get("clicked") is True
+                    or relation_event_title_visible
+                )
                 record_state_matched = (
                     not relation_record_title
                     or relation_record_title == relation_event_title
@@ -6731,6 +6999,7 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                         "browser_context": relation_crop_browser_context,
                     },
                     "relation_probe_reset": relation_probe_reset,
+                    "relation_event_title_visibility_required": relation_event_title_visibility_required,
                     "relation_event_title_visible": relation_event_title_visible,
                     "relation_record_title_visible": relation_record_title_visible,
                     "relation_state_matched": {
@@ -6738,9 +7007,9 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                         "record_state_matched": record_state_matched,
                     },
                     "relation_probe_screenshot": evidence_file_record(relation_screenshot, base=evidence),
-                    "character_index": character_index,
-                    "player_index": player_index,
-                    "text_distance": abs(character_index - player_index) if character_index >= 0 and player_index >= 0 else None,
+                    "character_text_index": character_text_index,
+                    "player_text_index": player_text_index,
+                    "text_distance": abs(character_text_index - player_text_index) if character_text_index >= 0 and player_text_index >= 0 else None,
                     "text_distance_is_informational_only": True,
                     "dom_structural_probe": dom_relation,
                 }
@@ -9620,8 +9889,53 @@ def write_runner_prism_assistance(evidence: pathlib.Path, final_prism: dict[str,
     write_json(evidence / "prism-assisted-review.json", existing)
 
 
-def write_runner_self_purification_resolution(evidence: pathlib.Path) -> dict[str, Any]:
+def write_runner_failure_self_purification_candidate(evidence: pathlib.Path, failures: list[str]) -> dict[str, Any]:
+    candidate = {
+        "id": "runner-failure-loop-diagnostic",
+        "source": "e2e-runner",
+        "kind": "workflow_failure_candidate",
+        "summary": "本轮 E2E 在完整通过前暴露了运行机缺陷，必须进入自我净化评审而不是沉默丢弃。",
+        "evidence_files": [
+            "codex-run.json",
+            "developer-repair-loop.json",
+            "package-prism-check.json",
+            "behavioral-browser-verification.json",
+            "failure-backlog.json",
+        ],
+        "observed_failures": failures[:20],
+        "privacy_class": "public-process",
+        "decisions": [
+            {
+                "candidate_id": "runner-failure-loop-diagnostic",
+                "decision": "defer_with_owner",
+                "owner": "redcap-self-purification",
+                "reason": "失败轮只能沉淀为候选输入，不能在当前 E2E 未通过时晋升为公共能力资产。",
+            }
+        ],
+    }
+    payload = {
+        "schema_id": "redcap-e2e-self-purification-candidates",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "candidates": [candidate],
+        "decisions": candidate["decisions"],
+        "runner_seeded": True,
+        "runner_seed_reason": "role_pipeline_or_finalization_failed_before_reviewer_self_purification",
+    }
+    write_json(evidence / "self-purification-candidates.json", payload)
+    return payload
+
+
+def write_runner_self_purification_resolution(
+    evidence: pathlib.Path,
+    *,
+    allow_runner_failure_candidate: bool = False,
+    failure_context: list[str] | None = None,
+) -> dict[str, Any]:
     purification = load_optional_json(evidence / "self-purification-candidates.json") or {}
+    candidates = purification.get("candidates")
+    if allow_runner_failure_candidate and (not isinstance(candidates, list) or not candidates):
+        purification = write_runner_failure_self_purification_candidate(evidence, failure_context or [])
     decisions = collect_self_purification_decisions(purification)
     candidates = purification.get("candidates")
     if not isinstance(candidates, list):
@@ -9945,7 +10259,18 @@ def finalize_e2e_acceptance(
     final_marker_validation = run_final_marker_validation(project)
     write_json(evidence / "final-marker-validation.json", final_marker_validation)
     role_risk = write_role_execution_risk(evidence)
-    runner_purification_resolution = write_runner_self_purification_resolution(evidence)
+    pre_purification_failures: list[str] = []
+    if role_result.get("ok") is not True:
+        pre_purification_failures.append("Loom 角色管线未通过")
+    if package_prism.get("ok") is not True:
+        pre_purification_failures.append("安装包内棱镜自检未通过")
+    if behavioral_verification.get("ok") is not True:
+        pre_purification_failures.append("运行器行为级浏览器验证未通过")
+    runner_purification_resolution = write_runner_self_purification_resolution(
+        evidence,
+        allow_runner_failure_candidate=bool(pre_purification_failures),
+        failure_context=pre_purification_failures,
+    )
     failures: list[str] = []
     if role_result.get("ok") is not True:
         failures.append("Loom 角色管线未通过")
@@ -10278,6 +10603,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("package-prism-check 必须成功退出")
         if "PRISM_CHECK_OK" not in stdout_tail:
             failures.append("package-prism-check 必须包含 PRISM_CHECK_OK")
+        policy_failures = package_prism_timeout_policy_failures(package_prism.get("timeout_policy"))
+        if policy_failures:
+            failures.append(f"package-prism-check 超时策略不合法：{policy_failures}")
+        performance_budget = package_prism.get("performance_budget")
+        if not isinstance(performance_budget, dict) or performance_budget.get("ok") is not True:
+            failures.append(f"package-prism-check 必须通过硬性性能预算：{performance_budget}")
     runner_tests = load_optional_json(evidence / "final-runner-test-results.json")
     if runner_tests is not None and runner_tests.get("ok") is not True:
         failures.append("final-runner-test-results 必须证明运行器独立验证通过")
@@ -10339,7 +10670,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             relation_state = relation_evidence.get("relation_state_matched") if isinstance(relation_evidence, dict) else None
             if not isinstance(relation_state, dict) or relation_state.get("event_state_matched") is not True or relation_state.get("record_state_matched") is not True:
                 failures.append("behavioral-browser-verification 关系探针必须证明外层活动和内层记录状态都已匹配")
-            if isinstance(relation_evidence, dict) and relation_evidence.get("event_title") and relation_evidence.get("relation_event_title_visible") is not True:
+            if (
+                isinstance(relation_evidence, dict)
+                and relation_evidence.get("event_title")
+                and relation_evidence.get("event_title_source") == "payload"
+                and relation_evidence.get("relation_event_title_visible") is not True
+            ):
                 failures.append("behavioral-browser-verification 关系探针必须证明被验证活动标题在关系探针页面状态中可见")
             if isinstance(relation_evidence, dict) and relation_evidence.get("record_title") and relation_evidence.get("relation_record_title_visible") is not True:
                 failures.append("behavioral-browser-verification 关系探针必须证明被验证嵌套记录标题在关系探针页面状态中可见")
@@ -10825,8 +11161,11 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
     package_prism = run_command([
         ".redcap/runtime/prism/bin/prism",
         "check",
-    ], cwd=project, timeout_seconds=240)
-    write_json(evidence / "package-prism-check.json", command_receipt(package_prism))
+    ], cwd=project, timeout_seconds=PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS, env_overrides={
+        "REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS": str(PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS),
+    })
+    package_prism = enforce_package_prism_policy(package_prism)
+    write_json(evidence / "package-prism-check.json", package_prism_receipt(package_prism))
     hook_events = parse_hook_events(project_hook_events_path(project))
     missing_hooks = [event for event in REQUIRED_HOOK_EVENTS if event not in hook_events]
     write_json(evidence / "hook-events-summary.json", {
@@ -11943,6 +12282,37 @@ def cmd_preflight_regression_test(args: argparse.Namespace) -> int:
 
 def cmd_self_check(args: argparse.Namespace) -> int:
     failures: list[str] = []
+    policy_failures = package_prism_timeout_policy_failures()
+    if policy_failures:
+        failures.extend(f"E2E 包内棱镜超时策略失败：{failure}" for failure in policy_failures)
+    over_budget_receipt = package_prism_receipt(enforce_package_prism_policy({
+        "argv": [".redcap/runtime/prism/bin/prism", "check"],
+        "cwd": str(REPO_ROOT),
+        "exit_code": 0,
+        "ok": True,
+        "timed_out": False,
+        "timeout_seconds": PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS,
+        "duration_seconds": PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS + 1,
+        "stdout": "PRISM_CHECK_OK\n",
+        "stderr": "",
+        "env_overrides": ["REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS"],
+    }))
+    if over_budget_receipt.get("ok") is not False or (over_budget_receipt.get("performance_budget") or {}).get("ok") is not False:
+        failures.append("package-prism-check 超过性能预算时必须硬失败")
+    healthy_budget_receipt = package_prism_receipt(enforce_package_prism_policy({
+        "argv": [".redcap/runtime/prism/bin/prism", "check"],
+        "cwd": str(REPO_ROOT),
+        "exit_code": 0,
+        "ok": True,
+        "timed_out": False,
+        "timeout_seconds": PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS,
+        "duration_seconds": PACKAGE_PRISM_OBSERVED_MAX_SECONDS,
+        "stdout": "PRISM_CHECK_OK\n",
+        "stderr": "",
+        "env_overrides": ["REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS"],
+    }))
+    if healthy_budget_receipt.get("ok") is not True or (healthy_budget_receipt.get("performance_budget") or {}).get("ok") is not True:
+        failures.append("package-prism-check 健康耗时样本不应被性能预算误杀")
     if validate_contract(load_json(CONTRACT)):
         failures.append("通用 E2E 合同检查失败")
     with tempfile.TemporaryDirectory(prefix="redcap-ai-e2e-self-check-") as raw:
@@ -12061,6 +12431,24 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("重试失败尝试没有进入 retry_session_ids")
             if manifest.get("session_loss_alarms"):
                 failures.append(f"重试成功夹具不应产生 session_loss_alarms：{manifest.get('session_loss_alarms')}")
+            repair_chain_manifest = build_role_session_manifest(project, evidence, {
+                "developer": {
+                    "ok": False,
+                    "role_execution_ok": True,
+                    "attempt_count": 2,
+                }
+            }, include_pending=True)
+            repair_chain_developer = next(item for item in repair_chain_manifest["roles"] if item["role"] == "developer")
+            if repair_chain_developer.get("session_id") != "22222222-2222-4222-8222-222222222222":
+                failures.append(f"开发者修复链没有在工作流失败时保留最新真实 session_id：{repair_chain_developer}")
+            if repair_chain_developer.get("session_chain_mode") != "repair-chain":
+                failures.append(f"开发者修复链没有被显式标记为 repair-chain：{repair_chain_developer}")
+            developer_alarms = [
+                item for item in repair_chain_manifest.get("session_loss_alarms", [])
+                if isinstance(item, dict) and item.get("role") == "developer"
+            ]
+            if developer_alarms:
+                failures.append(f"开发者修复链不应被误报 session 丢失：{developer_alarms}")
             developer_prompt = build_role_prompt(project, evidence, "developer", "自检方向")
             developer_argv = build_codex_role_argv(project, "developer", evidence / "role-messages" / "developer.txt", developer_prompt)
             if "--ignore-user-config" in developer_argv:
@@ -13217,6 +13605,45 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             elif relation_probe.get("data_file") != "data/sample-data.json" or relation_probe.get("event_index") != 1 or relation_probe.get("character_index") != 0:
                 failures.append(f"行为关系探针没有返回稳定的事件和角色下标：{relation_probe}")
             sample_data.unlink()
+            app_js.write_text(
+                "(function (root) {\n"
+                "  const TRPG_DATA = "
+                + json.dumps({
+                    "players": [
+                        {"id": "player-room-a", "name": "房间玩家甲"},
+                    ],
+                    "rooms": [
+                        {
+                            "id": "room-relation-a",
+                            "title": "关系房间甲",
+                            "signupIntent": "自检房间需要报名",
+                        }
+                    ],
+                    "characters": [
+                        {
+                            "id": "character-room-a",
+                            "name": "房间角色甲",
+                            "playerId": "player-room-a",
+                            "roomId": "room-relation-a",
+                        }
+                    ],
+                }, ensure_ascii=False, indent=2)
+                + ";\n"
+                "  root.TRPG_DATA = TRPG_DATA;\n"
+                "})(typeof window !== 'undefined' ? window : globalThis);\n",
+                encoding="utf-8",
+            )
+            top_level_relation_probe = find_character_player_probe(project)
+            if not isinstance(top_level_relation_probe, dict):
+                failures.append("行为关系探针没有从顶层 rooms/players/characters 数据中找到角色玩家关系")
+            elif (
+                top_level_relation_probe.get("data_file") != "app.js"
+                or top_level_relation_probe.get("event_title") != "关系房间甲"
+                or top_level_relation_probe.get("record_title") != "关系房间甲"
+                or top_level_relation_probe.get("event_title_source") != "payload"
+            ):
+                failures.append(f"行为关系探针没有把顶层角色 roomId 关联回房间标题：{top_level_relation_probe}")
+            app_js.unlink()
             nested_campaign_js = src_dir / "sample-data.js"
             nested_campaign_js.write_text(
                 "window.TRPG_SEED_DATA = "
@@ -13399,6 +13826,20 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "no_candidate_reason": None
             })
             write_runner_self_purification_resolution(evidence)
+            seeded_resolution_evidence = evidence / "seeded-self-purification"
+            seeded_resolution_evidence.mkdir(parents=True, exist_ok=True)
+            seeded_resolution = write_runner_self_purification_resolution(
+                seeded_resolution_evidence,
+                allow_runner_failure_candidate=True,
+                failure_context=["Loom 角色管线未通过", "运行器行为级浏览器验证未通过"],
+            )
+            seeded_candidates = load_optional_json(seeded_resolution_evidence / "self-purification-candidates.json") or {}
+            if seeded_resolution.get("resolved") is not True:
+                failures.append(f"失败轮自我净化候选没有被转成后续评审输入：{seeded_resolution}")
+            if seeded_candidates.get("runner_seeded") is not True:
+                failures.append(f"失败轮自我净化候选没有标记 runner_seeded：{seeded_candidates}")
+            if seeded_resolution.get("public_promotions_written") is not False or seeded_resolution.get("private_persona_written") is not False:
+                failures.append(f"失败轮自我净化候选不应写公共能力或私有人格正文：{seeded_resolution}")
             write_json(evidence / "persona-distillation-decision.json", {
                 "schema_id": "redcap-e2e-persona-distillation-decision",
                 "privacy_class": "cap-private",

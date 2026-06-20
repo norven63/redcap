@@ -8,6 +8,7 @@ import json
 import pathlib
 import subprocess
 import sys
+import time
 from typing import Any
 
 
@@ -24,6 +25,8 @@ DECISIONS = {
     "not_required",
 }
 STATUSES = {"operational", "manual_protocol", "not_implemented", "not_applicable"}
+PROBE_TIMINGS: list[dict[str, Any]] = []
+PROBE_COMMAND_CACHE: dict[tuple[str, ...], subprocess.CompletedProcess[str]] = {}
 
 
 def load_json(path: pathlib.Path) -> Any:
@@ -107,6 +110,20 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
         return [f"{entry_id}: probe {probe.get('name', '<unnamed>')} argv must be a non-empty string list"]
     timeout_seconds = int(probe.get("timeout_seconds") or 60)
     probe_name = str(probe.get("name") or "<unnamed>")
+    started = time.monotonic()
+
+    def record_timing(status: str, *, reason: str | None = None) -> None:
+        item: dict[str, Any] = {
+            "entry_id": entry_id,
+            "probe": probe_name,
+            "status": status,
+            "duration_seconds": round(time.monotonic() - started, 3),
+            "timeout_seconds": timeout_seconds,
+        }
+        if reason:
+            item["reason"] = reason
+        PROBE_TIMINGS.append(item)
+
     if REPO_ROOT.name == ".redcap":
         if "--verify-live-marker" in argv and "--require-real-codex-session" in argv:
             print(
@@ -114,6 +131,7 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
                 file=sys.stderr,
                 flush=True,
             )
+            record_timing("skipped", reason="installed-package-has-no-required-live-event-history")
             return []
         if "--verify-evidence" in argv and any(item.startswith("assets/evidence/") for item in argv):
             print(
@@ -121,6 +139,7 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
                 file=sys.stderr,
                 flush=True,
             )
+            record_timing("skipped", reason="installed-package-does-not-ship-source-evidence-history")
             return []
     print(
         f"REDCAP_ENFORCEMENT_PROBE_START entry={entry_id} probe={probe_name} timeout_seconds={timeout_seconds}",
@@ -128,15 +147,22 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
         flush=True,
     )
     try:
-        completed = subprocess.run(
-            argv,
-            cwd=str(REPO_ROOT),
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds,
-        )
+        cache_key = tuple(argv)
+        completed = PROBE_COMMAND_CACHE.get(cache_key)
+        cache_hit = completed is not None
+        if completed is None:
+            completed = subprocess.run(
+                argv,
+                cwd=str(REPO_ROOT),
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds,
+            )
+            if completed.returncode == 0:
+                PROBE_COMMAND_CACHE[cache_key] = completed
     except subprocess.TimeoutExpired as exc:
+        record_timing("timeout")
         return [
             f"{entry_id}: probe {probe_name} timed out after {timeout_seconds} seconds: "
             f"{exc.stderr or exc.stdout or ''}"
@@ -153,12 +179,14 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
         if needle not in completed.stderr:
             failures.append(f"{entry_id}: probe {probe_name} stderr missing {needle!r}")
     if failures:
+        record_timing("failed")
         print(
             f"REDCAP_ENFORCEMENT_PROBE_FAIL entry={entry_id} probe={probe_name} exit_code={completed.returncode}",
             file=sys.stderr,
             flush=True,
         )
     else:
+        record_timing("cached" if cache_hit else "ok")
         print(
             f"REDCAP_ENFORCEMENT_PROBE_OK entry={entry_id} probe={probe_name}",
             file=sys.stderr,
@@ -289,6 +317,11 @@ def main() -> int:
         "ok": not failures,
         "entries": len(entries),
         "probes_run": probes_run,
+        "probe_timings": PROBE_TIMINGS,
+        "slow_probes": [
+            item for item in sorted(PROBE_TIMINGS, key=lambda value: value.get("duration_seconds", 0), reverse=True)
+            if float(item.get("duration_seconds") or 0) >= 5
+        ][:10],
         "warnings": warnings,
         "failures": failures,
     }

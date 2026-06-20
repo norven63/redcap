@@ -8,6 +8,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import argparse
 from typing import Any
 
 
@@ -91,6 +92,13 @@ def run_with_retry(argv: list[str], *, attempts: int = 2) -> list[subprocess.Com
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Audit RedCap host hook coverage and provider-call interception boundaries")
+    parser.add_argument(
+        "--skip-codex-hook-self-check",
+        action="store_true",
+        help="Skip the expensive Codex hook behavioral self-check when another required probe has already executed it in the same verification matrix.",
+    )
+    args = parser.parse_args()
     failures: list[str] = []
     config = load_json(HOOKS_CONFIG)
     template = load_json(HOOKS_TEMPLATE)
@@ -117,10 +125,13 @@ def main() -> int:
     dispatcher = run(["runtime/prism/bin/prism-dispatch", "--self-check"])
     if dispatcher.returncode != 0 or "PRISM_DISPATCH_SELF_CHECK_OK" not in dispatcher.stdout:
         failures.append("provider dispatcher self-check failed")
-    codex_hook_attempts = run_with_retry([sys.executable, CODEX_ADAPTER, "--self-check-intent-judge"])
-    codex_hook = codex_hook_attempts[-1]
-    if codex_hook.returncode != 0:
-        failures.append("codex hook self-check failed")
+    codex_hook_attempts: list[subprocess.CompletedProcess[str]] = []
+    codex_hook: subprocess.CompletedProcess[str] | None = None
+    if not args.skip_codex_hook_self_check:
+        codex_hook_attempts = run_with_retry([sys.executable, CODEX_ADAPTER, "--self-check-intent-judge"])
+        codex_hook = codex_hook_attempts[-1]
+        if codex_hook.returncode != 0:
+            failures.append("codex hook self-check failed")
 
     result = {
         "ok": not failures,
@@ -135,10 +146,15 @@ def main() -> int:
             "providers": sorted(provider_cli),
             "dispatcher_self_check": dispatcher.returncode == 0,
         },
-        "codex_hook_self_check": codex_hook.returncode == 0,
+        "codex_hook_self_check": None if args.skip_codex_hook_self_check else codex_hook is not None and codex_hook.returncode == 0,
+        "codex_hook_self_check_skipped": args.skip_codex_hook_self_check,
+        "codex_hook_self_check_skip_reason": (
+            "Skipped only because enforcement-matrix runs the Codex Stop advisory self-check as a separate required probe."
+            if args.skip_codex_hook_self_check else None
+        ),
         "codex_hook_self_check_attempts": len(codex_hook_attempts),
-        "codex_hook_self_check_stdout_tail": (codex_hook.stdout or "")[-1200:],
-        "codex_hook_self_check_stderr_tail": (codex_hook.stderr or "")[-1200:],
+        "codex_hook_self_check_stdout_tail": ((codex_hook.stdout or "")[-1200:] if codex_hook is not None else ""),
+        "codex_hook_self_check_stderr_tail": ((codex_hook.stderr or "")[-1200:] if codex_hook is not None else ""),
         "unsupported_events": AUDITED_UNSUPPORTED_EVENTS,
         "retired_events": {},
         "failures": failures,

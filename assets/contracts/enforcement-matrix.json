@@ -958,7 +958,8 @@
             "name": "host hook audit verifies advisory Stop deployment",
             "argv": [
               "runtime/bin/redcap",
-              "host-hook-audit"
+              "host-hook-audit",
+              "--skip-codex-hook-self-check"
             ],
             "expect_exit": 0,
             "timeout_seconds": 180,
@@ -1599,7 +1600,8 @@
             "name": "host hook audit verifies Codex hooks and dispatcher boundary",
             "argv": [
               "runtime/bin/redcap",
-              "host-hook-audit"
+              "host-hook-audit",
+              "--skip-codex-hook-self-check"
             ],
             "expect_exit": 0,
             "stdout_contains": [

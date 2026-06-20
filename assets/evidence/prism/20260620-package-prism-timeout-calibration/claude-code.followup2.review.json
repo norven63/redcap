@@ -1,0 +1,23 @@
+{
+  "confidence": "medium",
+  "missing_evidence": [
+    "Full prism check composition — what does 'prism check' do beyond enforcement-check that accounts for the 2.3x duration increase (58s → 134s)? Without understanding the composition, it's unclear whether the ratio is stable or whether future changes to other components could further inflate the full-check duration.",
+    "Performance budget placement in the timeout stack — the 170s hard performance budget is proposed alongside a 150s child subprocess timeout. If the child kills at 150s, the 170s budget is unreachable. Either the architecture, the numbers, or the relationship needs clarification.",
+    "No evidence of run-to-run variance within the full prism check path — the success samples (134.039s, 133.337s) differ by only ~0.7s, which is reassuring, but there are only two successful runs. A third sample would strengthen confidence in the 150s ceiling."
+  ],
+  "verdict": "concern",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The main AI caught their own calibration error (wrong target command) through live testing before implementation — the strongest possible anti-loop behavior. The shift from enforcement-check (~58s) to full prism check (~134s) as the calibration basis is correct and prevents a guaranteed re-failure. The remaining loop risk is that full prism check duration could drift upward over time, and a 12% margin (150s vs 134s) leaves limited headroom for that drift before the next recalibration is needed."
+  },
+  "provider": "claude-code",
+  "minimum_fix": "1) Resolve the 170s budget / 150s child timeout inconsistency — either move the budget below child timeout (e.g., 145s as a soft warning band), raise child timeout above budget, or clarify that they operate at different architectural levels. 2) Explain the full prism check composition so future reviewers can assess whether the 2.3x multiplier over enforcement-check is stable. 3) Document the shift from formula-driven calibration (ceil(max(obs×1.5, obs+30))) to empirically-derived calibration (passing threshold + ~12%) so the methodology choice is explicit and reviewable.",
+  "user_intent_alignment": "aligned",
+  "top_risks": [
+    "Child timeout margin is thin at 12% — observed max is ~134s, child timeout is 150s. The outer timeout (210s) provides backup bounding, but a child killed at 150s vs outer killed at 210s produces different error artifacts. A 15-20% margin (160-165s) would reduce false-child-timeout risk without meaningfully weakening the bound.",
+    "170s performance budget appears unreachable — if the child subprocess is killed at 150s, the 170s budget can never fire. This either indicates a number error (budget should be <150s, e.g. 145s) or an architectural misunderstanding about which layer enforces which limit.",
+    "Formula abandonment without replacement — the previous proposal's rigor came from ceil(max(obs×1.5, obs+30)). That formula would give ~202s for the full prism check. The new 150s value abandons the formula but doesn't replace it with a new documented methodology, making this calibration harder to reproduce or audit."
+  ],
+  "main_concern": "The 170s hard performance budget and 150s child subprocess timeout are architecturally contradictory as stated. If the child subprocess is killed at 150s, the 170s budget is unreachable — no process can be flagged at 170s if it's already dead at 150s. Either the performance budget must sit below the child timeout (creating a soft warning band before the hard kill), or the budget operates at a different architectural layer that isn't bounded by the child timeout. Without this clarification, the timeout stack has a dead zone between 150-170s with undefined behavior.",
+  "reality_delta": "The main AI correctly discovered that the previous calibration used the wrong command — direct enforcement-check (~58s) instead of the actual E2E target, full prism check (~134s). This 2.3x gap would have guaranteed a re-failure if the 95s policy had been implemented. The correction to full-command calibration is real and necessary. However, the new 150/210/170 policy shifts from formula-driven calibration to empirically-derived numbers without documenting the methodology change. The 150s child timeout (observed 134s + 12%) is functional but thin. The 170s budget in a timeout stack with a 150s child kill creates a structural inconsistency that needs resolution before the numbers can be trusted."
+}

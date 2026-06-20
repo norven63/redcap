@@ -1,0 +1,45 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "second-e2e-failure-loop-fix",
+  "merge_path": "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/kimi.review.json",
+    "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。原计划里的 audit-mode tester/reviewer 路径确实可能软化 developer-readiness gate，因此本轮没有实现该路径，也没有生成任何可被下游误读为通过的测试者或评审者正常产物。改为：开发者修复链保留真实 session_id；失败轮只生成自我净化诊断候选；包内棱镜检查保留完整检查但加子进程超时证据；行为关系探针从业务数据里推导房间或活动标题。E2E 通过条件仍要求角色链、包内棱镜、浏览器行为、负向探针和 completion-marker 同时成立。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/session.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/receipts/complete-revival-e2e-self-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。为避免审计产物被当作完成证据，本轮直接撤回 audit-mode tester/reviewer 设计，没有把诊断输出写入正常 Loom 角色路径。失败轮自我净化候选带 runner_seeded 与 defer_with_owner 决策，只能作为后续评审输入；completion-marker 的写入条件没有放宽，developer-readiness 失败仍会让 E2E 失败。自检新增了修复链 session、失败候选不写公共或私有人格正文、顶层 rooms/players/characters 关系标题推导等回归夹具。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/session.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260620-second-e2e-failure-loop-fix/receipts/complete-revival-e2e-self-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方 concern 均被采纳；高风险审计角色路径已撤回，实际实现保持硬失败边界，并通过 complete-revival-e2e self-check 验证。本结论只关闭本轮 E2E 失败循环修复，不声明 RedCap 完整复活。"
+  }
+}

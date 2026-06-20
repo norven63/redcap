@@ -1,0 +1,157 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260620-redcap-complete-revival-terminal",
+  "fsm_state": "VERIFYING",
+  "requirement_review": {
+    "user_intent": "完成此前长任务中所有已知 RedCap 复活修复点，并用真实 E2E 与终局门禁确认 RedCap 是否已达到完整复活、可投入工程生产使用的状态。",
+    "target_reality": "RedCap 不再停留在阶段可用或最小内核状态：项目级安装、Loom 角色链、独立 Codex CLI 角色会话、失败回流、自我净化、人格私有边界、棱镜评审、知识召回、目录隔离、缓存保留和终局任务事实均有运行证据和检查器确认。",
+    "non_goals": [
+      "不把第五轮 E2E 示例 TRPG 项目本身当作 RedCap 完整复活的唯一依据",
+      "不绕过终局任务事实和 complete-revival-check",
+      "不把阶段性正式可用检查替代完整复活终局验收",
+      "不把外部 E2E 沙盒产物迁入 RedCap 源码区"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "如发现终局关闭有误，追加 task-facts 记录将 redcap-complete-revival 标回 in_progress 或 blocked，并回滚本批次 runtime/core/complete_revival_e2e.py、runtime/host-adapters/host-hook-audit.py、runtime/prism/bin/enforcement-check 与 assets/contracts/enforcement-matrix.json 的相关提交；外部 E2E 运行目录只作为证据保留，不纳入源码回滚。",
+    "verification_plan": [
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260620-loom-role-chain-e2e-fix/merge.json --resolution assets/evidence/prism/20260620-loom-role-chain-e2e-fix/resolution.json --review assets/evidence/prism/20260620-loom-role-chain-e2e-fix/kimi.review.json --review assets/evidence/prism/20260620-loom-role-chain-e2e-fix/claude-code.review.json --manifest assets/evidence/prism/20260620-loom-role-chain-e2e-fix/session.json",
+      "runtime/bin/redcap complete-revival-e2e run --work-root /Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e --timeout-seconds 1800",
+      "runtime/bin/redcap formal-usable-check",
+      "runtime/bin/redcap task-facts record --task-id redcap-complete-revival --status verified",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+      "runtime/bin/redcap terminal-goal check",
+      "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "把遗漏未闭环点编排为整体任务清单，与棱镜评审达成一致；完成 Cap 复活手册与私有人格边界治理；把 E2E 缓存防膨胀纳入每轮流程并清理当前缓存；执行全部任务、测试验证、发现新问题入队并循环修复，直至没有新问题、新需求。",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "把 RedCap 复活任务从阶段可用推进到终局验证：修复第五轮 E2E 前置缺口，运行真实 E2E，关闭父任务事实，并通过完整复活终局验收。",
+    "primary_deliverable": "RedCap 完整复活终局验收证据链、任务事实关闭记录、棱镜决议闭环、第五轮 E2E 成功证据和最终全量回归。",
+    "acceptance_criteria": [
+      "第五轮完整 E2E 必须返回 ok=true，并且 codex_cli_ok、package_prism_ok、hook_events_ok、finalization_ok、meaningful_evidence_ok、ready_for_engineering_use 均为 true。",
+      "Loom 角色链必须包含产品经理、架构师、开发者、测试者、评审者的独立 Codex CLI 会话与 session id。",
+      "测试者必须执行正向验证和领域负向探针，不能只接受开发者声明。",
+      "评审者必须产出自我净化候选、人格沉淀边界判断和失败待办证据。",
+      "self-purification-candidates 必须被 runner-self-purification-resolution 消费并裁决。",
+      "项目级 .redcap 运行产物必须留在外部 E2E 项目中，不污染 RedCap 源码区。",
+      "redcap-complete-revival 任务事实必须 verified，complete-revival-check --require-terminal-verified 必须通过。",
+      "终局关闭后 runtime/bin/redcap check 必须 69/69 通过。"
+    ],
+    "status": "verified",
+    "task_type": "terminal-closeout",
+    "task_weight": "heavy",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-run-summary.json",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/run-summary.json",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/loom-role-session-manifest.json",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/runner-self-purification-resolution.json",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/persona-distillation-decision.json",
+      "assets/evidence/prism/20260620-loom-role-chain-e2e-fix/resolution.json",
+      "assets/evidence/task-facts/task-facts.jsonl",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260620-loom-role-chain-e2e-fix/merge.json",
+    "resolution_path": "assets/evidence/prism/20260620-loom-role-chain-e2e-fix/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260620-loom-role-chain-e2e-fix/session.json"
+  },
+  "self_purification": {
+    "knowledge_retrieval_evidence": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/knowledge-retrieval-evidence.json",
+    "post_task_harvest": {
+      "candidates_path": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/self-purification-candidates.json"
+    },
+    "review_decision": {
+      "decision": "defer_with_owner",
+      "reason": "第五轮 E2E 产生的领域负向探针经验已由 runner-self-purification-resolution 消费并裁决为延后评审，不阻塞终局关闭。"
+    },
+    "promotion_or_no_promote_result": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/runner-self-purification-resolution.json",
+    "persona_boundary_evidence": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/persona-distillation-decision.json"
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "第五轮 E2E 证明项目级 .redcap 安装、隔离 Codex home、Loom 五角色链和外部项目交付可以端到端运行。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-run-summary.json",
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/loom-role-session-manifest.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "完整复活修订、Loom 工作流、Forge、arsenal、项目级安装和终局目标合同均由 complete-revival-check 与 redcap check 覆盖。"
+      ],
+      "evidence": [
+        "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+        "runtime/bin/redcap check"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "任务事实 open_count=0，终局目标 terminal_verified=true；人格沉淀没有写公共仓库，符合私有边界。"
+      ],
+      "evidence": [
+        "assets/evidence/task-facts/task-facts-summary.json",
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-基于旧-trpg-server-与-trpg-web-的方向-开发一个简/.redcap/evidence/e2e/persona-distillation-decision.json"
+      ]
+    },
+    "verification": {
+      "status": "checked",
+      "findings": [
+        "第五轮 E2E、formal-usable-check、complete-revival-check、terminal-goal、status 和 redcap check 已通过。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-run-summary.json",
+        "runtime/bin/redcap formal-usable-check",
+        "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+        "runtime/bin/redcap terminal-goal check",
+        "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+        "runtime/bin/redcap check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/host-adapters/host-hook-audit.py",
+    "runtime/prism/bin/enforcement-check",
+    "assets/contracts/enforcement-matrix.json",
+    "assets/evidence/task-facts/task-facts.jsonl",
+    "assets/evidence/prism/20260620-loom-role-chain-e2e-fix/resolution.json"
+  ],
+  "verification_evidence": [
+    "/Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fifth-e2e/redcap-e2e-run-summary.json",
+    "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+    "runtime/bin/redcap terminal-goal check",
+    "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "claim_scope": "RedCap 完整复活终局已按第五轮 E2E、任务事实、终局门禁和全量回归验证关闭；后续仍可继续做质量治理或发布决策，但不再作为完整复活阻塞项。"
+  }
+}

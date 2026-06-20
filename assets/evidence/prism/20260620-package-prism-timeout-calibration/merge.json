@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "block",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The proposed policy is numerically inconsistent and under-sampled. A hard performance budget must sit below the child timeout to be actionable, and only two successful runs at 150 s do not prove that 150 s is a stable, non-flaky threshold for CI/E2E."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The 170s hard performance budget and 150s child subprocess timeout are architecturally contradictory as stated. If the child subprocess is killed at 150s, the 170s budget is unreachable — no process can be flagged at 170s if it's already dead at 150s. Either the performance budget must sit below the child timeout (creating a soft warning band before the hard kill), or the budget operates at a different architectural layer that isn't bounded by the child timeout. Without this clarification, the timeout stack has a dead zone between 150-170s with undefined behavior."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Make the hard performance budget strictly below the child timeout (for example: child 180 s, hard budget 150 s, outer 240 s) so the budget can actually fail before the child kill. Run the full package prism check repeatedly at the chosen child timeout under E2E-like conditions to confirm stability. Document the exact command path being calibrated and the margin rationale."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "1) Resolve the 170s budget / 150s child timeout inconsistency — either move the budget below child timeout (e.g., 145s as a soft warning band), raise child timeout above budget, or clarify that they operate at different architectural levels. 2) Explain the full prism check composition so future reviewers can assess whether the 2.3x multiplier over enforcement-check is stable. 3) Document the shift from formula-driven calibration (ceil(max(obs×1.5, obs+30))) to empirically-derived calibration (passing threshold + ~12%) so the methodology choice is explicit and reviewable."
+    }
+  ],
+  "anti_loop_detected": true
+}

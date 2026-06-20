@@ -1,0 +1,53 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "package-prism-timeout-calibration",
+  "merge_path": "assets/evidence/prism/20260620-package-prism-timeout-calibration/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260620-package-prism-timeout-calibration/kimi.followup2.review.json",
+    "assets/evidence/prism/20260620-package-prism-timeout-calibration/claude-code.followup2.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。150/210/170 方案存在性能预算高于子超时的结构矛盾，已废弃。实际实现改为先治理慢因：enforcement-check 输出 probe_timings 与 slow_probes，同一轮成功执行过的相同探针命令会缓存复用；host-hook-audit 默认仍完整自检，但执行矩阵在已经单独运行 Codex Stop 自检后显式使用 --skip-codex-hook-self-check，避免嵌套重复。优化后三轮完整 prism check 稳定在 36.914 到 37.241 秒，因此最终策略为 observed_max=37.241、performance_budget=55、child_timeout=68、outer_timeout=120，满足 observed_max < performance_budget < child_timeout < outer_timeout。",
+      "implementation_evidence": [
+        "runtime/prism/bin/enforcement-check",
+        "runtime/host-adapters/host-hook-audit.py",
+        "assets/contracts/enforcement-matrix.json",
+        "runtime/core/complete_revival_e2e.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260620-package-prism-timeout-calibration/receipts/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/prism/20260620-package-prism-timeout-calibration/receipts/prism-check-optimized.receipt.json",
+        "assets/evidence/prism/20260620-package-prism-timeout-calibration/receipts/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。已明确 full prism check 的耗时组成：慢点主要来自 Codex Stop 自检、host-hook-audit 嵌套自检与重复 host-hook-audit。实现没有通过继续放大 timeout 解决，而是拆出探针级耗时、去重同命令探针，并让 host-hook-audit 在矩阵场景下显式跳过已经单独验证过的 Codex hook 自检。最终预算重新回到公式化校准：child_timeout_seconds = ceil(max(observed_max_seconds * 1.5, observed_max_seconds + 30)) = 68；外层 120 秒；性能硬预算 55 秒，低于子超时且高于健康观测最大值。",
+      "implementation_evidence": [
+        "runtime/prism/bin/enforcement-check",
+        "runtime/host-adapters/host-hook-audit.py",
+        "assets/contracts/enforcement-matrix.json",
+        "runtime/core/complete_revival_e2e.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260620-package-prism-timeout-calibration/receipts/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/prism/20260620-package-prism-timeout-calibration/receipts/prism-check-optimized.receipt.json",
+        "assets/evidence/prism/20260620-package-prism-timeout-calibration/receipts/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "棱镜指出的预算不可达、样本不足、慢因不明三类问题均被采纳并落实：先定位慢探针，再去重和拆分嵌套自检，最后按优化后的完整 prism check 样本重新校准包内自检预算。本结论只关闭第三轮 E2E 暴露的 package-prism-check 超时治理，不声明 RedCap 完整复活。"
+  }
+}

@@ -1,24 +1,16 @@
 {
-  "computed_at": "2026-06-19T03:13:45+00:00",
-  "open_count": 1,
-  "open_tasks": [
-    {
-      "reason": "近期 E2E 审查确认 RedCap 仍处于基建可用基线与二次 E2E 前置验证阶段；Loom、自我净化、知识召回和发布安装已有运行入口与前置检查，但尚未由下一轮完整 E2E 证明可投入工程生产。",
-      "recorded_at": "2026-06-19T03:13:45+00:00",
-      "status": "in_progress",
-      "task_id": "redcap-complete-revival",
-      "title": "RedCap 完整复活"
-    }
-  ],
-  "record_count": 54,
+  "computed_at": "2026-06-20T09:16:37+00:00",
+  "open_count": 0,
+  "open_tasks": [],
+  "record_count": 55,
   "schema_id": "redcap-task-fact-summary",
   "status_counts": {
     "blocked": 0,
     "escalated": 0,
-    "in_progress": 1,
+    "in_progress": 0,
     "planned": 0,
     "superseded": 4,
-    "verified": 21
+    "verified": 22
   },
   "task_count": 26
 }
