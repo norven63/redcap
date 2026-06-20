@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260620-open-loop-full-objective-continuation",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-open-loop-full-objective-continuation",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T11:25:39+00:00",
+  "task_started_at": "2026-06-20T11:25:39+00:00",
+  "updated_at": "2026-06-20T11:43:50+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "82b0279d-0738-47de-a988-4ed89e020fc2",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-open-loop-full-objective-continuation/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_5a27bc86-9ef9-4510-82cc-2c30a95b3367",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-open-loop-full-objective-continuation/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted both Prism concerns and implemented infrastructure readiness plus per-item E2E acceptance gates."
+  }
+}

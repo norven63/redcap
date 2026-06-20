@@ -1,0 +1,47 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260620-open-loop-full-objective-continuation",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。原方案把大量开放项押在一次完整 E2E 上，容易把计划评审误当作实际进展；本轮已改为基础设施预检和逐项验收，未通过或未触发的开放项会继续阻断。",
+      "implementation_evidence": [
+        "../../../../runtime/core/complete_revival_e2e.py",
+        "../../../../runtime/core/revival_followthrough.py",
+        "../../../../assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "./prism-resolution-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。整体 E2E 不能掩盖单项未触发；本轮新增 open-loop-e2e-item-results.json，并把 e2e-infrastructure-readiness.json 设为完整 E2E 的硬前置证据。",
+      "implementation_evidence": [
+        "../../../../runtime/core/complete_revival_e2e.py",
+        "../../../../runtime/core/revival_followthrough.py",
+        "../../../../assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "./prism-resolution-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两个 concern 均被采纳并已落到合同、运行器与 followthrough 检查器；开放队列仍不关闭，等待真实外部 E2E 逐项证据。"
+  }
+}

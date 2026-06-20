@@ -97,6 +97,35 @@
         ],
         "failure_behavior": "缺少编排者身份、身份与当前开发会话相同、无法确认不同实体，或回执缺少哈希时，OL-01 必须在启动 Loom 角色前失败，不得写 completion-marker.json。"
     },
+    "e2e_infrastructure_readiness": {
+        "status": "hard_entry_gate",
+        "purpose": "在完整 E2E 启动 Loom 角色前，先把外部工作目录、RedCap 分层预检和 Codex CLI 项目级钩子承载探针收敛成机器可读就绪报告。",
+        "evidence_required": [
+            "e2e-infrastructure-readiness.json",
+            "redcap-e2e-layered-preflight.json",
+            "redcap-e2e-carrier-preflight.json"
+        ],
+        "failure_behavior": "缺少 e2e-infrastructure-readiness.json、任一 gate 未通过、外部工作目录位于 RedCap 源码工作区内，均必须阻断完整 E2E。"
+    },
+    "open_loop_per_item_acceptance": {
+        "status": "hard_closeout_gate",
+        "purpose": "完整 E2E 的整体通过不得掩盖单项未触发或失败；OL-01、OL-02、OL-03、OL-04、OL-05、OL-06、OL-07、OL-08、OL-10 必须逐项记录 passed、failed 或 not_triggered。",
+        "evidence_required": [
+            "open-loop-e2e-item-results.json"
+        ],
+        "required_item_ids": [
+            "OL-01-second-e2e-acceptance",
+            "OL-02-loom-independent-role-runtime",
+            "OL-03-loom-failure-loop-consumption",
+            "OL-04-self-purification-natural-trigger",
+            "OL-05-knowledge-affects-decisions",
+            "OL-06-cap-revival-manual-and-private-boundary",
+            "OL-07-project-install-release-proof",
+            "OL-08-e2e-cache-retention-integrated",
+            "OL-10-e2e-failed-retention-bounded"
+        ],
+        "failure_behavior": "任一条目缺失、failed、not_triggered 或缺少 evidence_refs 时，revival-followthrough e2e-check 必须失败；不得用整体 E2E 成功倒推单项通过。"
+    },
     "redcap_layered_preflight": {
         "status": "hard_entry_gate",
         "why": "E2E 的目标是验证 RedCap 能不能稳定推动工程，而不只是让某个目标应用看起来可运行；因此启动 Codex CLI 承载探针和 Loom 角色前，必须先确认 RedCap 自身关键能力可运行。",

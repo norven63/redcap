@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "当前交付的主要是计划和治理资产，而不是开放队列中 9 个阻断项的实际闭环。下一步策略把多数阻断项押注在“一次外部完整 E2E”上，这本身就是高风险执行假设；如果该 E2E 失败，会同时拖累 OL-01~OL-08/OL-10，导致队列膨胀、循环加长，而本轮仍可能把“计划被棱镜评审通过”误当作进展。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "E2E 捆绑验证陷阱：方案将 9 个不同开放项的验证收敛到一次外部完整 E2E，但没有定义逐项通过/失败标准。整体 E2E 通过不等于每一项都被验证——某些项可能因执行路径未触发而被\"虚假通过\"。同时，E2E 基础设施就绪（外部 work-root、Loom 角色会话可用性）未入队，可能成为 E2E 首轮即失败的隐性阻断。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "不要再新增任何治理文档或阶段评审；立即在外部 work-root 跑一次 complete-revival-e2e preflight，产出实际证据；根据预检结果把可验证项拆分为小步里程碑，而不是一次性覆盖 9 项；任何失败必须按 Loom 回流规则交给对应角色修复，并把根因写入队列；只有在 presenting 每轮外部 E2E 的 per-item pass/fail 证据后，才进入下一轮策略讨论。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在 E2E 执行前，为开放队列中的每一项（OL-01 到 OL-08、OL-10）定义独立可验证的 E2E 内验收标准（per-item acceptance criteria），并在 E2E 运行器中实现逐项 pass/fail 追踪——任何单项失败即标记对应 OL 项为未通过，不得被整体 E2E 成功掩盖。同时将\"E2E 基础设施就绪\"作为显式检查项加入开放队列或 E2E 前置检查流程。"
+    }
+  ],
+  "anti_loop_detected": true
+}

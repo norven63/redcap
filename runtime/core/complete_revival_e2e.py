@@ -32,7 +32,12 @@ import urllib.request
 import zipfile
 from typing import Any, Callable
 
-from revival_followthrough import PRIVATE_PERSONA_MARKERS, REQUIRED_EVIDENCE_CHECKS, validate_e2e_evidence_quality
+from revival_followthrough import (
+    OPEN_LOOP_E2E_ITEM_IDS,
+    PRIVATE_PERSONA_MARKERS,
+    REQUIRED_EVIDENCE_CHECKS,
+    validate_e2e_evidence_quality,
+)
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -88,6 +93,9 @@ E2E_RETENTION_DELETE_STALE_ACTIVE_AFTER_RUN = os.environ.get("REDCAP_E2E_RETENTI
 E2E_RETENTION_STALE_ACTIVE_DELETE_MAX = int(os.environ.get("REDCAP_E2E_RETENTION_STALE_ACTIVE_DELETE_MAX", "20"))
 E2E_RETENTION_DELETE_OLD_FAILED_AFTER_RUN = os.environ.get("REDCAP_E2E_RETENTION_DELETE_OLD_FAILED_AFTER_RUN", "1") != "0"
 E2E_RETENTION_OLD_FAILED_DELETE_MAX = int(os.environ.get("REDCAP_E2E_RETENTION_OLD_FAILED_DELETE_MAX", "20"))
+E2E_RETENTION_OLD_PROBE_SECONDS = int(os.environ.get("REDCAP_E2E_RETENTION_OLD_PROBE_SECONDS", str(48 * 60 * 60)))
+E2E_RETENTION_DELETE_OLD_PROBE_AFTER_RUN = os.environ.get("REDCAP_E2E_RETENTION_DELETE_OLD_PROBE_AFTER_RUN", "1") != "0"
+E2E_RETENTION_OLD_PROBE_DELETE_MAX = int(os.environ.get("REDCAP_E2E_RETENTION_OLD_PROBE_DELETE_MAX", "50"))
 ROLE_TIMEOUT_SECONDS = {
     "product_manager": 420,
     "architect": 420,
@@ -123,14 +131,14 @@ CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS
 LOOM_DEVELOPER_REPAIR_MAX_ROUNDS = int(os.environ.get("REDCAP_E2E_LOOM_DEVELOPER_REPAIR_MAX_ROUNDS", "2"))
 E2E_PATROL_MAX_ITERATIONS = 3
 E2E_SINGLE_RUN_TIMEOUT_HARD_CAP_SECONDS = 1800
-PACKAGE_PRISM_OBSERVED_MAX_SECONDS = 37.241
-PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS = 30
+PACKAGE_PRISM_OBSERVED_MAX_SECONDS = 132.0
+PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS = 50
 PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS = int(os.environ.get(
     "REDCAP_E2E_PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS",
     str(math.ceil(max(PACKAGE_PRISM_OBSERVED_MAX_SECONDS * 1.5, PACKAGE_PRISM_OBSERVED_MAX_SECONDS + PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS))),
 ))
-PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS", "120"))
-PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS = int(os.environ.get("REDCAP_E2E_PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS", "55"))
+PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS", "250"))
+PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS = int(os.environ.get("REDCAP_E2E_PACKAGE_PRISM_PERFORMANCE_BUDGET_SECONDS", "180"))
 CODEX_CLI_READINESS_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_CODEX_READINESS_TIMEOUT_SECONDS", "120"))
 CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
     "responses_websocket",
@@ -360,30 +368,67 @@ def codex_mcp_isolation_contract(trust_mode: str | None = None) -> dict[str, Any
     }
 
 
+def detect_codex_resource_blocker(result: dict[str, Any]) -> dict[str, Any]:
+    text = "\n".join([
+        str(result.get("stdout") or ""),
+        str(result.get("stderr") or ""),
+    ])
+    lowered = text.lower()
+    matched = []
+    for marker in [
+        "you've hit your usage limit",
+        "usage limit",
+        "purchase more credits",
+        "rate limit",
+        "quota",
+        "用量",
+        "额度",
+    ]:
+        if marker.lower() in lowered:
+            matched.append(marker)
+    retry_after = None
+    retry_match = re.search(r"try again at\s+([0-9:]+\s*[AP]M)", text, flags=re.IGNORECASE)
+    if retry_match:
+        retry_after = retry_match.group(1).strip()
+    return {
+        "schema_id": "redcap-codex-cli-resource-blocker",
+        "present": bool(matched),
+        "kind": "codex_cli_resource_limit" if matched else None,
+        "matched_markers": unique_preserve_order(matched),
+        "retry_after_hint": retry_after,
+    }
+
+
 def carrier_probe_attempt_decision(
     *,
     command_ok: bool,
     marker_exists: bool,
     marker_text: str | None,
     missing_events: list[str] | None,
+    resource_blocker: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized_missing_events = missing_events if isinstance(missing_events, list) else ["__invalid_missing_events__"]
     marker_normalized = marker_text.rstrip("\r\n") if marker_exists and marker_text is not None else None
     marker_ok = marker_normalized == "carrier-shell-ok"
+    resource_limited = bool(resource_blocker and resource_blocker.get("present") is True)
     failure_reasons: list[str] = []
-    if not command_ok:
+    if resource_limited:
+        failure_reasons.append("codex_cli_resource_limited")
+    elif not command_ok:
         failure_reasons.append("command_failed")
-    if not marker_exists:
-        failure_reasons.append("marker_missing")
-    elif not marker_ok:
-        failure_reasons.append("marker_content_mismatch")
-    if normalized_missing_events:
-        failure_reasons.append("hook_events_missing")
+    if not resource_limited:
+        if not marker_exists:
+            failure_reasons.append("marker_missing")
+        elif not marker_ok:
+            failure_reasons.append("marker_content_mismatch")
+        if normalized_missing_events:
+            failure_reasons.append("hook_events_missing")
     return {
-        "ok": command_ok and marker_ok and len(normalized_missing_events) == 0,
+        "ok": (not resource_limited) and command_ok and marker_ok and len(normalized_missing_events) == 0,
         "marker_ok": marker_ok,
         "marker_normalized": marker_normalized,
         "missing_events": normalized_missing_events,
+        "resource_blocker": resource_blocker or {"present": False},
         "failure_reasons": failure_reasons,
     }
 
@@ -395,12 +440,14 @@ def carrier_probe_final_decision(
     marker_text: str | None,
     missing_events: list[str] | None,
     marker_cleanup_error: str | None,
+    resource_blocker: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     decision = carrier_probe_attempt_decision(
         command_ok=command_ok,
         marker_exists=marker_exists,
         marker_text=marker_text,
         missing_events=missing_events,
+        resource_blocker=resource_blocker,
     )
     failure_reasons = list(decision["failure_reasons"])
     if marker_cleanup_error:
@@ -1478,7 +1525,7 @@ def package_prism_timeout_policy() -> dict[str, Any]:
     return {
         "schema_id": "redcap-e2e-package-prism-timeout-policy",
         "observed_max_seconds": PACKAGE_PRISM_OBSERVED_MAX_SECONDS,
-        "calibration_source": "optimized full prism check samples collected on 2026-06-20 after probe timing, duplicate command cache, and host-hook-audit nested self-check separation",
+        "calibration_source": "full installed-package prism check samples collected on 2026-06-20 after advisory Stop semantic self-check expanded; latest observed sample was about 132 seconds, keeping full check and recalibrating instead of downgrading to a smoke check",
         "formula": "child_timeout_seconds = ceil(max(observed_max_seconds * 1.5, observed_max_seconds + margin_seconds))",
         "margin_seconds": PACKAGE_PRISM_TIMEOUT_MARGIN_SECONDS,
         "formula_child_timeout_seconds": formula_child,
@@ -2117,6 +2164,44 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         ]:
             if not isinstance(evidence_required, list) or required_evidence not in evidence_required:
                 failures.append(f"ol01_orchestrator_independence.evidence_required 缺少：{required_evidence}")
+    infrastructure_readiness = contract.get("e2e_infrastructure_readiness")
+    if not isinstance(infrastructure_readiness, dict):
+        failures.append("E2E 合同缺少 e2e_infrastructure_readiness")
+    else:
+        if infrastructure_readiness.get("status") != "hard_entry_gate":
+            failures.append("e2e_infrastructure_readiness.status 必须为 hard_entry_gate")
+        evidence_required = infrastructure_readiness.get("evidence_required")
+        for required_evidence in [
+            "e2e-infrastructure-readiness.json",
+            "redcap-e2e-layered-preflight.json",
+            "redcap-e2e-carrier-preflight.json",
+        ]:
+            if not isinstance(evidence_required, list) or required_evidence not in evidence_required:
+                failures.append(f"e2e_infrastructure_readiness.evidence_required 缺少：{required_evidence}")
+        failure_behavior = str(infrastructure_readiness.get("failure_behavior") or "")
+        for required_fragment in ["任一 gate 未通过", "阻断完整 E2E"]:
+            if required_fragment not in failure_behavior:
+                failures.append(f"e2e_infrastructure_readiness.failure_behavior 缺少：{required_fragment}")
+    per_item_acceptance = contract.get("open_loop_per_item_acceptance")
+    if not isinstance(per_item_acceptance, dict):
+        failures.append("E2E 合同缺少 open_loop_per_item_acceptance")
+    else:
+        if per_item_acceptance.get("status") != "hard_closeout_gate":
+            failures.append("open_loop_per_item_acceptance.status 必须为 hard_closeout_gate")
+        required_item_ids = per_item_acceptance.get("required_item_ids")
+        if not isinstance(required_item_ids, list):
+            failures.append("open_loop_per_item_acceptance.required_item_ids 必须是列表")
+        else:
+            missing_ids = [item_id for item_id in OPEN_LOOP_E2E_ITEM_IDS if item_id not in required_item_ids]
+            if missing_ids:
+                failures.append(f"open_loop_per_item_acceptance.required_item_ids 缺少：{missing_ids}")
+        evidence_required = per_item_acceptance.get("evidence_required")
+        if not isinstance(evidence_required, list) or "open-loop-e2e-item-results.json" not in evidence_required:
+            failures.append("open_loop_per_item_acceptance.evidence_required 缺少 open-loop-e2e-item-results.json")
+        failure_behavior = str(per_item_acceptance.get("failure_behavior") or "")
+        for required_fragment in ["failed", "not_triggered", "不得用整体 E2E 成功倒推单项通过"]:
+            if required_fragment not in failure_behavior:
+                failures.append(f"open_loop_per_item_acceptance.failure_behavior 缺少：{required_fragment}")
     roles = contract.get("roles")
     if not isinstance(roles, dict):
         failures.append("E2E 合同缺少 roles")
@@ -2674,6 +2759,8 @@ def build_role_prompt(
         1. 阅读 requirements.json 和 acceptance-criteria.json。
         2. 运行 `.redcap/runtime/bin/redcap knowledge-gateway search loom`，把结果写入 knowledge-retrieval-evidence.json。
            该文件必须包含 search_ran=true、query="loom"、command、exit_code、matches；如果 matches 为空，必须写 no_relevant_entry_reason。
+           如果 matches 非空，必须写 decision_impact 非空数组；每项必须包含 source_id、used_by_role、affected_artifact、adopted_rule、effect，说明知识召回如何改变或约束你的需求、范围、验收重点或下游交付。
+           role-artifacts/product_manager.json 也必须记录 knowledge_decision_impacts，且内容必须和 knowledge-retrieval-evidence.json 的 decision_impact 对应。
         3. 明确问题陈述、范围边界、验收重点；如果存在 domain_contracts，必须把每项契约列为验收重点，并写入 role-artifacts/product_manager.json。
            product_manager 没有真实上游角色，role-artifacts/product_manager.json 的 upstream_challenges 可以是空数组，但 accepted_upstream_assumptions 必须说明它如何接受用户 direction 并收窄成可验收需求。
         """,
@@ -2801,6 +2888,29 @@ def latest_observed_role_session_id(project: pathlib.Path, role: str) -> str | N
     return None
 
 
+def latest_observed_marker_session_id(project: pathlib.Path, marker_role: str) -> str | None:
+    events_path = project_hook_events_path(project)
+    if not events_path.exists():
+        return None
+    observed: list[str] = []
+    for line in events_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict) or event.get("event") != "UserPromptSubmit":
+            continue
+        text = user_prompt_text(event)
+        if f"{ROLE_MARKER_PREFIX}{marker_role}" not in text:
+            continue
+        session_id = event.get("session_id")
+        if isinstance(session_id, str) and session_id.strip():
+            observed.append(session_id.strip())
+    return observed[-1] if observed else None
+
+
 def provider_state_dirs_for_role(role: str) -> list[pathlib.Path]:
     kimi_state = pathlib.Path.home() / ".kimi-code"
     if not kimi_state.exists():
@@ -2852,6 +2962,174 @@ def role_retry_prompt(base_prompt: str, attempt_index: int) -> str:
     上一次尝试没有产出本角色必需文件，可能误入了需要人工批准的交互式设计流程或遇到传输抖动。
     本次重试必须直接完成本角色产物，不要读取或执行需要人工批准的技能流程，不要写等待用户确认的回复。
     """)
+
+
+def build_ol01_orchestrator_prompt(project: pathlib.Path, evidence: pathlib.Path, direction: str) -> str:
+    draft = evidence / "ol01-orchestrator-identity-draft.json"
+    return textwrap.dedent(f"""
+    {ROLE_MARKER_PREFIX}orchestrator
+
+    你是 RedCap 本轮 E2E（端到端验收）的独立编排者身份确认角色。
+
+    你的职责不是开发项目、不是修复 RedCap 源仓库、不是替任何 Loom 角色交付产物；你的唯一任务是证明本轮 E2E 在进入 Loom 角色前，已经由一个独立 Codex CLI（命令行版 Codex）会话接入外部项目工作区。
+
+    需求方向：
+    {direction}
+
+    工作目录：
+    {project}
+
+    必须读取：
+    - {evidence / "requirements.json"}
+    - {evidence / "acceptance-criteria.json"}
+
+    必须写入：
+    - {draft}
+
+    {draft} 必须是 JSON 对象，至少包含：
+    - schema_id: "redcap-ol01-orchestrator-identity-draft"
+    - role: "orchestrator"
+    - status: "completed"
+    - independent_session_claim: true
+    - read_inputs: 已读取文件数组
+    - orchestration_scope: 一句话说明你只确认编排身份边界，不替 Loom 角色执行
+    - handoff_boundary: 一句话说明后续项目开发必须交给独立 Loom 角色
+
+    写完该 JSON 后，用一句中文说明“编排者身份草稿已写入”并停止。不要修改其他文件。
+    """).strip() + "\n"
+
+
+def ol01_orchestrator_independence_failures(identity_path: pathlib.Path, receipt_path: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    identity = load_optional_json(identity_path)
+    receipt = load_optional_json(receipt_path)
+    if not isinstance(identity, dict):
+        failures.append("缺少可解析的 ol01-orchestrator-identity.json")
+    if not isinstance(receipt, dict):
+        failures.append("缺少可解析的 ol01-orchestrator-independence-receipt.json")
+    if not isinstance(identity, dict) or not isinstance(receipt, dict):
+        return failures
+    if identity.get("schema_id") != "redcap-ol01-orchestrator-identity":
+        failures.append("ol01-orchestrator-identity schema_id 错误")
+    if receipt.get("schema_id") != "redcap-ol01-orchestrator-independence-receipt":
+        failures.append("ol01-orchestrator-independence-receipt schema_id 错误")
+    if identity.get("different_entity") is not True:
+        failures.append("OL-01 编排者身份没有证明 different_entity=true")
+    if receipt.get("ok") is not True:
+        failures.append("OL-01 编排者独立性回执 ok 不是 true")
+    if identity.get("independence_mode") != "different_saved_session":
+        failures.append("OL-01 编排者独立性模式必须是 different_saved_session")
+    session_id = str(identity.get("session_id") or "")
+    if not re.fullmatch(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", session_id):
+        failures.append("OL-01 编排者 session_id 缺失或格式非法")
+    if receipt.get("identity_sha256") != sha256_file(identity_path):
+        failures.append("OL-01 编排者身份回执 identity_sha256 与文件不匹配")
+    for field in ["prompt_sha256", "message_sha256", "draft_sha256", "receipt_sha256"]:
+        if not receipt.get(field):
+            failures.append(f"OL-01 编排者独立性回执缺少哈希字段：{field}")
+    if receipt.get("codex_cli_session_observed") is not True:
+        failures.append("OL-01 没有观察到独立 Codex CLI 会话")
+    return failures
+
+
+def run_ol01_orchestrator_independence_gate(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    direction: str,
+    child_env: dict[str, str],
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    prompt_path = evidence / "ol01-orchestrator-prompt.md"
+    message_path = evidence / "ol01-orchestrator-message.txt"
+    draft_path = evidence / "ol01-orchestrator-identity-draft.json"
+    identity_path = evidence / "ol01-orchestrator-identity.json"
+    receipt_path = evidence / "ol01-orchestrator-independence-receipt.json"
+    for path in [message_path, draft_path, identity_path, receipt_path]:
+        if path.exists():
+            path.unlink()
+    prompt = build_ol01_orchestrator_prompt(project, evidence, direction)
+    prompt_path.write_text(prompt, encoding="utf-8")
+    result = run_command_pty(
+        build_codex_role_argv(project, "orchestrator", message_path, prompt),
+        cwd=project,
+        timeout_seconds=min(timeout_seconds, 300),
+        completion_files=[draft_path],
+        completion_predicate=lambda: draft_path.exists(),
+        env_overrides=child_env,
+    )
+    raw_stdout = evidence / "role-raw" / "orchestrator.stdout.txt"
+    raw_stderr = evidence / "role-raw" / "orchestrator.stderr.txt"
+    raw_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
+    raw_stderr.write_text(str(result.get("stderr") or ""), encoding="utf-8")
+    if not message_path.exists() and str(result.get("stdout") or "").strip():
+        message_path.write_text(str(result.get("stdout") or "")[-12000:], encoding="utf-8")
+    parsed_session_id = extract_codex_session_id(f"{result.get('stdout') or ''}\n{result.get('stderr') or ''}")
+    observed_session_id = latest_observed_marker_session_id(project, "orchestrator")
+    session_id = parsed_session_id or observed_session_id
+    draft_payload = load_optional_json(draft_path)
+    command_success = result.get("ok") is True or result.get("stop_requested_after_completion") is True
+    failures: list[str] = []
+    if not command_success:
+        failures.append("独立编排者 Codex CLI 会话未成功完成或未在产物写出后停止")
+    if not isinstance(draft_payload, dict):
+        failures.append("独立编排者没有写入可解析的身份草稿")
+    elif draft_payload.get("schema_id") != "redcap-ol01-orchestrator-identity-draft" or draft_payload.get("status") != "completed":
+        failures.append("独立编排者身份草稿 schema/status 不符合要求")
+    if not session_id:
+        failures.append("未能从 Codex CLI 输出或项目 Hook 事件中取得独立编排者 session_id")
+    identity = {
+        "schema_id": "redcap-ol01-orchestrator-identity",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "role": "orchestrator",
+        "independence_mode": "different_saved_session",
+        "different_entity": not failures,
+        "session_id": session_id,
+        "session_id_source": "codex-output" if parsed_session_id else ("project-hook-events" if observed_session_id else None),
+        "project": str(project),
+        "direction_sha256": sha256_text(direction),
+        "prompt": str(prompt_path),
+        "draft": str(draft_path),
+        "message": str(message_path),
+        "process_boundary": {
+            "runner_pid": os.getpid(),
+            "codex_cli_invoked": True,
+            "worker_mode": os.environ.get("REDCAP_E2E_WORKER") == "1",
+            "harness_pid": os.environ.get("REDCAP_E2E_HARNESS_PID"),
+        },
+        "failures": failures,
+    }
+    write_json(identity_path, identity)
+    receipt_base = {
+        "schema_id": "redcap-ol01-orchestrator-independence-receipt",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "ok": False,
+        "independence_mode": "different_saved_session",
+        "codex_cli_session_observed": bool(session_id),
+        "command": command_receipt(result),
+        "identity_sha256": sha256_file(identity_path),
+        "prompt_sha256": sha256_file(prompt_path),
+        "message_sha256": sha256_file(message_path) if message_path.exists() else "",
+        "draft_sha256": sha256_file(draft_path) if draft_path.exists() else "",
+        "raw_stdout": str(raw_stdout),
+        "raw_stderr": str(raw_stderr),
+        "failures": failures,
+    }
+    receipt_base["ok"] = not failures
+    receipt_base["receipt_sha256"] = sha256_text(json.dumps(receipt_base, ensure_ascii=False, sort_keys=True))
+    write_json(receipt_path, receipt_base)
+    validation_failures = ol01_orchestrator_independence_failures(identity_path, receipt_path)
+    summary = {
+        "schema_id": "redcap-ol01-orchestrator-independence-gate",
+        "ok": not validation_failures,
+        "identity": str(identity_path),
+        "receipt": str(receipt_path),
+        "session_id": session_id,
+        "failures": validation_failures,
+    }
+    write_json(evidence / "ol01-orchestrator-independence-gate.json", summary)
+    return summary
 
 
 def role_provider_boundary_failures(evidence: pathlib.Path, role: str) -> list[str]:
@@ -3637,6 +3915,27 @@ def run_loom_role_pipeline(
         }
         write_json(evidence / "codex-run.json", aggregate)
         return aggregate
+    ol01_gate = run_ol01_orchestrator_independence_gate(project, evidence, direction, child_env, timeout_seconds)
+    if ol01_gate.get("ok") is not True:
+        aggregate = {
+            "schema_id": "redcap-e2e-loom-role-pipeline-run",
+            "ok": False,
+            "roles": {},
+            "codex_project_trust": trust_result,
+            "codex_mcp_isolation_contract": mcp_contract,
+            "ol01_orchestrator_independence_gate": ol01_gate,
+            "developer_repair_loop": {
+                "max_rounds": LOOM_DEVELOPER_REPAIR_MAX_ROUNDS,
+                "rounds_used": 0,
+                "history": [],
+                "resolved_failures": [],
+                "final_feedback_packet": None,
+            },
+            "session_manifest": None,
+            "failures": ["OL-01 独立编排者身份门禁未通过，禁止启动 Loom 角色执行。", *ol01_gate.get("failures", [])],
+        }
+        write_json(evidence / "codex-run.json", aggregate)
+        return aggregate
 
     def execute_role(role: str, *, feedback_packet: pathlib.Path | None = None, round_name: str | None = None) -> dict[str, Any]:
         role_workspace_path(evidence, role).mkdir(parents=True, exist_ok=True)
@@ -4143,6 +4442,15 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "query": "<required>",
         "matches": [],
         "used_entries": [],
+        "decision_impact": [
+            {
+                "source_id": "<knowledge entry id or source reference>",
+                "used_by_role": "product_manager",
+                "affected_artifact": "role-artifacts/product_manager.json",
+                "adopted_rule": "<what rule or lesson was adopted>",
+                "effect": "<how the recalled knowledge changed scope, acceptance, or handoff>"
+            }
+        ],
         "no_relevant_entry_reason": "<required if matches empty and search ran>",
         "skip_reason": None
     })
@@ -5055,9 +5363,11 @@ def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path,
     if data_path.suffix == ".js":
         script = (
             "const fs = require('fs');"
+            "const path = require('path');"
             "const vm = require('vm');"
-            "const p = process.argv[1];"
-            "const source = fs.readFileSync(p, 'utf8');"
+            "const p = process.argv[2] || process.argv[1];"
+            "const abs = path.resolve(p);"
+            "const source = fs.readFileSync(abs, 'utf8');"
             "function structured(v) { return v && typeof v !== 'function' && (Array.isArray(v) || typeof v === 'object'); }"
             "const candidates = [];"
             "const marker = source.match(/\\/\\*\\s*TRPG_DATA_START\\s*\\*\\/\\s*(?:const|let|var)\\s+(?:BOOTSTRAP_DATA|TRPG_DATA|REDCAP_DATA)\\s*=\\s*([\\s\\S]*?);\\s*\\/\\*\\s*TRPG_DATA_END\\s*\\*\\//);"
@@ -5065,11 +5375,11 @@ def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path,
             "  try { candidates.push({source: 'marker.TRPG_DATA_START', value: vm.runInNewContext(`(${marker[1]})`, {}, { timeout: 1000 })}); }"
             "  catch (error) { candidates.push({source: 'marker-error', value: undefined, error: String(error && error.message || error)}); }"
             "}"
-            "try { candidates.push({source: 'require', value: require(p)}); } catch (error) { candidates.push({source: 'require-error', value: undefined, error: String(error && error.message || error)}); }"
-            "const sandbox = { module: { exports: {} }, exports: {}, window: {} };"
+            "try { candidates.push({source: 'require', value: require(abs)}); } catch (error) { candidates.push({source: 'require-error', value: undefined, error: String(error && error.message || error)}); }"
+            "const sandbox = { module: { exports: {} }, exports: {}, window: {}, console };"
             "sandbox.globalThis = sandbox;"
             "vm.createContext(sandbox);"
-            "try { vm.runInContext(source, sandbox, { filename: p }); } catch (error) { candidates.push({source: 'vm-error', value: undefined, error: String(error && error.message || error)}); }"
+            "try { vm.runInContext(source, sandbox, { filename: abs }); } catch (error) { candidates.push({source: 'vm-error', value: undefined, error: String(error && error.message || error)}); }"
             "candidates.push({source: 'module.exports', value: sandbox.module.exports});"
             "candidates.push({source: 'exports', value: sandbox.exports});"
             "for (const scopeName of ['window', 'globalThis']) {"
@@ -5645,6 +5955,49 @@ def relation_parent_ids(container: dict[str, Any], parent_key: str) -> set[str]:
     return ids
 
 
+def relation_parent_id_sets(container: dict[str, Any]) -> list[tuple[str, set[str]]]:
+    return [
+        (parent_key, ids)
+        for parent_key in RELATION_PARENT_LIST_KEYS
+        if (ids := relation_parent_ids(container, parent_key))
+    ]
+
+
+def relation_parent_id_sets_from_containers(containers: list[dict[str, Any]]) -> list[tuple[str, set[str]]]:
+    merged: dict[str, set[str]] = {}
+    for container in containers:
+        for parent_key, ids in relation_parent_id_sets(container):
+            merged.setdefault(parent_key, set()).update(ids)
+    return [(parent_key, ids) for parent_key, ids in merged.items() if ids]
+
+
+def ancestor_containers_for_list_key(payload: dict[str, Any] | list[Any], list_key: str) -> list[dict[str, Any]]:
+    if list_key in {"", "$", "__top_level__"}:
+        return []
+    current: Any = payload
+    ancestors: list[dict[str, Any]] = []
+    for part in [item for item in list_key.split(".") if item]:
+        if part == "$":
+            continue
+        if isinstance(current, dict):
+            ancestors.append(current)
+            current = current.get(part)
+            continue
+        if isinstance(current, list):
+            try:
+                item_index = int(part)
+            except ValueError:
+                return ancestors
+            if item_index < 0 or item_index >= len(current):
+                return ancestors
+            current = current[item_index]
+            if isinstance(current, dict):
+                ancestors.append(current)
+            continue
+        return ancestors
+    return ancestors
+
+
 def append_relation_matches(
     matches: list[CharacterPlayerMatch],
     data_path: pathlib.Path,
@@ -5653,12 +6006,14 @@ def append_relation_matches(
     event_index: int,
     container: dict[str, Any],
     failures: list[str],
+    inherited_parent_id_sets: list[tuple[str, set[str]]] | None = None,
 ) -> None:
-    parent_id_sets = [
-        (parent_key, relation_parent_ids(container, parent_key))
-        for parent_key in RELATION_PARENT_LIST_KEYS
-    ]
-    parent_id_sets = [(key, ids) for key, ids in parent_id_sets if ids]
+    parent_id_sets = relation_parent_id_sets(container)
+    if inherited_parent_id_sets:
+        by_key: dict[str, set[str]] = {key: set(ids) for key, ids in inherited_parent_id_sets}
+        for parent_key, ids in parent_id_sets:
+            by_key.setdefault(parent_key, set()).update(ids)
+        parent_id_sets = [(key, ids) for key, ids in by_key.items() if ids]
     for child_key in RELATION_CHILD_LIST_KEYS:
         children = container.get(child_key)
         if not isinstance(children, list):
@@ -5692,6 +6047,7 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
             append_relation_matches(candidate_matches, data_path, payload, "__top_level__", -1, payload, failures)
         list_candidates = top_level_data_list_candidates(payload)
         for list_key, records in list_candidates:
+            inherited_parent_id_sets = relation_parent_id_sets_from_containers(ancestor_containers_for_list_key(payload, list_key))
             for event_index, event in enumerate(records):
                 if not isinstance(event, dict):
                     continue
@@ -5701,11 +6057,28 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
                     if not isinstance(child_records, list):
                         continue
                     nested_list_key = f"{list_key}.{event_index}.{child_key}"
+                    nested_inherited_parent_id_sets = [
+                        *inherited_parent_id_sets,
+                        *relation_parent_id_sets(event),
+                    ]
                     for child_index, child_event in enumerate(child_records):
                         if isinstance(child_event, dict):
                             event_records.append((nested_list_key, child_index, child_event))
                 for candidate_list_key, candidate_event_index, candidate_event in event_records:
-                    append_relation_matches(candidate_matches, data_path, payload, candidate_list_key, candidate_event_index, candidate_event, failures)
+                    if candidate_list_key == list_key:
+                        candidate_inherited_parent_id_sets = inherited_parent_id_sets
+                    else:
+                        candidate_inherited_parent_id_sets = nested_inherited_parent_id_sets
+                    append_relation_matches(
+                        candidate_matches,
+                        data_path,
+                        payload,
+                        candidate_list_key,
+                        candidate_event_index,
+                        candidate_event,
+                        failures,
+                        inherited_parent_id_sets=candidate_inherited_parent_id_sets,
+                    )
         if candidate_matches:
             return prefer_deeper_character_player_match(candidate_matches)
         failures.append(f"{data_path.relative_to(project)} 未发现可破坏的实体引用关系")
@@ -6145,6 +6518,18 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                 return raw.strip()
         return ""
 
+    def player_names_by_id(value: Any) -> dict[str, str]:
+        if not isinstance(value, dict):
+            return {}
+        players = value.get("players")
+        if not isinstance(players, list):
+            return {}
+        return {
+            str(player.get("id")): person_name(player)
+            for player in players
+            if isinstance(player, dict) and player.get("id") and person_name(player)
+        }
+
     def append_event_candidates(
         *,
         data_path: pathlib.Path,
@@ -6153,16 +6538,13 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
         event: dict[str, Any],
         parent_titles: list[str],
         path_indexes: list[int],
+        inherited_player_by_id: dict[str, str],
     ) -> None:
         characters = event.get("characters")
         if not isinstance(characters, list):
             return
-        players = event.get("players")
-        player_by_id = {
-            str(player.get("id")): person_name(player)
-            for player in players
-            if isinstance(player, dict) and player.get("id") and person_name(player)
-        } if isinstance(players, list) else {}
+        player_by_id = dict(inherited_player_by_id)
+        player_by_id.update(player_names_by_id(event))
         related_title_by_id: dict[str, str] = {}
         related_title_keys = {
             "activities",
@@ -6238,6 +6620,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
         path: str,
         parent_titles: list[str],
         path_indexes: list[int],
+        inherited_player_by_id: dict[str, str],
         list_key: str | None = None,
         event_index: int | None = None,
     ) -> None:
@@ -6249,9 +6632,12 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                 event=value,
                 parent_titles=parent_titles,
                 path_indexes=path_indexes,
+                inherited_player_by_id=inherited_player_by_id,
             )
             title = event_title(value)
             next_parent_titles = parent_titles + ([title] if title else [])
+            next_player_by_id = dict(inherited_player_by_id)
+            next_player_by_id.update(player_names_by_id(value))
             for key, child in value.items():
                 if isinstance(child, list):
                     child_list_key = f"{path}.{key}" if path and path != "$" else key
@@ -6262,6 +6648,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                             path=f"{child_list_key}.{child_index}",
                             parent_titles=next_parent_titles,
                             path_indexes=path_indexes + [child_index],
+                            inherited_player_by_id=next_player_by_id,
                             list_key=child_list_key,
                             event_index=child_index,
                         )
@@ -6273,6 +6660,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                         path=child_path,
                         parent_titles=next_parent_titles,
                         path_indexes=path_indexes,
+                        inherited_player_by_id=next_player_by_id,
                         list_key=list_key,
                         event_index=event_index,
                     )
@@ -6285,6 +6673,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                     path=f"{child_list_key}.{child_index}",
                     parent_titles=parent_titles,
                     path_indexes=path_indexes + [child_index],
+                    inherited_player_by_id=inherited_player_by_id,
                     list_key=child_list_key,
                     event_index=child_index,
                 )
@@ -6302,6 +6691,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
             path="$",
             parent_titles=[],
             path_indexes=[],
+            inherited_player_by_id={},
         )
     if not candidates:
         return None
@@ -7991,12 +8381,162 @@ def failure_item_route_hash(item: dict[str, Any], evidence_files: list[str]) -> 
     }, ensure_ascii=False, sort_keys=True))
 
 
+def route_from_loom_runtime_event(event: dict[str, Any], consumption: dict[str, Any]) -> dict[str, Any] | None:
+    if not isinstance(event, dict) or not event.get("route_id"):
+        return None
+    return {
+        "route_id": str(event.get("route_id")),
+        "source_role": str(event.get("source_role") or "tester"),
+        "source_phase": str(event.get("source_phase") or "quality_assurance"),
+        "root_cause": normalize_root_cause(event.get("root_cause")),
+        "root_cause_hash": str(event.get("root_cause_hash") or sha256_text(str(event.get("summary") or ""))),
+        "summary": str(event.get("summary") or "Loom 失败回流受控演练"),
+        "target_role": str(event.get("target_role") or "developer"),
+        "target_phase": str(event.get("target_phase") or "implementation"),
+        "restart_from_phase": str(event.get("restart_from_phase") or event.get("target_phase") or "implementation"),
+        "downstream_replay_required": event.get("downstream_replay_required") is True,
+        "downstream_replay_roles": downstream_replay_roles_from_phase(str(event.get("target_phase") or "implementation")),
+        "loop_count": int(event.get("loop_count") or 1),
+        "previous_route_id": str(event.get("previous_route_id") or ""),
+        "escalation_threshold": int(event.get("escalation_threshold") or 3),
+        "status": str(event.get("status") or ""),
+        "evidence": [str(item) for item in event.get("evidence", []) if item],
+        "target_role_must_acknowledge": event.get("target_role_must_acknowledge") is True,
+        "target_role_must_read_route_before_edit": event.get("target_role_must_read_route_before_edit") is True,
+        "controlled_drill": consumption.get("controlled_drill") is True,
+        "runtime_ledger": consumption.get("ledger"),
+        "accepted_by": event.get("accepted_by"),
+        "completed_by": event.get("completed_by"),
+    }
+
+
+def run_loom_failure_route_runtime_drill(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    package_redcap = project / ".redcap" / "runtime" / "bin" / "redcap"
+    source_path = evidence / "controlled-failure-route-drill-source.json"
+    write_json(source_path, {
+        "schema_id": "redcap-e2e-controlled-failure-route-drill-source",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "purpose": "受控验证 Loom 失败回流运行机可以创建、目标角色接收、完成并检查无开放路由。",
+        "target_role": "developer",
+        "target_phase": "implementation",
+    })
+    failures: list[str] = []
+    commands: dict[str, Any] = {}
+    events: dict[str, Any] = {}
+    if not package_redcap.exists():
+        failures.append("项目级 .redcap 缺少 runtime/bin/redcap，无法演练失败回流运行机")
+    else:
+        common = [
+            str(package_redcap),
+            "loom-runtime",
+            "failure-route",
+            "--project-root",
+            str(project),
+            "--project-id",
+            project.name,
+            "--task-id",
+            "complete-revival-e2e",
+        ]
+        create = run_command([
+            *common,
+            "--action",
+            "create",
+            "--source-role",
+            "tester",
+            "--source-phase",
+            "quality_assurance",
+            "--root-cause",
+            "code",
+            "--summary",
+            "受控演练：验证失败路由可以回到 developer 并被关闭",
+            "--target-role",
+            "developer",
+            "--target-phase",
+            "implementation",
+            "--restart-from-phase",
+            "implementation",
+            "--evidence-files",
+            "controlled-failure-route-drill-source.json",
+        ], cwd=project, timeout_seconds=30)
+        commands["create"] = command_receipt(create)
+        create_payload = parse_leading_json(str(create.get("stdout") or ""))
+        create_event = create_payload.get("event") if isinstance(create_payload, dict) else None
+        if not create.get("ok") or not isinstance(create_event, dict):
+            failures.append("失败回流运行机 create 未返回有效路由事件")
+        else:
+            events["create"] = create_event
+            route_id = str(create_event.get("route_id") or "")
+            accept = run_command([
+                *common,
+                "--action",
+                "accept",
+                "--route-id",
+                route_id,
+                "--role",
+                "developer",
+                "--evidence-files",
+                "role-artifacts/developer.json,controlled-failure-route-drill-source.json",
+            ], cwd=project, timeout_seconds=30)
+            commands["accept"] = command_receipt(accept)
+            accept_payload = parse_leading_json(str(accept.get("stdout") or ""))
+            accept_event = accept_payload.get("event") if isinstance(accept_payload, dict) else None
+            if not accept.get("ok") or not isinstance(accept_event, dict):
+                failures.append("失败回流运行机 accept 未返回有效接收事件")
+            else:
+                events["accept"] = accept_event
+            complete = run_command([
+                *common,
+                "--action",
+                "complete",
+                "--route-id",
+                route_id,
+                "--role",
+                "developer",
+                "--evidence-files",
+                "role-artifacts/developer.json,developer-repair-loop.json,controlled-failure-route-drill-source.json",
+            ], cwd=project, timeout_seconds=30)
+            commands["complete"] = command_receipt(complete)
+            complete_payload = parse_leading_json(str(complete.get("stdout") or ""))
+            complete_event = complete_payload.get("event") if isinstance(complete_payload, dict) else None
+            if not complete.get("ok") or not isinstance(complete_event, dict):
+                failures.append("失败回流运行机 complete 未返回有效完成事件")
+            else:
+                events["complete"] = complete_event
+            check = run_command([
+                *common,
+                "--action",
+                "check",
+                "--require-no-open",
+            ], cwd=project, timeout_seconds=30)
+            commands["check"] = command_receipt(check)
+            if not check.get("ok"):
+                failures.append("失败回流运行机 check --require-no-open 未通过")
+    ledger = project / ".redcap" / "state" / "loom" / "failure-routes.jsonl"
+    result = {
+        "schema_id": "redcap-e2e-loom-failure-route-runtime-consumption",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "controlled_drill": True,
+        "ok": not failures,
+        "ledger": str(ledger),
+        "ledger_sha256": sha256_file(ledger) if ledger.exists() else None,
+        "commands": commands,
+        "events": events,
+        "final_event": events.get("complete"),
+        "failures": failures,
+    }
+    write_json(evidence / "loom-failure-route-runtime-consumption.json", result)
+    return result
+
+
 def build_loom_failure_route_plan(
     *,
     evidence: pathlib.Path,
     failure_backlog: dict[str, Any] | None,
     convergence: dict[str, Any] | None,
     final_failures: list[str],
+    runtime_consumption: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     open_items: list[dict[str, Any]] = []
     if isinstance(failure_backlog, dict):
@@ -8048,6 +8588,12 @@ def build_loom_failure_route_plan(
             "target_role_must_acknowledge": True,
             "target_role_must_read_route_before_edit": True,
         })
+    runtime_route = route_from_loom_runtime_event(
+        runtime_consumption.get("final_event") if isinstance(runtime_consumption, dict) else {},
+        runtime_consumption if isinstance(runtime_consumption, dict) else {},
+    )
+    if runtime_route is not None and isinstance(runtime_consumption, dict) and runtime_consumption.get("ok") is True:
+        routes.append(runtime_route)
     plan = {
         "schema_id": "redcap-e2e-loom-failure-route-plan",
         "producer": "e2e-runner",
@@ -8143,8 +8689,42 @@ def validate_loom_failure_route_plan(evidence: pathlib.Path, *, route_required: 
             failures.append("loom-failure-route-plan 每条路由都必须要求下游重放")
         if not isinstance(route.get("evidence"), list) or not route.get("evidence"):
             failures.append("loom-failure-route-plan 每条路由都必须包含证据文件")
+        if route.get("status") == "completed" and route.get("completed_by") != target_role:
+            failures.append("loom-failure-route-plan 已完成路由必须记录由目标角色完成")
         if route.get("status") == "open" and isinstance(route.get("loop_count"), int) and isinstance(route.get("escalation_threshold"), int) and route["loop_count"] >= route["escalation_threshold"]:
             failures.append("loom-failure-route-plan 达到升级阈值后不能继续保持 open")
+    return failures
+
+
+def knowledge_decision_impact_failures(retrieval: dict[str, Any] | None, product_artifact: dict[str, Any] | None = None) -> list[str]:
+    failures: list[str] = []
+    if not isinstance(retrieval, dict):
+        return ["缺少可解析的 knowledge-retrieval-evidence.json"]
+    impacts = retrieval.get("decision_impact")
+    if not isinstance(impacts, list) or not impacts:
+        failures.append("knowledge-retrieval-evidence.decision_impact 必须是非空数组")
+        return failures
+    required = ["source_id", "used_by_role", "affected_artifact", "adopted_rule", "effect"]
+    for index, impact in enumerate(impacts, start=1):
+        if not isinstance(impact, dict):
+            failures.append(f"knowledge decision_impact[{index}] 必须是对象")
+            continue
+        for field in required:
+            if not str(impact.get(field) or "").strip():
+                failures.append(f"knowledge decision_impact[{index}] 缺少字段：{field}")
+        if impact.get("used_by_role") != "product_manager":
+            failures.append(f"knowledge decision_impact[{index}].used_by_role 必须是 product_manager")
+    if isinstance(product_artifact, dict):
+        artifact_impacts = product_artifact.get("knowledge_decision_impacts")
+        if not isinstance(artifact_impacts, list) or not artifact_impacts:
+            failures.append("role-artifacts/product_manager.json 必须记录 knowledge_decision_impacts")
+        else:
+            artifact_text = json.dumps(artifact_impacts, ensure_ascii=False, sort_keys=True)
+            for impact in impacts:
+                if isinstance(impact, dict):
+                    source_id = str(impact.get("source_id") or "")
+                    if source_id and source_id not in artifact_text:
+                        failures.append(f"product_manager 产物没有承接知识来源：{source_id}")
     return failures
 
 
@@ -8439,7 +9019,7 @@ def direct_e2e_run_dirs(root: pathlib.Path) -> list[pathlib.Path]:
         return [
             child.resolve()
             for child in container.iterdir()
-            if child.is_dir() and has_run_summary(child)
+            if child.is_dir()
         ]
 
     if root.name.startswith("redcap-e2e-runs"):
@@ -8457,6 +9037,18 @@ def direct_e2e_run_dirs(root: pathlib.Path) -> list[pathlib.Path]:
         else:
             candidates.append(child.resolve())
     return sorted(candidates)
+
+
+def e2e_probe_cache_dir_name(name: str) -> bool:
+    lowered = name.lower()
+    if "probe" in lowered:
+        return True
+    return lowered.startswith((
+        "carrier-",
+        "hook-",
+        "codex-",
+        "role-",
+    ))
 
 
 def run_summary_paths(run_dir: pathlib.Path) -> list[pathlib.Path]:
@@ -8530,6 +9122,8 @@ def classify_e2e_run_dir(run_dir: pathlib.Path, *, stale_active_seconds: int = E
         status = "success"
     elif any(item.get("blocked_before_project_run") is True or item.get("status") == "blocked" for item in summaries):
         status = "blocked"
+    elif not summary_paths and not active_packet_paths and e2e_probe_cache_dir_name(run_dir.name):
+        status = "probe"
     elif summaries:
         status = "failed"
     else:
@@ -8572,6 +9166,9 @@ def plan_e2e_run_retention(
     delete_old_failed: bool = False,
     old_failed_seconds: int = E2E_RETENTION_OLD_FAILED_SECONDS,
     old_failed_delete_max: int = E2E_RETENTION_OLD_FAILED_DELETE_MAX,
+    delete_old_probe: bool = False,
+    old_probe_seconds: int = E2E_RETENTION_OLD_PROBE_SECONDS,
+    old_probe_delete_max: int = E2E_RETENTION_OLD_PROBE_DELETE_MAX,
 ) -> dict[str, Any]:
     resolved_root = root.expanduser().resolve()
     source = REPO_ROOT.resolve()
@@ -8600,6 +9197,7 @@ def plan_e2e_run_retention(
     safety_warnings: list[dict[str, Any]] = []
     stale_active_delete_count = 0
     old_failed_delete_count = 0
+    old_probe_delete_count = 0
     for item in summaries:
         if item["status"] == "stale-active":
             if delete_stale_active:
@@ -8653,6 +9251,34 @@ def plan_e2e_run_retention(
             else:
                 item["delete_reason"] = "保留 failed 状态目录，避免删除排障证据；如需防膨胀可显式开启 old-failed 清理"
             continue
+        if item["status"] == "probe":
+            age_seconds = item.get("age_seconds")
+            old_enough = isinstance(age_seconds, (int, float)) and old_probe_seconds >= 0 and age_seconds >= old_probe_seconds
+            if delete_old_probe and old_enough:
+                if old_probe_delete_max < 0 or old_probe_delete_count < old_probe_delete_max:
+                    item["delete_allowed"] = True
+                    item["delete_reason"] = (
+                        f"探针缓存超过 {old_probe_seconds} 秒，且显式允许旧探针清理"
+                    )
+                    delete_candidates.append(item)
+                    old_probe_delete_count += 1
+                else:
+                    item["delete_reason"] = (
+                        f"探针缓存超过 {old_probe_seconds} 秒，但本轮 probe 清理数量达到安全上限 "
+                        f"{old_probe_delete_max}，保留并要求后续诊断。"
+                    )
+                    safety_warnings.append({
+                        "path": item["path"],
+                        "status": item["status"],
+                        "old_probe_seconds": old_probe_seconds,
+                        "old_probe_delete_max": old_probe_delete_max,
+                        "reason": item["delete_reason"],
+                    })
+            elif delete_old_probe and not old_enough:
+                item["delete_reason"] = f"保留未超过 {old_probe_seconds} 秒的探针缓存"
+            else:
+                item["delete_reason"] = "保留 probe 状态目录；如需防膨胀可显式开启 old-probe 清理"
+            continue
         if item["status"] != "success":
             item["delete_reason"] = f"保留 {item['status']} 状态目录，避免删除排障证据"
             continue
@@ -8675,7 +9301,10 @@ def plan_e2e_run_retention(
         "delete_old_failed": delete_old_failed,
         "old_failed_seconds": old_failed_seconds,
         "old_failed_delete_max": old_failed_delete_max,
-        "delete_policy": "默认删除旧成功运行、超过阈值的陈旧 active 目录，以及超过年龄阈值且不在最近失败保留数量内的旧 failed 目录；阻塞、未知、未达阈值 active 和最近 failed 目录保留；缺状态文件目录和超过安全上限的目录进入警告，不静默跳过",
+        "delete_old_probe": delete_old_probe,
+        "old_probe_seconds": old_probe_seconds,
+        "old_probe_delete_max": old_probe_delete_max,
+        "delete_policy": "默认删除旧成功运行、超过阈值的陈旧 active 目录、超过年龄阈值且不在最近失败保留数量内的旧 failed 目录，以及显式启用后的旧 probe 探针缓存；阻塞、未知、未达阈值 active、最近 failed 和未达阈值 probe 目录保留；缺状态文件目录和超过安全上限的目录进入警告，不静默跳过",
         "runs": summaries,
         "state_file_warnings": [
             {
@@ -8751,6 +9380,9 @@ def attach_e2e_run_retention_result(
     delete_old_failed: bool = E2E_RETENTION_DELETE_OLD_FAILED_AFTER_RUN,
     old_failed_seconds: int = E2E_RETENTION_OLD_FAILED_SECONDS,
     old_failed_delete_max: int = E2E_RETENTION_OLD_FAILED_DELETE_MAX,
+    delete_old_probe: bool = E2E_RETENTION_DELETE_OLD_PROBE_AFTER_RUN,
+    old_probe_seconds: int = E2E_RETENTION_OLD_PROBE_SECONDS,
+    old_probe_delete_max: int = E2E_RETENTION_OLD_PROBE_DELETE_MAX,
 ) -> dict[str, Any]:
     root = e2e_retention_root_for_work_root(work_root)
     plan = plan_e2e_run_retention(
@@ -8763,6 +9395,9 @@ def attach_e2e_run_retention_result(
         delete_old_failed=delete_old_failed,
         old_failed_seconds=old_failed_seconds,
         old_failed_delete_max=old_failed_delete_max,
+        delete_old_probe=delete_old_probe,
+        old_probe_seconds=old_probe_seconds,
+        old_probe_delete_max=old_probe_delete_max,
     )
     retention: dict[str, Any] = {
         "schema_id": "redcap-e2e-run-retention-after-run",
@@ -8785,6 +9420,7 @@ def attach_e2e_run_retention_result(
             result["failures"].append("E2E 收尾缓存治理回执写入失败")
         result["ok"] = False
         result["ready_for_engineering_use"] = False
+    result = attach_open_loop_e2e_item_results(result, work_root)
     return result
 
 
@@ -10121,6 +10757,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
             "completion-marker-preview.json previews the exact boundary-copying payload shape that will become completion-marker.json only if final Prism passes; completion-marker-preview-validation.json proves it copies self-referential-boundary.json disclosures before providers review.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
+            "The runner executed a controlled Loom failure-route drill through the installed project-level .redcap runtime: create, accept, complete, then check --require-no-open. This proves the failure feedback loop is consumed by the Loom runtime instead of remaining only a contract file.",
         ],
         "evidence": [
             {
@@ -10187,6 +10824,11 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "kind": "convergence-diagnosis-policy",
                 "reference": "convergence-diagnosis.json",
                 "summary": supplemental_evidence.get("convergence_diagnosis_policy"),
+            },
+            {
+                "kind": "loom-failure-route-runtime-consumption",
+                "reference": "loom-failure-route-runtime-consumption.json",
+                "summary": supplemental_evidence.get("loom_failure_route_runtime_consumption"),
             }
         ],
         "review_mode": "completion_review",
@@ -10362,6 +11004,7 @@ def finalize_e2e_acceptance(
     final_marker_validation = run_final_marker_validation(project)
     write_json(evidence / "final-marker-validation.json", final_marker_validation)
     role_risk = write_role_execution_risk(evidence)
+    route_runtime_drill = run_loom_failure_route_runtime_drill(project, evidence)
     pre_purification_failures: list[str] = []
     if role_result.get("ok") is not True:
         pre_purification_failures.append("Loom 角色管线未通过")
@@ -10399,6 +11042,8 @@ def finalize_e2e_acceptance(
         failures.append("写完成标记前最终项目验证未通过")
     if role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("Loom 角色推理预算风险未被接受")
+    if route_runtime_drill.get("ok") is not True:
+        failures.append(f"Loom 失败回流运行机演练未通过：{route_runtime_drill.get('failures')}")
     if runner_purification_resolution.get("resolved") is not True:
         failures.append(f"运行器自我净化裁决未通过：{runner_purification_resolution.get('failures')}")
     backlog_path = evidence / "failure-backlog.json"
@@ -10485,6 +11130,7 @@ def finalize_e2e_acceptance(
             "failure_backlog": load_optional_json(evidence / "failure-backlog.json"),
             "independent_observer": load_optional_json(evidence / "independent-observer.json"),
             "package_prism_check": load_optional_json(evidence / "package-prism-check.json"),
+            "loom_failure_route_runtime_consumption": load_optional_json(evidence / "loom-failure-route-runtime-consumption.json"),
             "convergence_diagnosis_policy": {
                 "will_write": "convergence-diagnosis.json",
                 "rule": "如果最终棱镜未通过，运行器必须归类 loop_class，并在结构性缺口存在时设置 auto_rerun_allowed=false，禁止继续无意义重跑。",
@@ -10509,6 +11155,7 @@ def finalize_e2e_acceptance(
             failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
             convergence=load_optional_json(evidence / "convergence-diagnosis.json"),
             final_failures=failures,
+            runtime_consumption=route_runtime_drill,
         )
         route_failures = validate_loom_failure_route_plan(evidence, route_required=True)
         if route_failures:
@@ -10519,6 +11166,7 @@ def finalize_e2e_acceptance(
                 failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
                 convergence=load_optional_json(evidence / "convergence-diagnosis.json"),
                 final_failures=failures,
+                runtime_consumption=route_runtime_drill,
             )
         write_final_iteration_verdict(project, evidence, False, failures, {
             **pre_final_context,
@@ -10533,6 +11181,7 @@ def finalize_e2e_acceptance(
             failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
             convergence=convergence,
             final_failures=[],
+            runtime_consumption=route_runtime_drill,
         )
         write_final_iteration_verdict(project, evidence, True, [], {
             **pre_final_context,
@@ -10643,6 +11292,9 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
         or retrieval.get("no_relevant_entry_reason")
     ):
         failures.append("knowledge-retrieval-evidence 必须记录匹配项、无相关条目理由或跳过理由")
+    if retrieval is not None:
+        product_artifact = load_optional_json(evidence / "role-artifacts" / "product_manager.json")
+        failures.extend(knowledge_decision_impact_failures(retrieval, product_artifact))
     purification = load_optional_json(evidence / "self-purification-candidates.json")
     if purification is not None:
         candidates = purification.get("candidates")
@@ -10917,7 +11569,7 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("ready_for_engineering_use=true 时 iteration-verdict.status 必须是 pass")
         if not isinstance(verdict.get("evidence_checked"), list) or not verdict.get("evidence_checked"):
             failures.append("iteration-verdict.evidence_checked 必须非空")
-    followthrough = validate_e2e_evidence_quality(evidence)
+    followthrough = validate_e2e_evidence_quality(evidence, require_open_loop_item_results=False)
     if not followthrough["ok"]:
         failures.extend(f"followthrough: {item}" for item in followthrough["failures"])
     return {
@@ -11019,6 +11671,7 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
     marker_sha256: str | None = None
     marker_removed = False
     marker_cleanup_error: str | None = None
+    resource_blocker: dict[str, Any] = {"present": False}
 
     def cleanup_marker() -> None:
         nonlocal marker_removed, marker_cleanup_error
@@ -11080,6 +11733,7 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
                 settle_seconds=10.0,
                 env_overrides=child_env,
             )
+            resource_blocker = detect_codex_resource_blocker(result)
             if str(result.get("stdout") or "").strip():
                 last_message.write_text(str(result.get("stdout") or "")[-12000:], encoding="utf-8")
             events = parse_hook_events(events_path)
@@ -11092,11 +11746,13 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
                 marker_exists=marker_exists,
                 marker_text=marker_text,
                 missing_events=missing,
+                resource_blocker=resource_blocker,
             )
             attempts.append({
                 "attempt": attempt,
                 "ok": attempt_decision["ok"],
                 "command": command_receipt(result),
+                "resource_blocker": resource_blocker,
                 "events": events,
                 "missing_events": missing,
                 "failure_reasons": attempt_decision["failure_reasons"],
@@ -11116,6 +11772,7 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         marker_text=marker_text,
         missing_events=missing,
         marker_cleanup_error=marker_cleanup_error,
+        resource_blocker=resource_blocker,
     )
     probe = {
         "schema_id": "redcap-ai-e2e-carrier-probe",
@@ -11124,6 +11781,8 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         "events_path": str(events_path),
         "events": events,
         "missing_events": missing,
+        "resource_blocker": resource_blocker,
+        "blocked_by_external_resource": resource_blocker.get("present") is True,
         "command": command_receipt(result),
         "attempts": attempts,
         "max_attempts": max(1, CARRIER_PROBE_MAX_ATTEMPTS),
@@ -11148,11 +11807,16 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
     if trust_result.get("ok") is not True:
         probe["failures"].append("Codex CLI 项目信任登记失败，项目级 hook 无法加载")
         probe["ok"] = False
-    if not result["ok"]:
+    if resource_blocker.get("present") is True:
+        retry_hint = resource_blocker.get("retry_after_hint")
+        retry_text = f"，建议在 {retry_hint} 后重试" if retry_hint else ""
+        probe["failures"].append(f"Codex CLI 外部额度或账号资源受限，承载探针未进入工具执行阶段{retry_text}")
+        probe["ok"] = False
+    elif not result["ok"]:
         probe["failures"].append("Codex CLI 承载探针命令失败")
-    if not final_decision["marker_ok"]:
+    if resource_blocker.get("present") is not True and not final_decision["marker_ok"]:
         probe["failures"].append("Codex CLI 承载探针没有通过 shell 创建正确的标记文件")
-    if missing:
+    if resource_blocker.get("present") is not True and missing:
         probe["failures"].append(f"Codex CLI 没有触发全部项目级 hook：{missing}")
     if marker_cleanup_error:
         probe["failures"].append(f"Codex CLI 承载探针 marker 清理失败：{marker_cleanup_error}")
@@ -11242,6 +11906,285 @@ def run_layered_preflight(work_root: pathlib.Path | None = None) -> dict[str, An
     return result
 
 
+def path_inside(base: pathlib.Path, candidate: pathlib.Path) -> bool:
+    try:
+        candidate.resolve().relative_to(base.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def write_e2e_infrastructure_readiness(work_root: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    layered_path = work_root / "redcap-e2e-layered-preflight.json"
+    carrier_path = work_root / "redcap-e2e-carrier-preflight.json"
+    layered = load_optional_json(layered_path)
+    carrier = load_optional_json(carrier_path)
+    external_work_root_ok = work_root.exists() and not path_inside(REPO_ROOT, work_root)
+    gates = [
+        {
+            "id": "external-work-root",
+            "ok": external_work_root_ok,
+            "evidence_path": str(work_root),
+            "reason": "外部工作目录存在且不在 RedCap 源码工作区内。",
+        },
+        {
+            "id": "layered-preflight",
+            "ok": isinstance(layered, dict) and layered.get("ok") is True,
+            "evidence_path": str(layered_path),
+            "reason": "Loom、自我净化、知识召回和项目级发布安装的分层预检已通过。",
+        },
+        {
+            "id": "carrier-probe",
+            "ok": isinstance(carrier, dict) and carrier.get("ok") is True,
+            "evidence_path": str(carrier_path),
+            "reason": "Codex CLI 项目级钩子承载探针已通过。",
+        },
+    ]
+    failures = [f"{gate['id']} 未通过" for gate in gates if gate.get("ok") is not True]
+    payload = {
+        "schema_id": "redcap-e2e-infrastructure-readiness",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "ok": not failures,
+        "work_root": str(work_root),
+        "evidence_root": str(evidence),
+        "blocked_before_project_run": bool(failures),
+        "gates": gates,
+        "failures": failures,
+    }
+    write_json(evidence / "e2e-infrastructure-readiness.json", payload)
+    return payload
+
+
+def evidence_file_exists(evidence: pathlib.Path, rel: str) -> bool:
+    return (evidence / rel).exists()
+
+
+def evidence_json(evidence: pathlib.Path, rel: str) -> dict[str, Any] | None:
+    payload = load_optional_json(evidence / rel)
+    return payload if isinstance(payload, dict) else None
+
+
+def open_loop_item(
+    item_id: str,
+    title: str,
+    status: str,
+    reason: str,
+    evidence_refs: list[str],
+) -> dict[str, Any]:
+    return {
+        "id": item_id,
+        "title": title,
+        "status": status,
+        "reason": reason,
+        "evidence_refs": evidence_refs,
+    }
+
+
+def assess_open_loop_e2e_items(evidence: pathlib.Path, work_root: pathlib.Path, result: dict[str, Any]) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    completion_marker = evidence_json(evidence, "completion-marker.json")
+    final_prism = evidence_json(evidence, "final-prism-review.json")
+    role_manifest = evidence_json(evidence, "loom-role-session-manifest.json")
+    route_plan = evidence_json(evidence, "loom-failure-route-plan.json")
+    route_consumption = evidence_json(evidence, "loom-failure-route-runtime-consumption.json")
+    purification = evidence_json(evidence, "self-purification-candidates.json")
+    purification_resolution = evidence_json(evidence, "runner-self-purification-resolution.json")
+    knowledge = evidence_json(evidence, "knowledge-retrieval-evidence.json")
+    product_artifact = evidence_json(evidence, "role-artifacts/product_manager.json")
+    persona = evidence_json(evidence, "persona-distillation-decision.json")
+    readiness = evidence_json(evidence, "e2e-infrastructure-readiness.json")
+    retention_file = work_root / "redcap-e2e-run-retention-after-run.json"
+
+    ol01_refs = [
+        "completion-marker.json",
+        "final-prism-review.json",
+        "final-evidence-bundle.json",
+        "ol01-orchestrator-identity.json",
+        "ol01-orchestrator-independence-receipt.json",
+    ]
+    ol01_passed = (
+        completion_marker is not None
+        and final_prism is not None
+        and final_prism.get("strictest_verdict") == "pass"
+        and all(evidence_file_exists(evidence, ref) for ref in ol01_refs)
+        and not ol01_orchestrator_independence_failures(
+            evidence / "ol01-orchestrator-identity.json",
+            evidence / "ol01-orchestrator-independence-receipt.json",
+        )
+    )
+    items.append(open_loop_item(
+        "OL-01-second-e2e-acceptance",
+        "第二次完整 E2E 验收",
+        "passed" if ol01_passed else "failed",
+        "编排者身份独立凭证、最终棱镜复核和完成标记必须同时存在并通过。",
+        ol01_refs,
+    ))
+
+    roles = role_manifest.get("roles") if isinstance(role_manifest, dict) else None
+    role_sessions = [
+        str(role.get("session_id") or "")
+        for role in roles or []
+        if isinstance(role, dict) and role.get("role") in LOOM_EXECUTION_ROLES
+    ]
+    ol02_passed = (
+        isinstance(roles, list)
+        and len(role_sessions) == len(LOOM_EXECUTION_ROLES)
+        and len(set(role_sessions)) == len(role_sessions)
+        and not role_manifest.get("session_loss_alarms")
+        and evidence_file_exists(evidence, "role-gate-clearance-summary.json")
+    )
+    items.append(open_loop_item(
+        "OL-02-loom-independent-role-runtime",
+        "Loom 独立角色运行时",
+        "passed" if ol02_passed else "failed",
+        "五个 Loom 角色必须由独立会话执行，且没有会话丢失告警。",
+        ["loom-role-session-manifest.json", "role-gate-clearance-summary.json"],
+    ))
+
+    routes = route_plan.get("routes") if isinstance(route_plan, dict) else None
+    if not isinstance(route_plan, dict):
+        ol03_status = "failed"
+        ol03_reason = "缺少 Loom 失败回流计划。"
+    elif not routes:
+        ol03_status = "not_triggered"
+        ol03_reason = "本轮没有真实失败路由被 Loom 角色消费，不能证明失败回流机制。"
+    else:
+        open_routes = [route for route in routes if isinstance(route, dict) and route.get("status") == "open"]
+        completed_routes = [route for route in routes if isinstance(route, dict) and route.get("status") == "completed"]
+        runtime_consumed = isinstance(route_consumption, dict) and route_consumption.get("ok") is True
+        ol03_status = "passed" if completed_routes and runtime_consumed and not open_routes else "failed"
+        ol03_reason = "失败路由必须已被 Loom 运行机创建、目标角色接收、完成并关闭。"
+    items.append(open_loop_item(
+        "OL-03-loom-failure-loop-consumption",
+        "Loom 失败回流消费",
+        ol03_status,
+        ol03_reason,
+        ["loom-failure-route-plan.json", "loom-failure-route-runtime-consumption.json", "failure-backlog.json"],
+    ))
+
+    purification_candidates = purification.get("candidates") if isinstance(purification, dict) else None
+    ol04_passed = (
+        isinstance(purification_candidates, list)
+        and bool(purification_candidates)
+        and isinstance(purification_resolution, dict)
+        and purification_resolution.get("resolved") is True
+    )
+    items.append(open_loop_item(
+        "OL-04-self-purification-natural-trigger",
+        "自我净化自然触发",
+        "passed" if ol04_passed else "failed",
+        "任务后必须自然产生自我净化候选，并由运行器裁决。",
+        ["self-purification-candidates.json", "runner-self-purification-resolution.json"],
+    ))
+
+    knowledge_impact_failures = knowledge_decision_impact_failures(knowledge, product_artifact)
+    ol05_passed = (
+        isinstance(knowledge, dict)
+        and (knowledge.get("search_ran") is True or knowledge.get("exit_code") == 0)
+        and not knowledge_impact_failures
+    )
+    items.append(open_loop_item(
+        "OL-05-knowledge-affects-decisions",
+        "知识召回影响决策",
+        "passed" if ol05_passed else "failed",
+        "知识检索不能只留下日志，必须记录它如何影响角色计划、实现或验收。",
+        ["knowledge-retrieval-evidence.json"],
+    ))
+
+    ol06_passed = (
+        isinstance(persona, dict)
+        and persona.get("privacy_class") == "cap-private"
+        and persona.get("public_write") is False
+        and persona.get("private_body_written") is False
+    )
+    items.append(open_loop_item(
+        "OL-06-cap-revival-manual-and-private-boundary",
+        "Cap 复活手册与私有边界",
+        "passed" if ol06_passed else "failed",
+        "Cap 人格沉淀必须走私有边界，不得把私密正文写入公共仓库。",
+        ["persona-distillation-decision.json"],
+    ))
+
+    ol07_passed = (
+        isinstance(readiness, dict)
+        and readiness.get("ok") is True
+        and evidence_file_exists(evidence, "package-prism-check.json")
+        and evidence_file_exists(evidence, "source-workspace-guard-run.json")
+    )
+    items.append(open_loop_item(
+        "OL-07-project-install-release-proof",
+        "项目级发布安装证明",
+        "passed" if ol07_passed else "failed",
+        "外部项目必须完成 .redcap 安装、包内自检和源码工作区防污染证明。",
+        ["e2e-infrastructure-readiness.json", "package-prism-check.json", "source-workspace-guard-run.json"],
+    ))
+
+    retention = load_optional_json(retention_file)
+    retention_ref = str(retention_file) if retention_file.exists() else "redcap-e2e-run-retention-after-run.json"
+    ol08_passed = isinstance(retention, dict) and retention.get("ok") is True and retention.get("schema_id") == "redcap-e2e-run-retention-after-run"
+    items.append(open_loop_item(
+        "OL-08-e2e-cache-retention-integrated",
+        "E2E 缓存保留集成",
+        "passed" if ol08_passed else "not_triggered",
+        "每轮 E2E 收尾必须写入缓存治理回执并通过。",
+        [retention_ref],
+    ))
+
+    retention_text = json.dumps(retention or {}, ensure_ascii=False)
+    ol10_passed = ol08_passed and "keep_latest_failed" in retention_text
+    items.append(open_loop_item(
+        "OL-10-e2e-failed-retention-bounded",
+        "失败 E2E 保留上限",
+        "passed" if ol10_passed else "not_triggered",
+        "失败 E2E 产物必须进入有上限的保留策略，不能无限膨胀。",
+        [retention_ref],
+    ))
+
+    missing = [item_id for item_id in OPEN_LOOP_E2E_ITEM_IDS if item_id not in {item["id"] for item in items}]
+    failed_items = [item for item in items if item.get("status") != "passed"]
+    payload = {
+        "schema_id": "redcap-open-loop-e2e-item-results",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "work_root": str(work_root),
+        "evidence_root": str(evidence),
+        "source_run_ok": result.get("ok") is True,
+        "items": items,
+        "summary": {
+            "required_item_ids": OPEN_LOOP_E2E_ITEM_IDS,
+            "missing_item_ids": missing,
+            "passed_count": len(items) - len(failed_items),
+            "failed_or_untriggered_count": len(failed_items),
+            "all_required_passed": not missing and not failed_items,
+        },
+    }
+    write_json(evidence / "open-loop-e2e-item-results.json", payload)
+    return payload
+
+
+def attach_open_loop_e2e_item_results(result: dict[str, Any], work_root: pathlib.Path) -> dict[str, Any]:
+    evidence_root = result.get("evidence_root")
+    if not isinstance(evidence_root, str):
+        return result
+    evidence = pathlib.Path(evidence_root)
+    if not evidence.exists():
+        return result
+    item_results = assess_open_loop_e2e_items(evidence, work_root, result)
+    result["open_loop_e2e_item_results"] = {
+        "path": str(evidence / "open-loop-e2e-item-results.json"),
+        "summary": item_results.get("summary"),
+    }
+    summary = item_results.get("summary") if isinstance(item_results.get("summary"), dict) else {}
+    if summary.get("all_required_passed") is not True:
+        result.setdefault("failures", [])
+        if isinstance(result["failures"], list):
+            result["failures"].append(f"open-loop 逐项 E2E 验收未全通过：{summary}")
+        result["ok"] = False
+        result["ready_for_engineering_use"] = False
+    return result
+
+
 def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900) -> dict[str, Any]:
     provider_readiness = provider_readiness_check()
     if provider_readiness.get("ok") is not True:
@@ -11258,6 +12201,7 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
         return prepared
     project = pathlib.Path(str(prepared["project"]))
     evidence = pathlib.Path(str(prepared["evidence_root"]))
+    infrastructure_readiness = write_e2e_infrastructure_readiness(work_root, evidence)
     guard_before = source_workspace_snapshot()
     result = run_loom_role_pipeline(project, evidence, direction, timeout_seconds)
     write_json(evidence / "filesystem-after.json", {"files": filesystem_manifest(project)})
@@ -11290,6 +12234,7 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
         "package_prism_ok": package_prism["ok"],
         "hook_events_ok": not missing_hooks,
         "finalization_ok": finalization["ok"],
+        "infrastructure_readiness_ok": infrastructure_readiness["ok"],
         "meaningful_evidence_ok": meaningful["ok"],
         "ready_for_engineering_use": meaningful["ready_for_engineering_use"],
         "completion_marker_present": completion_marker.exists(),
@@ -11305,6 +12250,8 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
         summary["failures"].append("E2E 运行器没有写入 completion-marker.json；这表示最终验收未通过或被阻塞")
     if not finalization["ok"]:
         summary["failures"].append(f"运行器最终验收未通过：{finalization['failures']}")
+    if not infrastructure_readiness["ok"]:
+        summary["failures"].append(f"E2E 基础设施预检未通过：{infrastructure_readiness['failures']}")
     if not meaningful["ok"]:
         summary["failures"].append(f"有意义 E2E 证据不完整：{meaningful['failures']}")
     if not meaningful["ready_for_engineering_use"]:
@@ -11449,6 +12396,20 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
     carrier = carrier_probe(work_root / "carrier-preflight", min(max(timeout_seconds, 120), 240))
     write_json(work_root / "redcap-e2e-carrier-preflight.json", carrier)
     if carrier.get("ok") is not True:
+        carrier_resource_blocker = (
+            carrier.get("resource_blocker")
+            if isinstance(carrier.get("resource_blocker"), dict)
+            else {"present": False}
+        )
+        if carrier_resource_blocker.get("present") is True:
+            carrier_delta = (
+                "E2E 在启动 Loom 角色前验证 Codex CLI 项目级 hook 承载；当前 Codex CLI 外部额度或账号资源受限，"
+                "子进程没有进入工具执行阶段，因此必须等待资源恢复后重试，不能把资源阻塞误判为 RedCap 逻辑失败。"
+            )
+            blocker_signature = f"codex-cli-resource-limited:{carrier_resource_blocker.get('retry_after_hint') or 'retry-unknown'}"
+        else:
+            carrier_delta = "E2E 在启动 Loom 角色前验证 Codex CLI 项目级 hook 承载；当前承载探针失败，禁止继续执行会突破 hook 保障的角色流程。"
+            blocker_signature = f"codex-cli-hook-carrier:{','.join(carrier.get('missing_events') or []) or 'command-failed'}"
         active_run = write_e2e_long_task_active_run(
             work_root,
             direction=direction,
@@ -11458,8 +12419,8 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
                 "runtime/bin/redcap complete-revival-e2e carrier-probe",
                 str(work_root / "redcap-e2e-carrier-preflight.json"),
             ],
-            objective_delta="E2E 在启动 Loom 角色前验证 Codex CLI 项目级 hook 承载；当前承载探针失败，禁止继续执行会突破 hook 保障的角色流程。",
-            blocker_signature=f"codex-cli-hook-carrier:{','.join(carrier.get('missing_events') or []) or 'command-failed'}",
+            objective_delta=carrier_delta,
+            blocker_signature=blocker_signature,
             auto_rerun_allowed=False,
             failures=[str(item) for item in carrier.get("failures", [])],
         )
@@ -11878,6 +12839,9 @@ def cmd_prune_runs(args: argparse.Namespace) -> int:
         delete_old_failed=args.delete_old_failed,
         old_failed_seconds=int(args.old_failed_hours * 60 * 60),
         old_failed_delete_max=args.old_failed_delete_max,
+        delete_old_probe=args.delete_old_probe,
+        old_probe_seconds=int(args.old_probe_hours * 60 * 60),
+        old_probe_delete_max=args.old_probe_delete_max,
     )
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-run-retention-result",
@@ -12463,6 +13427,64 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"长任务到 E2E 巡检集成干跑失败：{integration_dry_run.get('failures')}")
             project = pathlib.Path(str(prepared["project"]))
             evidence = pathlib.Path(str(prepared["evidence_root"]))
+            ol01_identity = evidence / "ol01-orchestrator-identity.json"
+            write_json(ol01_identity, {
+                "schema_id": "redcap-ol01-orchestrator-identity",
+                "producer": "e2e-runner",
+                "role": "orchestrator",
+                "independence_mode": "different_saved_session",
+                "different_entity": True,
+                "session_id": "33333333-3333-4333-8333-333333333333",
+            })
+            ol01_receipt = evidence / "ol01-orchestrator-independence-receipt.json"
+            ol01_receipt_payload = {
+                "schema_id": "redcap-ol01-orchestrator-independence-receipt",
+                "producer": "e2e-runner",
+                "ok": True,
+                "independence_mode": "different_saved_session",
+                "codex_cli_session_observed": True,
+                "identity_sha256": sha256_file(ol01_identity),
+                "prompt_sha256": "fixture-prompt",
+                "message_sha256": "fixture-message",
+                "draft_sha256": "fixture-draft",
+                "failures": [],
+            }
+            ol01_receipt_payload["receipt_sha256"] = sha256_text(json.dumps(ol01_receipt_payload, ensure_ascii=False, sort_keys=True))
+            write_json(ol01_receipt, ol01_receipt_payload)
+            if ol01_orchestrator_independence_failures(ol01_identity, ol01_receipt):
+                failures.append("OL-01 编排者独立性正向夹具没有通过")
+            write_json(ol01_identity, {**load_json(ol01_identity), "different_entity": False})
+            if not ol01_orchestrator_independence_failures(ol01_identity, ol01_receipt):
+                failures.append("OL-01 编排者独立性负向夹具没有失败")
+            write_json(ol01_identity, {**load_json(ol01_identity), "different_entity": True})
+            product_prompt = build_role_prompt(project, evidence, "product_manager", "自检方向")
+            if "decision_impact" not in product_prompt or "knowledge_decision_impacts" not in product_prompt:
+                failures.append("product_manager 提示词没有要求知识召回影响决策的结构化证据")
+            knowledge_fixture = {
+                "schema_id": "redcap-e2e-knowledge-retrieval-evidence",
+                "search_ran": True,
+                "query": "loom",
+                "exit_code": 0,
+                "matches": [{"id": "loom-runtime-session-continuity"}],
+                "decision_impact": [
+                    {
+                        "source_id": "loom-runtime-session-continuity",
+                        "used_by_role": "product_manager",
+                        "affected_artifact": "role-artifacts/product_manager.json",
+                        "adopted_rule": "角色必须保持独立 session_id",
+                        "effect": "把 session_id 连续性纳入验收重点",
+                    }
+                ],
+            }
+            product_artifact_fixture = {
+                "schema_id": "redcap-e2e-role-artifact",
+                "role": "product_manager",
+                "knowledge_decision_impacts": knowledge_fixture["decision_impact"],
+            }
+            if knowledge_decision_impact_failures(knowledge_fixture, product_artifact_fixture):
+                failures.append("知识影响决策正向夹具没有通过")
+            if not knowledge_decision_impact_failures({**knowledge_fixture, "decision_impact": []}, product_artifact_fixture):
+                failures.append("知识影响决策负向夹具没有失败")
             for rel in load_json(CONTRACT)["raw_evidence_package"]["required_files_after_prepare"]:
                 if not (evidence / rel).exists():
                     failures.append(f"prepare 后缺少证据文件：{rel}")
@@ -12662,6 +13684,10 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             })
             unknown_dir = retention_root / "redcap-e2e-runs-unknown"
             unknown_dir.mkdir()
+            old_probe_dir = retention_root / "redcap-e2e-runs-carrier-probe-old"
+            old_probe_dir.mkdir()
+            old_probe_mtime = time.time() - E2E_RETENTION_OLD_PROBE_SECONDS - 10
+            os.utime(old_probe_dir, (old_probe_mtime, old_probe_mtime))
             stale_active_dir = retention_root / "redcap-e2e-runs-stale-active"
             stale_active_dir.mkdir()
             stale_summary = stale_active_dir / "redcap-e2e-run-summary.json"
@@ -12718,11 +13744,18 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             state_warnings = retention_plan.get("state_file_warnings", [])
             if not any(str(item.get("path") or "").endswith("redcap-e2e-runs-unknown") for item in state_warnings if isinstance(item, dict)):
                 failures.append(f"E2E 运行目录保留计划没有记录缺状态文件目录警告：{retention_plan}")
+            probe_items = [item for item in retention_plan.get("runs", []) if item.get("status") == "probe"]
+            if len(probe_items) != 1 or probe_items[0].get("delete_allowed") is True:
+                failures.append(f"E2E 运行目录保留计划没有保守识别 probe 探针缓存：{retention_plan}")
             retention_execution = execute_e2e_run_retention(retention_plan)
             if retention_execution.get("ok") is not True or len(retention_execution.get("deleted", [])) != 2:
                 failures.append(f"E2E 运行目录保留执行没有删除 2 个旧成功目录：{retention_execution}")
             after_run_cleanup_dir = retention_root / "redcap-e2e-runs-after-run-stale-active"
             after_run_cleanup_dir.mkdir()
+            after_run_old_probe_dir = retention_root / "redcap-e2e-runs-after-run-carrier-probe-old"
+            after_run_old_probe_dir.mkdir()
+            after_run_old_probe_mtime = time.time() - E2E_RETENTION_OLD_PROBE_SECONDS - 10
+            os.utime(after_run_old_probe_dir, (after_run_old_probe_mtime, after_run_old_probe_mtime))
             after_run_summary = after_run_cleanup_dir / "redcap-e2e-run-summary.json"
             write_json(after_run_summary, {
                 "schema_id": "redcap-e2e-run-summary",
@@ -12755,9 +13788,13 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"E2E 每轮收尾保留回执无效：{after_run_retention}")
             if after_run_cleanup_dir.exists():
                 failures.append("E2E 每轮收尾没有自动清理陈旧 active 目录")
+            if after_run_old_probe_dir.exists():
+                failures.append("E2E 每轮收尾没有自动清理旧 probe 探针缓存")
             after_run_execution = after_run_result.get("e2e_run_retention", {}).get("execution") if isinstance(after_run_result.get("e2e_run_retention"), dict) else {}
             if not isinstance(after_run_execution, dict) or not any(str(path).endswith("redcap-e2e-runs-after-run-stale-active") for path in after_run_execution.get("deleted", [])):
                 failures.append(f"E2E 每轮收尾回执没有记录陈旧 active 删除：{after_run_execution}")
+            if not isinstance(after_run_execution, dict) or not any(str(path).endswith("redcap-e2e-runs-after-run-carrier-probe-old") for path in after_run_execution.get("deleted", [])):
+                failures.append(f"E2E 每轮收尾回执没有记录旧 probe 探针缓存删除：{after_run_execution}")
             explicit_stale_active_dir = retention_root / "redcap-e2e-runs-explicit-stale-active"
             explicit_stale_active_dir.mkdir()
             explicit_stale_summary = explicit_stale_active_dir / "redcap-e2e-run-summary.json"
@@ -12822,6 +13859,31 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             ]
             if len(remaining_old_failed) != 2:
                 failures.append(f"E2E old-failed 安全清理没有同时保留最近失败和超额诊断目录：{[str(path) for path in remaining_old_failed]}")
+            old_probe_cleanup_root = work_root / "retention-old-probe-fixture"
+            old_probe_cleanup_root.mkdir()
+            for index in range(3):
+                probe_dir = old_probe_cleanup_root / f"redcap-e2e-runs-carrier-probe-old-{index}"
+                probe_dir.mkdir()
+                probe_mtime = time.time() - E2E_RETENTION_OLD_PROBE_SECONDS - 30 + index
+                os.utime(probe_dir, (probe_mtime, probe_mtime))
+            old_probe_cleanup_plan = plan_e2e_run_retention(
+                old_probe_cleanup_root,
+                delete_old_probe=True,
+                old_probe_seconds=1,
+                old_probe_delete_max=2,
+            )
+            if len(old_probe_cleanup_plan.get("delete_candidates", [])) != 2 or len(old_probe_cleanup_plan.get("safety_warnings", [])) != 1:
+                failures.append(f"E2E old-probe 安全清理没有形成 2 个删除候选和 1 个 warning：{old_probe_cleanup_plan}")
+            old_probe_cleanup_execution = execute_e2e_run_retention(old_probe_cleanup_plan)
+            if old_probe_cleanup_execution.get("ok") is not True or len(old_probe_cleanup_execution.get("deleted", [])) != 2:
+                failures.append(f"E2E old-probe 安全清理执行没有只删除 2 个目录：{old_probe_cleanup_execution}")
+            remaining_old_probe = [
+                path
+                for path in old_probe_cleanup_root.iterdir()
+                if path.is_dir() and path.name.startswith("redcap-e2e-runs-carrier-probe-old")
+            ]
+            if len(remaining_old_probe) != 1:
+                failures.append(f"E2E old-probe 安全清理没有保留超额诊断目录：{[str(path) for path in remaining_old_probe]}")
             safety_root = work_root / "retention-safety-ceiling-fixture"
             safety_root.mkdir()
             for index in range(2):
@@ -12912,6 +13974,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             carrier_decision_source = inspect.getsource(carrier_probe_attempt_decision)
             if "marker_content_mismatch" not in carrier_decision_source or "hook_events_missing" not in carrier_decision_source:
                 failures.append("carrier_probe 必须区分 marker 缺失/内容错误和 Hook 缺失等失败原因")
+            if "codex_cli_resource_limited" not in carrier_decision_source or "resource_blocker" not in carrier_decision_source:
+                failures.append("carrier_probe 必须把 Codex CLI 外部资源限制作为独立阻塞原因，不能误报为 Hook 缺失")
             carrier_final_decision_source = inspect.getsource(carrier_probe_final_decision)
             if "marker_cleanup_failed" not in carrier_final_decision_source or "marker_cleanup_error is None" not in carrier_final_decision_source:
                 failures.append("carrier_probe 最终判定必须把 marker_cleanup_error 纳入 ok 计算")
@@ -12933,6 +13997,23 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 )
                 if decision["ok"] or expected_reason not in decision["failure_reasons"]:
                     failures.append(f"carrier_probe 负向判定失效：{case_name}")
+            resource_limited_decision = carrier_probe_attempt_decision(
+                command_ok=False,
+                marker_exists=False,
+                marker_text=None,
+                missing_events=["PreToolUse", "PostToolUse"],
+                resource_blocker={
+                    "present": True,
+                    "kind": "codex_cli_resource_limit",
+                    "matched_markers": ["usage limit"],
+                    "retry_after_hint": "8:17 PM",
+                },
+            )
+            if (
+                resource_limited_decision["ok"]
+                or resource_limited_decision["failure_reasons"] != ["codex_cli_resource_limited"]
+            ):
+                failures.append("carrier_probe 资源受限判定失效：不得把额度限制连带误报为 marker 或 Hook 缺失")
             positive_decision = carrier_probe_attempt_decision(
                 command_ok=True,
                 marker_exists=True,
@@ -13045,6 +14126,9 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("developer 修复反馈提示没有禁止降低验收严重度")
             if "target_role 不是本角色" not in feedback_prompt or "runner 或 tester 在替你设计实现" not in feedback_prompt:
                 failures.append("角色修复反馈提示没有要求按 Loom 路由目标角色处理，可能复发 Cap 或 tester 间接修复")
+            route_runtime_drill = run_loom_failure_route_runtime_drill(project, evidence)
+            if route_runtime_drill.get("ok") is not True:
+                failures.append(f"Loom 失败回流运行机受控演练没有通过：{route_runtime_drill.get('failures')}")
             route_plan = build_loom_failure_route_plan(
                 evidence=evidence,
                 failure_backlog={
@@ -13084,6 +14168,7 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 },
                 convergence={"summary": "fixture"},
                 final_failures=[],
+                runtime_consumption=route_runtime_drill,
             )
             route_failures = validate_loom_failure_route_plan(evidence, route_required=True)
             if route_failures:
@@ -13098,6 +14183,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                     failures.append(f"Loom 失败路由计划没有路由到目标角色：{expected_target}")
             if route_plan.get("cap_boundary", {}).get("cap_may_modify_target_project") is not False:
                 failures.append("Loom 失败路由计划没有禁止 Cap 直接修改目标项目")
+            completed_drill_routes = [
+                item for item in route_plan.get("routes", [])
+                if isinstance(item, dict) and item.get("controlled_drill") is True and item.get("status") == "completed"
+            ]
+            if not completed_drill_routes:
+                failures.append("Loom 失败路由计划没有纳入已完成的运行机受控演练路由")
             if "signup-empty" not in critical_categories_from_text("session signups 为空；warning only"):
                 failures.append("关键 warning 分类没有识别 signups 空数组")
             if "remote-dependency" not in critical_categories_from_text("入口包含 https://cdn.example/asset.js 远端依赖"):
@@ -13154,6 +14245,7 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("developer 修复反馈包不得包含 suggested_fix，避免 tester 间接修复")
             role_pipeline_source = inspect.getsource(run_loom_role_pipeline)
             for required_marker in [
+                "run_ol01_orchestrator_independence_gate",
                 "run_developer_readiness_gate",
                 "write_developer_repair_feedback",
                 "developer_repair_decision",
@@ -13822,6 +14914,83 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 or nested_relation_probe.get("character_index") != 0
             ):
                 failures.append(f"行为关系探针没有返回嵌套活动的父级可点击标题和场次关系：{nested_relation_probe}")
+            inherited_relation_project = project / "inherited-parent-relation-project"
+            inherited_relation_project.mkdir(exist_ok=True)
+            inherited_relation_evidence = inherited_relation_project / ".redcap" / "evidence" / "e2e"
+            inherited_relation_evidence.mkdir(parents=True, exist_ok=True)
+            (inherited_relation_project / "data.js").write_text(
+                "/* TRPG_DATA_START */\n"
+                "const BOOTSTRAP_DATA = "
+                + json.dumps({
+                    "campaigns": [
+                        {
+                            "id": "campaign-parent-1",
+                            "title": "父级玩家活动一",
+                            "players": [{"id": "parent-player-1", "name": "父级玩家一"}],
+                            "sessions": [
+                                {
+                                    "id": "session-parent-1",
+                                    "title": "父级玩家场次一",
+                                    "characters": [{"id": "parent-character-1", "name": "父级角色一", "playerId": "parent-player-1"}],
+                                    "signups": [{"id": "parent-signup-1", "playerId": "parent-player-1", "intentStatus": "confirmed"}],
+                                }
+                            ],
+                        },
+                        {
+                            "id": "campaign-parent-2",
+                            "title": "父级玩家活动二",
+                            "players": [{"id": "parent-player-2", "name": "父级玩家二"}],
+                            "sessions": [
+                                {
+                                    "id": "session-parent-2",
+                                    "title": "父级玩家场次二",
+                                    "characters": [{"id": "parent-character-2", "name": "父级角色二", "playerId": "parent-player-2"}],
+                                    "signups": [{"id": "parent-signup-2", "playerId": "parent-player-2", "intentStatus": "confirmed"}],
+                                }
+                            ],
+                        },
+                    ]
+                }, ensure_ascii=False, indent=2)
+                + ";\n/* TRPG_DATA_END */\n"
+                "if (typeof module !== 'undefined' && module.exports) module.exports = BOOTSTRAP_DATA;\n"
+                "if (typeof window !== 'undefined') window.TRPG_DATA = BOOTSTRAP_DATA;\n",
+                encoding="utf-8",
+            )
+            (inherited_relation_project / "validate.js").write_text(
+                "#!/usr/bin/env node\n"
+                "\"use strict\";\n"
+                "const data = require('./data.js');\n"
+                "for (const campaign of data.campaigns) {\n"
+                "  const players = new Set(campaign.players.map((player) => player.id));\n"
+                "  for (const session of campaign.sessions) {\n"
+                "    for (const character of session.characters) {\n"
+                "      if (!players.has(character.playerId)) {\n"
+                "        console.error('character-player-relation-contract failed');\n"
+                "        process.exit(3);\n"
+                "      }\n"
+                "    }\n"
+                "  }\n"
+                "}\n"
+                "console.log('ok');\n",
+                encoding="utf-8",
+            )
+            inherited_relation_target = find_character_player_contract_data_target(inherited_relation_project)
+            if inherited_relation_target[0] != inherited_relation_project / "data.js" or inherited_relation_target[2] != "campaigns.1.sessions" or inherited_relation_target[7] != "players":
+                failures.append(f"角色玩家负向契约探针没有继承父级 players 列表：{inherited_relation_target}")
+            inherited_character_probe = run_runner_character_player_contract_probe(inherited_relation_project, inherited_relation_evidence)
+            if inherited_character_probe.get("ok") is not True:
+                failures.append(f"角色玩家负向契约探针不能处理父级玩家、子级角色结构：{inherited_character_probe.get('failures')}")
+            inherited_browser_probe = find_character_player_probe(inherited_relation_project)
+            if not isinstance(inherited_browser_probe, dict):
+                failures.append("行为关系探针没有从父级玩家、子级角色结构中找到角色玩家关系")
+            elif (
+                inherited_browser_probe.get("data_file") != "data.js"
+                or inherited_browser_probe.get("list_key") != "campaigns.1.sessions"
+                or inherited_browser_probe.get("player_name") != "父级玩家二"
+                or inherited_browser_probe.get("character_name") != "父级角色二"
+            ):
+                failures.append(f"行为关系探针没有返回父级玩家继承关系：{inherited_browser_probe}")
+            shutil.rmtree(inherited_relation_project, ignore_errors=True)
             (project / "index.html").write_text(
                 "<!doctype html>\n"
                 "<html lang=\"zh-CN\">\n"
@@ -14604,6 +15773,9 @@ def build_parser() -> argparse.ArgumentParser:
     prune.add_argument("--delete-old-failed", action="store_true")
     prune.add_argument("--old-failed-hours", type=float, default=E2E_RETENTION_OLD_FAILED_SECONDS / 3600)
     prune.add_argument("--old-failed-delete-max", type=int, default=E2E_RETENTION_OLD_FAILED_DELETE_MAX)
+    prune.add_argument("--delete-old-probe", action="store_true")
+    prune.add_argument("--old-probe-hours", type=float, default=E2E_RETENTION_OLD_PROBE_SECONDS / 3600)
+    prune.add_argument("--old-probe-delete-max", type=int, default=E2E_RETENTION_OLD_PROBE_DELETE_MAX)
     prune.add_argument("--execute", action="store_true")
     prune.add_argument("--out")
     prune.set_defaults(func=cmd_prune_runs)

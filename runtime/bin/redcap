@@ -47,7 +47,7 @@ Usage:
   runtime/bin/redcap soul-load check|load|self-check [...]
   runtime/bin/redcap status [...]
   runtime/bin/redcap revive [...]
-  runtime/bin/redcap revival-followthrough check|e2e-check|self-check [...]
+  runtime/bin/redcap revival-followthrough check|e2e-check|open-loop-check|open-loop-close|self-check [...]
   runtime/bin/redcap revival-queue check|self-check [...]
   runtime/bin/redcap known-issues-order check|self-check [...]
   runtime/bin/redcap known-issues-queue check|self-check [...]

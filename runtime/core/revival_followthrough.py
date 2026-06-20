@@ -30,7 +30,21 @@ REQUIRED_LOOM_ROLES = {
     "tester",
     "reviewer",
 }
+OPEN_LOOP_E2E_ITEM_IDS = [
+    "OL-01-second-e2e-acceptance",
+    "OL-02-loom-independent-role-runtime",
+    "OL-03-loom-failure-loop-consumption",
+    "OL-04-self-purification-natural-trigger",
+    "OL-05-knowledge-affects-decisions",
+    "OL-06-cap-revival-manual-and-private-boundary",
+    "OL-07-project-install-release-proof",
+    "OL-08-e2e-cache-retention-integrated",
+    "OL-10-e2e-failed-retention-bounded",
+]
+E2E_INFRASTRUCTURE_READINESS_FILE = "e2e-infrastructure-readiness.json"
+OPEN_LOOP_E2E_ITEM_RESULT_FILE = "open-loop-e2e-item-results.json"
 REQUIRED_E2E_FILES = {
+    E2E_INFRASTRUCTURE_READINESS_FILE,
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
     "role-gate-clearance-summary.json",
@@ -59,6 +73,7 @@ REQUIRED_E2E_FILES = {
     "completion-marker.json",
 }
 REQUIRED_EVIDENCE_CHECKS = {
+    E2E_INFRASTRUCTURE_READINESS_FILE,
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
     "role-gate-clearance-summary.json",
@@ -294,6 +309,140 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
         "closeout_allowed": closeout_allowed,
         "closeout_blockers": closeout_blockers,
         "open_p0_p1_count": len(closeout_blockers),
+        "failures": failures,
+    }
+
+
+def validate_open_loop_closeout_input(results: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if results.get("schema_id") != "redcap-open-loop-e2e-item-results":
+        failures.append("open-loop E2E 逐项结果 schema_id 错误")
+    if results.get("producer") != "e2e-runner":
+        failures.append("open-loop E2E 逐项结果 producer 必须是 e2e-runner")
+    if results.get("source_run_ok") is not True:
+        failures.append("open-loop E2E 逐项结果必须来自 ok=true 的 E2E 运行")
+    summary = results.get("summary")
+    if not isinstance(summary, dict):
+        failures.append("open-loop E2E 逐项结果缺少 summary")
+    else:
+        if summary.get("all_required_passed") is not True:
+            failures.append(f"open-loop E2E 逐项结果未全部通过：{summary}")
+        required = summary.get("required_item_ids")
+        if required != OPEN_LOOP_E2E_ITEM_IDS:
+            failures.append("open-loop E2E 逐项结果 required_item_ids 与当前硬门禁不一致")
+    items = results.get("items")
+    if not isinstance(items, list) or not items:
+        failures.append("open-loop E2E 逐项结果 items 必须非空")
+        return failures
+    indexed: dict[str, dict[str, Any]] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            failures.append("open-loop E2E 逐项结果条目必须是对象")
+            continue
+        item_id = str(item.get("id") or "")
+        indexed[item_id] = item
+        if item.get("status") != "passed":
+            failures.append(f"{item_id}: 状态不是 passed")
+        refs = item.get("evidence_refs")
+        if not isinstance(refs, list) or not refs or not all(isinstance(ref, str) and ref.strip() for ref in refs):
+            failures.append(f"{item_id}: evidence_refs 必须是非空字符串列表")
+    missing = [item_id for item_id in OPEN_LOOP_E2E_ITEM_IDS if item_id not in indexed]
+    if missing:
+        failures.append(f"open-loop E2E 逐项结果缺少条目：{missing}")
+    return failures
+
+
+def close_open_loop_queue_from_e2e_results(
+    *,
+    queue_path: pathlib.Path,
+    item_results_path: pathlib.Path,
+    out_path: pathlib.Path,
+    apply_to_queue: bool = False,
+) -> dict[str, Any]:
+    queue = load_json(queue_path)
+    results = load_json(item_results_path)
+    failures = validate_open_loop_closeout_input(results)
+    items = queue.get("items")
+    if not isinstance(items, list):
+        failures.append("open-loop 队列 items 必须是数组")
+        items = []
+    indexed_results = {
+        str(item.get("id")): item
+        for item in results.get("items", [])
+        if isinstance(item, dict) and item.get("id")
+    }
+    touched: list[str] = []
+    item_results_ref = str(item_results_path.resolve())
+    evidence_root = pathlib.Path(str(results.get("evidence_root") or item_results_path.parent)).resolve()
+    if not failures:
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            item_id = str(item.get("id") or "")
+            if item.get("priority") not in {"P0", "P1"}:
+                continue
+            if item_id not in OPEN_LOOP_E2E_ITEM_IDS:
+                continue
+            result_item = indexed_results.get(item_id)
+            if not result_item:
+                failures.append(f"{item_id}: 缺少逐项结果，不能关闭")
+                continue
+            refs = [item_results_ref]
+            for ref in result_item.get("evidence_refs", []):
+                ref_text = str(ref)
+                ref_path = pathlib.Path(ref_text)
+                refs.append(str(ref_path if ref_path.is_absolute() else evidence_root / ref_text))
+            current_refs = [
+                str(ref)
+                for ref in item.get("verified_runtime_evidence", [])
+                if isinstance(ref, str) and ref.strip()
+            ]
+            item["status"] = "verified"
+            item["verified_runtime_evidence"] = list(dict.fromkeys([*current_refs, *refs]))
+            item["prism_review"] = item.get("prism_review") if item.get("prism_review") in {"passed", "resolved", "not_required"} else "resolved"
+            item["closed_by_e2e_item_results"] = {
+                "item_results": item_results_ref,
+                "item_status": result_item.get("status"),
+                "closed_at": "runtime-generated-on-write",
+            }
+            touched.append(item_id)
+        if not touched:
+            failures.append("没有 P0/P1 open-loop 条目被关闭")
+    closed_at = None
+    if not failures:
+        import datetime as dt
+        closed_at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+        for item in items:
+            if isinstance(item, dict) and isinstance(item.get("closed_by_e2e_item_results"), dict):
+                item["closed_by_e2e_item_results"]["closed_at"] = closed_at
+        remaining = [
+            item
+            for item in items
+            if isinstance(item, dict)
+            and item.get("priority") in {"P0", "P1"}
+            and item.get("status") not in OPEN_LOOP_CLOSING_STATUSES
+        ]
+        if not remaining:
+            queue["status"] = "verified"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(queue, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    output_check = validate_open_loop_queue(out_path)
+    if not failures and output_check.get("ok") is not True:
+        failures.append(f"关闭后的 open-loop 队列结构无效：{output_check.get('failures')}")
+    if not failures and output_check.get("closeout_allowed") is not True:
+        failures.append(f"关闭后的 open-loop 队列仍不可收口：{output_check.get('closeout_blockers')}")
+    if not failures and apply_to_queue:
+        shutil.copy2(out_path, queue_path)
+    return {
+        "schema_id": "redcap-open-loop-closeout-application",
+        "ok": not failures,
+        "queue": str(queue_path),
+        "item_results": item_results_ref,
+        "out": str(out_path),
+        "applied": bool(apply_to_queue and not failures),
+        "closed_at": closed_at,
+        "touched_item_ids": touched,
+        "output_check": output_check,
         "failures": failures,
     }
 
@@ -565,6 +714,84 @@ def validate_failure_loop(evidence_root: pathlib.Path, failures: list[str]) -> N
             failures.append(f"iteration-verdict.evidence_checked 缺少关键证据：{missing_checked}")
 
 
+def evidence_ref_exists(evidence_root: pathlib.Path, reference: str) -> bool:
+    path_text = str(reference or "").split("#", 1)[0].strip()
+    if not path_text:
+        return False
+    path = pathlib.Path(path_text)
+    if not path.is_absolute():
+        path = evidence_root / path
+    return path.exists()
+
+
+def validate_e2e_infrastructure_readiness(evidence_root: pathlib.Path, failures: list[str]) -> None:
+    payload = load_optional_json(evidence_root / E2E_INFRASTRUCTURE_READINESS_FILE)
+    if payload is None:
+        failures.append(f"缺少或无法读取 {E2E_INFRASTRUCTURE_READINESS_FILE}")
+        return
+    if payload.get("schema_id") != "redcap-e2e-infrastructure-readiness":
+        failures.append("e2e-infrastructure-readiness schema_id 错误")
+    if payload.get("producer") != "e2e-runner":
+        failures.append("e2e-infrastructure-readiness.producer 必须是 e2e-runner")
+    if payload.get("ok") is not True:
+        failures.append(f"E2E 基础设施预检未通过：{payload.get('failures')}")
+    gates = payload.get("gates")
+    if not isinstance(gates, list) or not gates:
+        failures.append("e2e-infrastructure-readiness.gates 必须是非空数组")
+        return
+    indexed = {str(item.get("id")): item for item in gates if isinstance(item, dict)}
+    for gate_id in ["external-work-root", "layered-preflight", "carrier-probe"]:
+        gate = indexed.get(gate_id)
+        if not isinstance(gate, dict):
+            failures.append(f"E2E 基础设施预检缺少 gate：{gate_id}")
+            continue
+        if gate.get("ok") is not True:
+            failures.append(f"E2E 基础设施 gate 未通过：{gate_id}")
+        evidence_path = str(gate.get("evidence_path") or "")
+        if evidence_path and not evidence_ref_exists(evidence_root, evidence_path):
+            failures.append(f"E2E 基础设施 gate 证据不存在：{gate_id} -> {evidence_path}")
+
+
+def validate_open_loop_item_results(evidence_root: pathlib.Path, failures: list[str]) -> None:
+    payload = load_optional_json(evidence_root / OPEN_LOOP_E2E_ITEM_RESULT_FILE)
+    if payload is None:
+        failures.append(f"缺少或无法读取 {OPEN_LOOP_E2E_ITEM_RESULT_FILE}")
+        return
+    if payload.get("schema_id") != "redcap-open-loop-e2e-item-results":
+        failures.append("open-loop-e2e-item-results schema_id 错误")
+    if payload.get("producer") != "e2e-runner":
+        failures.append("open-loop-e2e-item-results.producer 必须是 e2e-runner")
+    items = payload.get("items")
+    if not isinstance(items, list) or not items:
+        failures.append("open-loop-e2e-item-results.items 必须是非空数组")
+        return
+    indexed = {str(item.get("id")): item for item in items if isinstance(item, dict)}
+    missing = [item_id for item_id in OPEN_LOOP_E2E_ITEM_IDS if item_id not in indexed]
+    if missing:
+        failures.append(f"open-loop 逐项 E2E 结果缺少条目：{missing}")
+    for item_id in OPEN_LOOP_E2E_ITEM_IDS:
+        item = indexed.get(item_id)
+        if not isinstance(item, dict):
+            continue
+        status = item.get("status")
+        evidence_refs = item.get("evidence_refs")
+        if status not in {"passed", "failed", "not_triggered"}:
+            failures.append(f"{item_id}: status 必须是 passed、failed 或 not_triggered")
+        if not isinstance(evidence_refs, list) or not evidence_refs:
+            failures.append(f"{item_id}: 必须包含 evidence_refs")
+        elif status == "passed":
+            missing_refs = [ref for ref in evidence_refs if not evidence_ref_exists(evidence_root, str(ref))]
+            if missing_refs:
+                failures.append(f"{item_id}: passed 证据引用不存在：{missing_refs}")
+        if status != "passed":
+            failures.append(f"{item_id}: 未通过逐项 E2E 验收，当前状态 {status}，原因：{item.get('reason')}")
+    summary = payload.get("summary")
+    if not isinstance(summary, dict):
+        failures.append("open-loop-e2e-item-results.summary 必须是对象")
+    elif summary.get("all_required_passed") is not True:
+        failures.append(f"open-loop 逐项验收未全通过：{summary}")
+
+
 def validate_package_prism(evidence_root: pathlib.Path, failures: list[str]) -> None:
     payload = load_optional_json(evidence_root / "package-prism-check.json")
     if payload is None:
@@ -719,11 +946,16 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("self-referential-boundary 必须要求 completion-marker 复制边界披露")
 
 
-def validate_e2e_evidence_quality(evidence_root: pathlib.Path) -> dict[str, Any]:
+def validate_e2e_evidence_quality(
+    evidence_root: pathlib.Path,
+    *,
+    require_open_loop_item_results: bool = True,
+) -> dict[str, Any]:
     failures: list[str] = []
     for rel in sorted(REQUIRED_E2E_FILES):
         if not (evidence_root / rel).is_file():
             failures.append(f"缺少 E2E 证据文件：{rel}")
+    validate_e2e_infrastructure_readiness(evidence_root, failures)
     validate_role_manifest(evidence_root, failures)
     validate_role_gate_clearance(evidence_root, failures)
     validate_prism_assistance(evidence_root, failures)
@@ -732,6 +964,8 @@ def validate_e2e_evidence_quality(evidence_root: pathlib.Path) -> dict[str, Any]
     validate_failure_loop(evidence_root, failures)
     validate_package_prism(evidence_root, failures)
     validate_runner_finalization(evidence_root, failures)
+    if require_open_loop_item_results:
+        validate_open_loop_item_results(evidence_root, failures)
     return {
         "schema_id": "redcap-revival-followthrough-e2e-check",
         "ok": not failures,
@@ -778,6 +1012,20 @@ def cmd_open_loop_check(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_open_loop_close(args: argparse.Namespace) -> int:
+    result = close_open_loop_queue_from_e2e_results(
+        queue_path=pathlib.Path(args.queue).resolve(),
+        item_results_path=pathlib.Path(args.item_results).resolve(),
+        out_path=pathlib.Path(args.out).resolve(),
+        apply_to_queue=args.apply,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["ok"]:
+        print("REDCAP_OPEN_LOOP_CLOSEOUT_APPLY_OK")
+        return 0
+    return 1
+
+
 def cmd_rule_report(args: argparse.Namespace) -> int:
     result = runtime_rule_report()
     if args.out:
@@ -812,6 +1060,52 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         verified_result = validate_open_loop_queue(verified_queue)
         if verified_result.get("ok") is not True or verified_result.get("closeout_allowed") is not True:
             failures.append(f"完整 open-loop fixture 应允许收口：{verified_result}")
+        item_results = root / "open-loop-e2e-item-results.json"
+        item_results.write_text(json.dumps({
+            "schema_id": "redcap-open-loop-e2e-item-results",
+            "producer": "e2e-runner",
+            "source_run_ok": True,
+            "evidence_root": str(root / "e2e"),
+            "items": [
+                {
+                    "id": item_id,
+                    "title": f"fixture {item_id}",
+                    "status": "passed",
+                    "reason": "fixture passed",
+                    "evidence_refs": ["completion-marker.json"],
+                }
+                for item_id in OPEN_LOOP_E2E_ITEM_IDS
+            ],
+            "summary": {
+                "required_item_ids": OPEN_LOOP_E2E_ITEM_IDS,
+                "missing_item_ids": [],
+                "passed_count": len(OPEN_LOOP_E2E_ITEM_IDS),
+                "failed_or_untriggered_count": 0,
+                "all_required_passed": True,
+            },
+        }, ensure_ascii=False), encoding="utf-8")
+        closed_queue = root / "open-loop-closed-by-results.json"
+        close_result = close_open_loop_queue_from_e2e_results(
+            queue_path=DEFAULT_OPEN_LOOP_QUEUE,
+            item_results_path=item_results,
+            out_path=closed_queue,
+            apply_to_queue=False,
+        )
+        if close_result.get("ok") is not True or close_result.get("output_check", {}).get("closeout_allowed") is not True:
+            failures.append(f"open-loop-close 正向样例没有关闭 P0/P1：{close_result}")
+        failed_item_results = json.loads(item_results.read_text(encoding="utf-8"))
+        failed_item_results["items"][0]["status"] = "failed"
+        failed_item_results["summary"]["all_required_passed"] = False
+        failed_item_results_path = root / "open-loop-e2e-item-results-failed.json"
+        failed_item_results_path.write_text(json.dumps(failed_item_results, ensure_ascii=False), encoding="utf-8")
+        rejected_close = close_open_loop_queue_from_e2e_results(
+            queue_path=DEFAULT_OPEN_LOOP_QUEUE,
+            item_results_path=failed_item_results_path,
+            out_path=root / "open-loop-rejected-close.json",
+            apply_to_queue=False,
+        )
+        if rejected_close.get("ok") is True:
+            failures.append("open-loop-close 负向样例错误通过：未全部 passed 也关闭了队列")
         missing_evidence_fixture = json.loads(json.dumps(open_loop_fixture, ensure_ascii=False))
         missing_evidence_fixture["items"][0].pop("verified_runtime_evidence", None)
         missing_queue = root / "open-loop-missing-evidence.json"
@@ -947,6 +1241,41 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
         }, ensure_ascii=False), encoding="utf-8")
         (evidence / "package-prism-check.json").write_text('{"ok": true, "exit_code": 0, "stdout_tail": "PRISM_CHECK_OK"}\n', encoding="utf-8")
+        (evidence / "source-workspace-guard-run.json").write_text('{"ok": true, "producer": "e2e-runner"}\n', encoding="utf-8")
+        (evidence / "ol01-orchestrator-identity.json").write_text('{"schema_id": "redcap-ol01-orchestrator-identity", "different_entity": true}\n', encoding="utf-8")
+        (evidence / "ol01-orchestrator-independence-receipt.json").write_text('{"schema_id": "redcap-ol01-orchestrator-independence-receipt", "ok": true, "sha256": "fixture"}\n', encoding="utf-8")
+        (evidence / "e2e-infrastructure-readiness.json").write_text(json.dumps({
+            "schema_id": "redcap-e2e-infrastructure-readiness",
+            "producer": "e2e-runner",
+            "ok": True,
+            "gates": [
+                {"id": "external-work-root", "ok": True, "evidence_path": str(evidence)},
+                {"id": "layered-preflight", "ok": True, "evidence_path": str(evidence / "e2e-infrastructure-readiness.json")},
+                {"id": "carrier-probe", "ok": True, "evidence_path": str(evidence / "e2e-infrastructure-readiness.json")},
+            ],
+            "failures": [],
+        }, ensure_ascii=False), encoding="utf-8")
+        (evidence / "open-loop-e2e-item-results.json").write_text(json.dumps({
+            "schema_id": "redcap-open-loop-e2e-item-results",
+            "producer": "e2e-runner",
+            "items": [
+                {
+                    "id": item_id,
+                    "title": "fixture",
+                    "status": "passed",
+                    "reason": "fixture",
+                    "evidence_refs": ["e2e-infrastructure-readiness.json"],
+                }
+                for item_id in OPEN_LOOP_E2E_ITEM_IDS
+            ],
+            "summary": {
+                "required_item_ids": OPEN_LOOP_E2E_ITEM_IDS,
+                "missing_item_ids": [],
+                "passed_count": len(OPEN_LOOP_E2E_ITEM_IDS),
+                "failed_or_untriggered_count": 0,
+                "all_required_passed": True,
+            },
+        }, ensure_ascii=False), encoding="utf-8")
         (evidence / "completion-marker.json").write_text('{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true, "final_prism_strictest_verdict": "pass", "validation_chain_scope": {"same_host": true, "same_redcap_package": true}, "not_claimed": ["fixture"], "final_marker_validation": {"ok": true}, "file_browser_inspection": {"ok": true}, "convergence_diagnosis": {"strictest_verdict": "pass"}}\n', encoding="utf-8")
         good = validate_e2e_evidence_quality(evidence)
         if not good["ok"]:
@@ -984,6 +1313,12 @@ def build_parser() -> argparse.ArgumentParser:
     open_loop = sub.add_parser("open-loop-check")
     open_loop.add_argument("--queue", default=str(DEFAULT_OPEN_LOOP_QUEUE))
     open_loop.set_defaults(func=cmd_open_loop_check)
+    open_loop_close = sub.add_parser("open-loop-close")
+    open_loop_close.add_argument("--queue", default=str(DEFAULT_OPEN_LOOP_QUEUE))
+    open_loop_close.add_argument("--item-results", required=True)
+    open_loop_close.add_argument("--out", required=True)
+    open_loop_close.add_argument("--apply", action="store_true")
+    open_loop_close.set_defaults(func=cmd_open_loop_close)
     rules = sub.add_parser("rule-report")
     rules.add_argument("--out")
     rules.set_defaults(func=cmd_rule_report)
