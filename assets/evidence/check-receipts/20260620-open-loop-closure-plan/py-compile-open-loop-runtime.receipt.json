@@ -1,0 +1,20 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/revival_followthrough.py",
+  "argv": [
+    "python3",
+    "-m",
+    "py_compile",
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/core/revival_followthrough.py"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T05:26:43.922395+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "ok": true,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "",
+  "stderr_tail": ""
+}

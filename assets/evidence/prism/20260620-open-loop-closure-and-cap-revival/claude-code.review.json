@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The five \"changed_reality\" items are all diagnostic confirmations or problem discoveries — gate check passed, old soul.md read, ~/.cap structure confirmed, cache dry-run results observed, prune-runs gap found. None of these represent actual behavioral changes to RedCap. The queue, manual, and dry-run are planning artifacts, not implemented runtime changes. The claim that E2E cache governance \"必须接入每轮流程\" is directly contradicted by the evidence that prune-runs is NOT auto-triggered at run conclusion. The main AI has produced a convincing map of the terrain but has not yet moved any earth.",
+  "main_concern": "The main claim conflates design/preparation work with changed reality. All four evidence items are either new documents (queue, manual) or diagnostic observations (dry-run, code inspection). The E2E cache governance gap — the most concrete behavioral change needed — is acknowledged in the narrative but listed as unfixed. The nine-area task queue is comprehensive on paper, but without verification that each item maps to an actionable implementation step (not just another document), the queue itself risks becoming an open loop that spawns more open loops.",
+  "top_risks": [
+    "Documentation-as-completion loop: The queue, manual, and this prism review become self-referential artifacts that substitute for implementation — violating constraint #2 (不得把任务清单、手册或棱镜评审当作完成证据).",
+    "Cache governance remains manual: prune-runs exists but is not integrated into the complete-revival-e2e run conclusion flow. Without auto-trigger, the E2E cache will continue to bloat, and the governance claim is aspirational only.",
+    "Cap boundary creep via manual ambiguity: Without reading cap-revival-manual.md, it's unclear whether the claimed public/private separation is enforced by code or merely documented. A manual that describes the boundary without code enforcement creates a false sense of security around ~/.cap/identity.md."
+  ],
+  "missing_evidence": [
+    "Cannot read open-loop-closure-queue.json to verify all nine claimed areas are mapped with actionable steps (not just topic headings).",
+    "Cannot read cap-revival-manual.md to verify genuine path-independence and public/private separation beyond a textual claim.",
+    "No evidence of a termination condition for the open-loop queue — when is 'done' declared? Without this, the queue is an infinite loop generator."
+  ],
+  "minimum_fix": "1) Split the claim into two tiers: Tier A — \"design artifacts created\" (queue, manual) and Tier B — \"behavioral changes implemented\" (currently empty). 2) Implement the auto-trigger for E2E cache retention plan in complete_revival_e2e.py run conclusion before claiming governance integration. 3) Define an exit criterion for the open-loop queue (e.g., all nine items have linked PRs with passing tests, or all nine items have verified behavioral changes in runtime). The queue should track closure state, not just item existence.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Constraint #2 explicitly forbids treating the prism review as completion evidence. The nine-item queue itself lacks defined termination criteria per item, creating risk of infinite review→document→review cycling. The manual's 'path-independent' claim is a meta-signal that could justify deferring implementation indefinitely by always finding a new path to document."
+  },
+  "user_intent_alignment": "aligned"
+}

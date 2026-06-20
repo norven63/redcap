@@ -1,0 +1,756 @@
+{
+  "executed": false,
+  "execution": null,
+  "ok": true,
+  "plan": {
+    "created_at": "2026-06-20T03:30:31+00:00",
+    "delete_candidates": [],
+    "delete_policy": "只删除旧成功运行；失败、阻塞、中断、未知和正在运行目录保留",
+    "failures": [],
+    "keep_latest_success": 5,
+    "ok": true,
+    "root": "/Users/norven/workspace",
+    "runs": [
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781790325.771166,
+        "mtime_iso": "2026-06-18T13:45:25+00:00",
+        "name": "20260618-after-app-data-probe-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-app-data-probe-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-app-data-probe-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781801519.1745095,
+        "mtime_iso": "2026-06-18T16:51:59+00:00",
+        "name": "20260618-after-app-entrypoint-nested-relation-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-app-entrypoint-nested-relation-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-app-entrypoint-nested-relation-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781787323.6587975,
+        "mtime_iso": "2026-06-18T12:55:23+00:00",
+        "name": "20260618-after-carrier-hook-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-carrier-hook-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-carrier-hook-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781791283.051108,
+        "mtime_iso": "2026-06-18T14:01:23+00:00",
+        "name": "20260618-after-codex-exec-role-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-codex-exec-role-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-codex-exec-role-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781796443.4452372,
+        "mtime_iso": "2026-06-18T15:27:23+00:00",
+        "name": "20260618-after-data-like-js-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-data-like-js-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-data-like-js-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781794881.3152266,
+        "mtime_iso": "2026-06-18T15:01:21+00:00",
+        "name": "20260618-after-feedback-loop-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-feedback-loop-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-feedback-loop-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留最近成功运行",
+        "mtime": 1781802771.464378,
+        "mtime_iso": "2026-06-18T17:12:51+00:00",
+        "name": "20260618-after-final-boundary-disclosure-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-final-boundary-disclosure-fix",
+        "status": "success",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-final-boundary-disclosure-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781795850.877057,
+        "mtime_iso": "2026-06-18T15:17:30+00:00",
+        "name": "20260618-after-html-probe-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-html-probe-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-html-probe-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781798280.9443758,
+        "mtime_iso": "2026-06-18T15:58:00+00:00",
+        "name": "20260618-after-nested-relation-probe-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-nested-relation-probe-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-nested-relation-probe-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781799200.9968243,
+        "mtime_iso": "2026-06-18T16:13:20+00:00",
+        "name": "20260618-after-readiness-browser-gate-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-readiness-browser-gate-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-readiness-browser-gate-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781800124.355291,
+        "mtime_iso": "2026-06-18T16:28:44+00:00",
+        "name": "20260618-after-readme-args-command-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-readme-args-command-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-readme-args-command-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781789155.1887698,
+        "mtime_iso": "2026-06-18T13:25:55+00:00",
+        "name": "20260618-after-role-content-completion-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-role-content-completion-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-role-content-completion-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781788206.2444758,
+        "mtime_iso": "2026-06-18T13:10:06+00:00",
+        "name": "20260618-after-role-marker-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-role-marker-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-role-marker-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781793433.8136668,
+        "mtime_iso": "2026-06-18T14:37:13+00:00",
+        "name": "20260618-after-root-static-and-hook-scope-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-root-static-and-hook-scope-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-root-static-and-hook-scope-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781797347.5318358,
+        "mtime_iso": "2026-06-18T15:42:27+00:00",
+        "name": "20260618-after-trpg-sample-data-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-trpg-sample-data-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-trpg-sample-data-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781792473.2893322,
+        "mtime_iso": "2026-06-18T14:21:13+00:00",
+        "name": "20260618-after-validation-and-purification-fix",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/20260618-after-validation-and-purification-fix",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/20260618-after-validation-and-purification-fix/redcap-e2e-基于旧-trpg-server-与-trpg-web-项目的方向-推演一/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781873865.2470553,
+        "mtime_iso": "2026-06-19T12:57:45+00:00",
+        "name": "redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781532151.2316933,
+        "mtime_iso": "2026-06-15T14:02:31+00:00",
+        "name": "run-20260615-round10",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round10",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round10/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781534223.8588347,
+        "mtime_iso": "2026-06-15T14:37:03+00:00",
+        "name": "run-20260615-round11",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round11",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round11/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781535290.411945,
+        "mtime_iso": "2026-06-15T14:54:50+00:00",
+        "name": "run-20260615-round12",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round12",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round12/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781536400.4214122,
+        "mtime_iso": "2026-06-15T15:13:20+00:00",
+        "name": "run-20260615-round13",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round13",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round13/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781537530.6127083,
+        "mtime_iso": "2026-06-15T15:32:10+00:00",
+        "name": "run-20260615-round14",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round14",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round14/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781538478.4703753,
+        "mtime_iso": "2026-06-15T15:47:58+00:00",
+        "name": "run-20260615-round15",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round15",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round15/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781539649.261329,
+        "mtime_iso": "2026-06-15T16:07:29+00:00",
+        "name": "run-20260615-round16",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round16",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round16/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781541035.4058254,
+        "mtime_iso": "2026-06-15T16:30:35+00:00",
+        "name": "run-20260615-round17",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round17",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round17/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781542200.4629657,
+        "mtime_iso": "2026-06-15T16:50:00+00:00",
+        "name": "run-20260615-round18",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round18",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round18/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781544391.7784233,
+        "mtime_iso": "2026-06-15T17:26:31+00:00",
+        "name": "run-20260615-round19",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round19",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round19/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781556163.013251,
+        "mtime_iso": "2026-06-15T20:42:43+00:00",
+        "name": "run-20260615-round20",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round20",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round20/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781560068.5888703,
+        "mtime_iso": "2026-06-15T21:47:48+00:00",
+        "name": "run-20260615-round21",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round21",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round21/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781562011.414062,
+        "mtime_iso": "2026-06-15T22:20:11+00:00",
+        "name": "run-20260615-round22",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round22",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round22/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781564808.0885894,
+        "mtime_iso": "2026-06-15T23:06:48+00:00",
+        "name": "run-20260615-round23",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round23",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round23/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781568671.481242,
+        "mtime_iso": "2026-06-16T00:11:11+00:00",
+        "name": "run-20260615-round24",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round24",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round24/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781573620.6719968,
+        "mtime_iso": "2026-06-16T01:33:40+00:00",
+        "name": "run-20260615-round25",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round25",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round25/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781529295.3832846,
+        "mtime_iso": "2026-06-15T13:14:55+00:00",
+        "name": "run-20260615-round9",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round9",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round9/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781589811.458713,
+        "mtime_iso": "2026-06-16T06:03:31+00:00",
+        "name": "run-20260616-round26",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round26",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round26/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781591718.230598,
+        "mtime_iso": "2026-06-16T06:35:18+00:00",
+        "name": "run-20260616-round27",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round27",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round27/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781594976.4520264,
+        "mtime_iso": "2026-06-16T07:29:36+00:00",
+        "name": "run-20260616-round28",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round28",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round28/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781597472.4573028,
+        "mtime_iso": "2026-06-16T08:11:12+00:00",
+        "name": "run-20260616-round29",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round29",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round29/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781600055.3024795,
+        "mtime_iso": "2026-06-16T08:54:15+00:00",
+        "name": "run-20260616-round30",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round30",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round30/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781603565.2607086,
+        "mtime_iso": "2026-06-16T09:52:45+00:00",
+        "name": "run-20260616-round31",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round31",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round31/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781606269.771625,
+        "mtime_iso": "2026-06-16T10:37:49+00:00",
+        "name": "run-20260616-round32",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round32",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round32/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781607967.529939,
+        "mtime_iso": "2026-06-16T11:06:07+00:00",
+        "name": "run-20260616-round33",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round33",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round33/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781609211.3725708,
+        "mtime_iso": "2026-06-16T11:26:51+00:00",
+        "name": "run-20260616-round34",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round34",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round34/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781610677.2098117,
+        "mtime_iso": "2026-06-16T11:51:17+00:00",
+        "name": "run-20260616-round35",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round35",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round35/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留最近成功运行",
+        "mtime": 1781612409.5071805,
+        "mtime_iso": "2026-06-16T12:20:09+00:00",
+        "name": "run-20260616-round36",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round36",
+        "status": "success",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round36/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781616029.6537042,
+        "mtime_iso": "2026-06-16T13:20:29+00:00",
+        "name": "run-20260616-round38",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round38",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round38/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781617958.6176274,
+        "mtime_iso": "2026-06-16T13:52:38+00:00",
+        "name": "run-20260616-round39",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round39",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round39/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781619524.634661,
+        "mtime_iso": "2026-06-16T14:18:44+00:00",
+        "name": "run-20260616-round40",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round40",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round40/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781625278.9811308,
+        "mtime_iso": "2026-06-16T15:54:38+00:00",
+        "name": "run-20260616-round41",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round41",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round41/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781628134.0997477,
+        "mtime_iso": "2026-06-16T16:42:14+00:00",
+        "name": "run-20260616-round43",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round43",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round43/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 failed 状态目录，避免删除排障证据",
+        "mtime": 1781629566.8342285,
+        "mtime_iso": "2026-06-16T17:06:06+00:00",
+        "name": "run-20260616-round44",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round44",
+        "status": "failed",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round44/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留最近成功运行",
+        "mtime": 1781631290.1814272,
+        "mtime_iso": "2026-06-16T17:34:50+00:00",
+        "name": "run-20260616-round45",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round45",
+        "status": "success",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round45/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781852181.3026989,
+        "mtime_iso": "2026-06-19T06:56:21+00:00",
+        "name": "run-20260619T063540Z-36750",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260619T063540Z-36750",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T063540Z-36750/redcap-e2e-run-summary.json",
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T063540Z-36750/redcap-e2e-基于旧-trpg-server-与-trpg-web-的简化-trpg/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781859228.506454,
+        "mtime_iso": "2026-06-19T08:53:48+00:00",
+        "name": "run-20260619T084251Z-4381",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260619T084251Z-4381",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T084251Z-4381/redcap-e2e-run-summary.json",
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T084251Z-4381/redcap-e2e-基于旧-trpg-server-与-trpg-web-的简化-trpg/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781861171.4331834,
+        "mtime_iso": "2026-06-19T09:26:11+00:00",
+        "name": "run-20260619T090739Z-63176",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260619T090739Z-63176",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T090739Z-63176/redcap-e2e-run-summary.json",
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T090739Z-63176/redcap-e2e-基于旧-trpg-server-与-trpg-web-的简化-trpg/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781863189.605538,
+        "mtime_iso": "2026-06-19T09:59:49+00:00",
+        "name": "run-20260619T094049Z-33108",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260619T094049Z-33108",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T094049Z-33108/redcap-e2e-run-summary.json",
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T094049Z-33108/redcap-e2e-基于旧-trpg-server-与-trpg-web-的简化-trpg/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781865483.5931308,
+        "mtime_iso": "2026-06-19T10:38:03+00:00",
+        "name": "run-20260619T102735Z-30544",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260619T102735Z-30544",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T102735Z-30544/redcap-e2e-run-summary.json",
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T102735Z-30544/redcap-e2e-基于旧-trpg-server-与-trpg-web-的简化-trpg/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781867188.6518235,
+        "mtime_iso": "2026-06-19T11:06:28+00:00",
+        "name": "run-20260619T104850Z-73264",
+        "path": "/Users/norven/workspace/redcap-e2e-runs/run-20260619T104850Z-73264",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T104850Z-73264/redcap-e2e-run-summary.json",
+          "/Users/norven/workspace/redcap-e2e-runs/run-20260619T104850Z-73264/redcap-e2e-基于旧-trpg-server-与-trpg-web-的简化-trpg/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留 active 状态目录，避免删除排障证据",
+        "mtime": 1781877736.2438653,
+        "mtime_iso": "2026-06-19T14:02:16+00:00",
+        "name": "redcap-e2e-runs-reviewer-contract-cycle",
+        "path": "/Users/norven/workspace/redcap-e2e-runs-reviewer-contract-cycle",
+        "status": "active",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs-reviewer-contract-cycle/redcap-e2e-run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留最近成功运行",
+        "mtime": 1781884929.3840482,
+        "mtime_iso": "2026-06-19T16:02:09+00:00",
+        "name": "redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简",
+        "path": "/Users/norven/workspace/redcap-e2e-runs-root-summary-final-write/redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简",
+        "status": "success",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs-root-summary-final-write/redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简/.redcap/evidence/e2e/run-summary.json"
+        ]
+      },
+      {
+        "delete_allowed": false,
+        "delete_reason": "保留最近成功运行",
+        "mtime": 1781882738.4950619,
+        "mtime_iso": "2026-06-19T15:25:38+00:00",
+        "name": "redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简",
+        "path": "/Users/norven/workspace/redcap-e2e-runs-watchdog-fix-cycle/redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简",
+        "status": "success",
+        "summary_paths": [
+          "/Users/norven/workspace/redcap-e2e-runs-watchdog-fix-cycle/redcap-e2e-基于旧-trpg-server-与-trpg-web-的能力-开发一个简/.redcap/evidence/e2e/run-summary.json"
+        ]
+      }
+    ],
+    "schema_id": "redcap-e2e-run-retention-plan"
+  },
+  "schema_id": "redcap-e2e-run-retention-result"
+}

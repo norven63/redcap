@@ -1,0 +1,93 @@
+{
+  "executed": true,
+  "execution": {
+    "deleted": [
+      "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-a"
+    ],
+    "failures": [],
+    "ok": true,
+    "schema_id": "redcap-e2e-run-retention-execution"
+  },
+  "ok": true,
+  "plan": {
+    "created_at": "2026-06-20T04:49:23+00:00",
+    "delete_candidates": [
+      {
+        "active_packet_count": 1,
+        "active_running": true,
+        "age_seconds": 5.093744993209839,
+        "delete_allowed": true,
+        "delete_reason": "陈旧 active 目录超过 0 秒，显式允许清理",
+        "mtime": 1781930958.17082,
+        "mtime_iso": "2026-06-20T04:49:18+00:00",
+        "name": "redcap-e2e-runs-stale-a",
+        "path": "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-a",
+        "stale_active_seconds": 0,
+        "state_file_missing": false,
+        "state_file_warning": "",
+        "status": "stale-active",
+        "summary_paths": [
+          "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-a/redcap-e2e-run-summary.json"
+        ]
+      }
+    ],
+    "delete_policy": "默认删除旧成功运行和超过阈值的陈旧 active 目录；失败、阻塞、未知和未达阈值 active 目录保留；缺状态文件目录和超过安全上限的 stale-active 进入警告，不静默跳过",
+    "delete_stale_active": true,
+    "failures": [],
+    "keep_latest_success": 5,
+    "ok": true,
+    "root": "/private/tmp/redcap-e2e-retention-safety-proof-20260620",
+    "runs": [
+      {
+        "active_packet_count": 1,
+        "active_running": true,
+        "age_seconds": 5.093744993209839,
+        "delete_allowed": true,
+        "delete_reason": "陈旧 active 目录超过 0 秒，显式允许清理",
+        "mtime": 1781930958.17082,
+        "mtime_iso": "2026-06-20T04:49:18+00:00",
+        "name": "redcap-e2e-runs-stale-a",
+        "path": "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-a",
+        "stale_active_seconds": 0,
+        "state_file_missing": false,
+        "state_file_warning": "",
+        "status": "stale-active",
+        "summary_paths": [
+          "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-a/redcap-e2e-run-summary.json"
+        ]
+      },
+      {
+        "active_packet_count": 1,
+        "active_running": true,
+        "age_seconds": 5.094030857086182,
+        "delete_allowed": false,
+        "delete_reason": "陈旧 active 目录超过 0 秒，但本轮 stale-active 清理数量达到安全上限 1，保留并要求后续诊断。",
+        "mtime": 1781930958.17082,
+        "mtime_iso": "2026-06-20T04:49:18+00:00",
+        "name": "redcap-e2e-runs-stale-b",
+        "path": "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-b",
+        "stale_active_seconds": 0,
+        "state_file_missing": false,
+        "state_file_warning": "",
+        "status": "stale-active",
+        "summary_paths": [
+          "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-b/redcap-e2e-run-summary.json"
+        ]
+      }
+    ],
+    "safety_warnings": [
+      {
+        "path": "/private/tmp/redcap-e2e-retention-safety-proof-20260620/redcap-e2e-runs-stale-b",
+        "reason": "陈旧 active 目录超过 0 秒，但本轮 stale-active 清理数量达到安全上限 1，保留并要求后续诊断。",
+        "stale_active_delete_max": 1,
+        "stale_active_seconds": 0,
+        "status": "stale-active"
+      }
+    ],
+    "schema_id": "redcap-e2e-run-retention-plan",
+    "stale_active_delete_max": 1,
+    "stale_active_seconds": 0,
+    "state_file_warnings": []
+  },
+  "schema_id": "redcap-e2e-run-retention-result"
+}

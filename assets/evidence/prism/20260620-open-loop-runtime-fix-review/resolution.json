@@ -1,0 +1,38 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260620-open-loop-runtime-fix-review",
+  "merge_path": "assets/evidence/prism/20260620-open-loop-runtime-fix-review/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260620-open-loop-runtime-fix-review/kimi.final.review.json",
+    "assets/evidence/prism/20260620-open-loop-runtime-fix-review/claude-code.final.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 成立：此前只证明了快速阻断路径和局部规则，不能把它等同于完整成功路径 E2E。当前修复已把公共人格边界扫描规则、open-loop 收口逻辑、多污染负向样例、陈旧 active 目录清理和旧 failed-run 保留治理公开为可审计运行规则；完整成功路径 E2E 仍保留在 OL-01、OL-08 与 OL-10 的 promotion_criteria 中，不允许关闭。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/open-loop-closure-queue.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/runtime-rule-report.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-current-execute-failed-retention.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-current-after-failed-retention.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/revival-followthrough-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/revival-followthrough-open-loop-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/complete-revival-e2e-self-check-old-failed.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/revival-followthrough-self-check-after-rule-report.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/revival-followthrough-open-loop-check-after-ol10.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "本轮只解决可立即验证的 Kimi concern 子项：规则公开、收口逻辑公开、多污染样例覆盖、队列阻止误收口、陈旧 active 清理和旧 failed-run 保留治理；完整成功路径 E2E 没有被声明完成，继续作为后续 P0/P1 阻塞条件。"
+  }
+}

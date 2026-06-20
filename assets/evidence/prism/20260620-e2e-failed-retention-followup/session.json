@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260620-e2e-failed-retention-followup",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-e2e-failed-retention-followup",
+  "status": "converged",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T05:32:06+00:00",
+  "task_started_at": "2026-06-20T05:32:06+00:00",
+  "updated_at": "2026-06-20T05:39:28+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "87fdc1bc-0f07-42ba-b3a9-bfaa8618a93f",
+      "round_count": 3,
+      "status": "closed",
+      "last_review": "assets/evidence/prism/20260620-e2e-failed-retention-followup/claude-code.round3.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_19923041-2881-48f1-b9a7-3ece43c31174",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "assets/evidence/prism/20260620-e2e-failed-retention-followup/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "converged",
+    "reason": "Claude Code block was discussed through bounded follow-up and final verdict pass; full E2E proof remains queued."
+  }
+}

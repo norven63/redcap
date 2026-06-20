@@ -1,0 +1,380 @@
+{
+  "schema_id": "redcap-open-loop-closure-queue",
+  "schema_version": 1,
+  "status": "runtime-gated-in-progress",
+  "purpose": "把当前讨论过但尚未闭环的问题统一编排为可执行、可验证、可回流的任务队列，避免 RedCap 只围绕示例项目产出“鱼”，而没有强化自身工程能力这张“渔网”。",
+  "anti_completion_rule": "本队列、手册、评审请求、回执和单轮检查都不是 RedCap 完整复活完成证据；只有对应代码路径、运行检查、负向探针、外部项目端到端验收和棱镜评审通过，才允许关闭对应条目。",
+  "exit_criteria": [
+    "每个 P0 条目必须拥有已执行的 runtime_checks、对应证据文件和棱镜复核结论。",
+    "涉及 E2E 的条目必须在外部项目证据包中出现，而不是只在 RedCap 源仓库自检中出现。",
+    "任何新发现问题必须先进入本队列并重新排序，不能靠口头说明跳过。",
+    "只有全部 P0/P1 条目状态为 verified，且没有 failure_backlog open_items，才允许进入完整复活收口检查。"
+  ],
+  "owner_boundary": {
+    "cap": "Cap 负责总编排、需求方和验收方视角、风险仲裁和证据收口，不直接替 Loom 角色开发目标项目。",
+    "loom": "Loom 负责项目开发角色链：产品经理、架构师、开发者、测试者、评审者分别承担自己的上下游交付。",
+    "prism": "棱镜负责异构评审和漏洞挑战，不替代 Cap 做最终仲裁，也不替代 Loom 角色执行项目开发。",
+    "private_cap_home": "~/.cap 保存 Cap 私有人格和身份锚点；RedCap 公共仓库只保存路径无关的复活手册、边界规则和哈希化证据。"
+  },
+  "loop_rules": {
+    "new_issue_must_enter_queue": true,
+    "open_p0_blocks_second_e2e": true,
+    "failure_backlog_blocks_completion": true,
+    "same_root_cause_failure_limit": 3,
+    "same_root_cause_escalation": "同一根因连续三轮失败时，停止普通循环并进入架构评审，不继续盲目重跑。",
+    "manual_intervention_only_when": [
+      "需要 Norven 决策产品方向或私有人格内容",
+      "涉及不可逆删除、外发、正式发布或敏感信息风险",
+      "棱镜和 Cap 达到最大讨论轮次后仍无法达成一致"
+    ]
+  },
+  "items": [
+    {
+      "id": "OL-01-second-e2e-acceptance",
+      "title": "第二轮完整端到端验收",
+      "priority": "P0",
+      "status": "open",
+      "root_cause": "首次端到端验收产出了项目，但没有充分证明 RedCap 工作流质量、角色协作质量和自我进化能力。",
+      "required_change": [
+        "在外部项目中运行完整端到端验收。",
+        "验收关注 RedCap 能力，而不仅是目标应用能否打开。",
+        "每轮失败必须进入失败回流和新任务队列。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>",
+        "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-e2e-dir>"
+      ],
+      "evidence_required": [
+        "外部项目运行摘要",
+        "外部项目最终证据包",
+        "外部项目迭代裁决"
+      ],
+      "exit_criteria": [
+        "外部项目完整端到端验收成功结束，且 evidence_root 通过 revival-followthrough e2e-check。",
+        "最终证据包必须包含 Loom 角色证据、自我净化证据、知识消费证据、失败回流证据和缓存治理回执。",
+        "若 failure_backlog 存在开放 P0/P1，则本条不得关闭。"
+      ],
+      "promotion_criteria": [
+        "complete-revival-e2e run 在非 RedCap 源仓库的外部项目目录执行。",
+        "redcap-e2e-run-retention-after-run.json 在成功路径结束后自动产出。",
+        "棱镜对完整证据包给出 passed 或 Cap 记录已解决的分歧仲裁。"
+      ]
+    },
+    {
+      "id": "OL-02-loom-independent-role-runtime",
+      "title": "Loom 独立 AI 角色与会话接续",
+      "priority": "P0",
+      "status": "open",
+      "root_cause": "如果多个角色共享同一上下文，Loom 会退化成一个 AI 填表，无法实现角色隔离、上下游协作和对抗评审。",
+      "required_change": [
+        "每个 Loom 角色必须由独立 Codex CLI 或经批准的角色承载方执行。",
+        "每个角色必须记录 session_id、上游输入、下游输出、角色产物和执行回执。",
+        "session_id 缺失、重复、变化或上下文降级必须报警，并阻止端到端验收通过。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap loom-runtime self-check",
+        "runtime/bin/redcap loom-runtime manifest-check --project-root <project> --task-id <task>",
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-e2e-dir>"
+      ],
+      "evidence_required": [
+        "Loom 角色会话清单",
+        "角色运行回执",
+        "角色交付物"
+      ],
+      "exit_criteria": [
+        "所有必需 Loom 角色均有独立 session_id 和角色产物。",
+        "manifest-check 能发现缺失、重复或变化的 session_id。",
+        "外部端到端证据包显示角色上下游交付被实际消费。"
+      ],
+      "promotion_criteria": [
+        "至少产品经理、架构师、开发者、测试者、评审者五类角色进入会话清单。",
+        "角色间交接记录包含上游输入、下游输出和执行回执。",
+        "棱镜复核确认该链路没有退化为单一 AI 填表。"
+      ]
+    },
+    {
+      "id": "OL-03-loom-failure-loop-consumption",
+      "title": "Loom 失败回流真实消费",
+      "priority": "P0",
+      "status": "open",
+      "root_cause": "失败路由已经有基础，但还需要证明测试或评审失败会被对应角色消费，并从正确节点继续推进。",
+      "required_change": [
+        "tester 或 reviewer 发现缺陷时只生成 defect_route。",
+        "目标角色接收失败回流包并修复。",
+        "修复后必须从目标角色节点向下游重新交付。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap loom-runtime failure-route --action create|accept|complete|check",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe"
+      ],
+      "evidence_required": [
+        "Loom 失败路由计划",
+        "失败路由流水",
+        "目标角色修复产物"
+      ],
+      "exit_criteria": [
+        "测试者或评审者生成失败回流包后，Cap 不直接替角色修复目标项目。",
+        "目标角色接收失败回流包并产出修复证据。",
+        "修复后从目标角色节点重新向下游推进并重新验收。"
+      ],
+      "promotion_criteria": [
+        "failure-route check 通过正向和负向样例。",
+        "外部端到端证据包包含至少一次真实失败回流消费。",
+        "失败回流后的重新交付通过对应测试或评审。"
+      ]
+    },
+    {
+      "id": "OL-04-self-purification-natural-trigger",
+      "title": "自我净化自然触发闭环",
+      "priority": "P0",
+      "status": "open",
+      "root_cause": "自我净化机制存在，但还没有证明真实质疑、失败、偏航和修复会自动进入候选、评审、晋升或不晋升流程。",
+      "required_change": [
+        "任务前必须检索知识或写明不可执行理由。",
+        "任务后必须抽取候选或写明无候选理由。",
+        "候选必须进入 promote_public、keep_private、no_promote 或 defer_with_owner 决策。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap self-purification self-check",
+        "runtime/bin/redcap self-purification run-loop --task-summary <text> --evidence-root <dir>",
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-e2e-dir>"
+      ],
+      "evidence_required": [
+        "知识检索证据",
+        "自我净化候选",
+        "自我净化裁决"
+      ],
+      "exit_criteria": [
+        "真实任务结束后自动形成候选或明确 no-candidate 理由。",
+        "候选进入 promote_public、keep_private、no_promote 或 defer_with_owner 裁决。",
+        "公开晋升与私有保留路径都被边界检查覆盖。"
+      ],
+      "promotion_criteria": [
+        "self-purification run-loop 在真实任务证据目录中产出候选和裁决。",
+        "至少包含一次 no_promote 且写明理由的负向样例。",
+        "Cap 私有人格候选只进入私有边界，不进入公共知识资产。"
+      ]
+    },
+    {
+      "id": "OL-05-knowledge-affects-decisions",
+      "title": "知识召回真实影响任务决策",
+      "priority": "P0",
+      "status": "open",
+      "root_cause": "知识检索已增强，但还要证明命中的经验会改变计划、实现或验收裁决。",
+      "required_change": [
+        "角色计划必须引用命中知识及采用方式。",
+        "验收必须检查知识是否被实际消费，而非只记录检索日志。",
+        "若 0 命中，必须记录继续执行理由。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap knowledge-gateway search \"loom session continuity self-purification E2E layered acceptance\" --require-hit",
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>"
+      ],
+      "evidence_required": [
+        "知识检索证据",
+        "角色计划或实现中的采用说明"
+      ],
+      "exit_criteria": [
+        "任务前知识召回有命中并写入角色计划，或 0 命中时写明继续理由。",
+        "验收阶段检查命中知识是否改变计划、实现或裁决。",
+        "知识召回不得只停留在日志记录。"
+      ],
+      "promotion_criteria": [
+        "外部端到端证据包包含 knowledge-retrieval-evidence.json。",
+        "至少一个角色产物引用命中知识并说明采用方式。",
+        "验收证据明确指出该知识对某个实现或验收决策的影响。"
+      ]
+    },
+    {
+      "id": "OL-06-cap-revival-manual-and-private-boundary",
+      "title": "Cap 复活手册与私有人格边界",
+      "priority": "P0",
+      "status": "runtime-verified-pending-e2e",
+      "root_cause": "旧 RedCap 的人格、灵魂、培养与复活设计尚未形成当前 RedCap 的路径无关手册，也没有充分证明私有人格不会漏入公共资产。",
+      "required_change": [
+        "参考旧 compass/soul.md 提炼 Cap 复活手册。",
+        "公共手册使用 $CAP_HOME、~/.cap 和相对路径解析，不硬编码单机绝对路径。",
+        "私有人格正文留在 .cap Git，不进入 RedCap 公共仓库。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap soul-load check",
+        "runtime/bin/redcap self-purification self-check",
+        "runtime/bin/redcap revival-followthrough check",
+        "runtime/bin/redcap revival-followthrough open-loop-check --queue assets/contracts/open-loop-closure-queue.json"
+      ],
+      "evidence_required": [
+        "Cap 复活手册",
+        "人格沉淀边界裁决"
+      ],
+      "exit_criteria": [
+        "Cap 复活手册使用路径无关引用，不包含用户机器绝对路径。",
+        "公共资产扫描规则公开可审计，并能命中多类私密正文污染样例。",
+        "外部端到端验收中人格沉淀候选触发边界裁决。"
+      ],
+      "promotion_criteria": [
+        "revival-followthrough rule-report 产出公共人格边界规则。",
+        "revival-followthrough self-check 覆盖 PRIVATE_PERSONA_MARKERS 全量污染样例。",
+        "第二轮外部端到端验收证明 Cap 人格沉淀不会进入公共仓库。"
+      ],
+      "verified_runtime_evidence": [
+        "assets/docs/cap-revival-manual.md",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/cap-revival-manual-boundary-inventory.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/runtime-rule-report.json",
+        "runtime/bin/redcap revival-followthrough check",
+        "runtime/bin/redcap soul-load self-check",
+        "runtime/bin/redcap check"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "第二轮外部 E2E 中仍要证明人格沉淀候选和边界裁决自然触发。"
+      ]
+    },
+    {
+      "id": "OL-07-project-install-release-proof",
+      "title": "项目级发布安装真实证明",
+      "priority": "P1",
+      "status": "open",
+      "root_cause": "发布安装已有检查，但还需在外部项目证明 .redcap 解压、init、项目级 Hook、运行目录和证据目录能稳定工作。",
+      "required_change": [
+        "发布包必须能在外部项目初始化。",
+        "RedCap 源码区与目标项目运行时产物必须隔离。",
+        "项目级 Hook 必须能被 Codex CLI 承载探针验证。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap project-install release-check",
+        "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>"
+      ],
+      "evidence_required": [
+        "项目安装发布检查",
+        "Codex CLI 承载探针"
+      ],
+      "exit_criteria": [
+        "发布包在外部项目解压后能初始化 .redcap。",
+        "项目级 Hook 被 Codex CLI 承载探针验证。",
+        "外部项目运行时产物与 RedCap 源码区隔离。"
+      ],
+      "promotion_criteria": [
+        "project-install release-check 通过。",
+        "carrier-probe 在外部项目目录通过。",
+        "外部项目 .redcap 目录包含运行证据且没有写回 RedCap 源仓库。"
+      ]
+    },
+    {
+      "id": "OL-08-e2e-cache-retention-integrated",
+      "title": "E2E 缓存防膨胀纳入每轮流程",
+      "priority": "P1",
+      "status": "runtime-verified-pending-full-e2e",
+      "root_cause": "已有 prune-runs 命令，但当前每轮 E2E 未自动执行，且陈旧 active 目录会绕过清理。",
+      "required_change": [
+        "每轮 E2E 收束时自动写入保留计划。",
+        "成功收束后可执行保守清理。",
+        "陈旧 active 必须被重新分类为 stale-active 或 blocked，不能永久免清理。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap complete-revival-e2e prune-runs --root /Users/norven/workspace --keep-latest-success 5",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+        "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir> --timeout-seconds <seconds>"
+      ],
+      "evidence_required": [
+        "E2E 缓存 dry-run 回执",
+        "每轮 E2E 收束保留计划"
+      ],
+      "exit_criteria": [
+        "每轮 complete-revival-e2e run 收尾自动产出缓存保留回执。",
+        "旧成功运行按保留数量清理，失败、未知和未达阈值 active 不被误删。",
+        "陈旧 active 默认按阈值清理，但超过安全上限时写 safety_warnings 并保留诊断证据。"
+      ],
+      "promotion_criteria": [
+        "真实完整成功路径 E2E 结束后仍产出 redcap-e2e-run-retention-after-run.json。",
+        "保留回执显示 manual_prune_used=false。",
+        "棱镜确认该证据覆盖成功路径，而不只是快速阻断路径。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-stale-active-execute.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-after-cleanup.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-real-run-proof.receipt.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-real-run-after-run.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-safety-ceiling.receipt.json",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+        "runtime/bin/redcap check"
+      ],
+      "prism_review": "pending-rerun",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 结束后仍必须检查 redcap-e2e-run-retention-after-run.json 是否随运行自动产出；当前已用快速阻断的真实 run 入口证明收尾路径会自动产证并清理陈旧 active。"
+      ]
+    },
+    {
+      "id": "OL-10-e2e-failed-retention-bounded",
+      "title": "E2E 失败运行缓存保留上限",
+      "priority": "P1",
+      "status": "runtime-verified-pending-full-e2e",
+      "root_cause": "缓存治理验证发现 failed 运行会长期保留；连续 E2E 循环会把失败证据目录越积越多，复发磁盘膨胀风险。",
+      "required_change": [
+        "失败运行不能默认无限期全量保留。",
+        "保留最近失败样本以支持排障，同时对超过年龄阈值且超出保留数量的旧失败运行提供清理策略。",
+        "清理必须有单轮删除上限和 safety_warnings，避免一次误删大量诊断证据。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+        "runtime/bin/redcap complete-revival-e2e prune-runs --root /Users/norven/workspace --delete-old-failed --old-failed-hours 72 --keep-latest-failed 20 --execute"
+      ],
+      "evidence_required": [
+        "失败运行保留策略源码",
+        "当前缓存清理回执",
+        "old-failed 安全上限自检证据"
+      ],
+      "exit_criteria": [
+        "old-failed 清理能保留最近失败样本。",
+        "old-failed 清理能删除超过阈值且超出保留数量的旧失败目录。",
+        "超过单轮删除上限时必须写入 safety_warnings 并保留超额诊断目录。"
+      ],
+      "promotion_criteria": [
+        "complete-revival-e2e self-check 覆盖 old-failed 正负样例。",
+        "当前 /Users/norven/workspace 缓存执行回执显示旧失败目录被受控清理，或明确无候选。",
+        "下一轮完整外部 E2E 后保留回执包含 delete_old_failed 策略字段。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-current-execute-failed-retention.json",
+        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/complete-revival-e2e-self-check-old-failed.receipt.json",
+        "assets/evidence/prism/20260620-e2e-failed-retention-followup/merge.final.json"
+      ],
+      "prism_review": "passed",
+      "remaining_scope": [
+        "下一轮完整外部 E2E 结束后仍要证明成功路径收尾回执包含 failed 保留策略。"
+      ]
+    },
+    {
+      "id": "OL-09-terminal-language-reconciliation",
+      "title": "历史终局措辞与当前阶段状态对齐",
+      "priority": "P2",
+      "status": "open",
+      "root_cause": "部分历史合同或队列可能残留过强完成措辞，容易诱导把阶段成果当成 RedCap 完整复活完成。",
+      "required_change": [
+        "清点历史终局措辞。",
+        "保留历史事实，但新增当前阶段状态锚点。",
+        "完成声明必须以 complete-revival-check 或 formal-usable-check 为准。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap terminal-goal self-check",
+        "runtime/bin/redcap complete-revival-check"
+      ],
+      "evidence_required": [
+        "终局目标检查回执",
+        "当前阶段状态说明"
+      ],
+      "exit_criteria": [
+        "历史强完成措辞被保留为历史事实，但当前阶段状态有明确锚点。",
+        "完成声明检查能区分阶段成果和 RedCap 完整复活。",
+        "所有终局完成声明必须绑定专用终局验收命令。"
+      ],
+      "promotion_criteria": [
+        "terminal-goal self-check 通过。",
+        "complete-revival-check 在未完成时仍阻止完整复活声明。",
+        "最终收口前有新的终局验收回执。"
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_QUEUE = REPO_ROOT / "assets" / "contracts" / "revival-followthrough-queue.json"
+DEFAULT_OPEN_LOOP_QUEUE = REPO_ROOT / "assets" / "contracts" / "open-loop-closure-queue.json"
 REQUIRED_ITEM_IDS = {
     "RF-01-followthrough-queue",
     "RF-02-loom-runtime-session-quality",
@@ -86,6 +87,14 @@ REQUIRED_EVIDENCE_CHECKS = {
     "completion-marker.json",
 }
 SELF_PURIFICATION_ALLOWED_DECISIONS = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
+OPEN_LOOP_CLOSING_STATUSES = {"verified", "runtime-verified", "runtime-verified-manual-boundary"}
+OPEN_LOOP_OPEN_STATUSES = {"open", "runtime-gated-in-progress", "planned", "in-progress"}
+OPEN_LOOP_REQUIRED_EXIT_MARKERS = ["runtime_checks", "证据文件", "棱镜", "外部项目", "failure_backlog", "P0/P1"]
+OPEN_LOOP_REQUIRED_TRUE_RULES = [
+    "new_issue_must_enter_queue",
+    "open_p0_blocks_second_e2e",
+    "failure_backlog_blocks_completion",
+]
 
 
 def collect_self_purification_decisions(purification: dict[str, Any]) -> list[dict[str, Any]]:
@@ -222,9 +231,114 @@ def validate_queue(path: pathlib.Path = DEFAULT_QUEUE) -> list[str]:
     return failures
 
 
-def scan_public_persona_boundary() -> list[str]:
+def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> dict[str, Any]:
+    payload = load_json(path)
     failures: list[str] = []
-    for root in PUBLIC_SCAN_ROOTS:
+    closeout_blockers: list[str] = []
+    if payload.get("schema_id") != "redcap-open-loop-closure-queue":
+        failures.append("open-loop 队列 schema_id 错误")
+    if payload.get("status") not in {"runtime-gated-in-progress", "verified"}:
+        failures.append("open-loop 队列 status 必须是 runtime-gated-in-progress 或 verified")
+    anti_rule = str(payload.get("anti_completion_rule") or "")
+    if "不是 RedCap 完整复活完成证据" not in anti_rule:
+        failures.append("open-loop 队列必须声明队列自身不是完整复活完成证据")
+    exit_criteria = payload.get("exit_criteria")
+    if not isinstance(exit_criteria, list) or not exit_criteria or not all(isinstance(item, str) and item.strip() for item in exit_criteria):
+        failures.append("open-loop 队列 exit_criteria 必须是非空字符串列表")
+    else:
+        joined = "\n".join(exit_criteria)
+        for marker in OPEN_LOOP_REQUIRED_EXIT_MARKERS:
+            if marker not in joined:
+                failures.append(f"open-loop exit_criteria 缺少机器可判定关键片段：{marker}")
+    loop_rules = payload.get("loop_rules")
+    if not isinstance(loop_rules, dict):
+        failures.append("open-loop 队列缺少 loop_rules")
+    else:
+        for key in OPEN_LOOP_REQUIRED_TRUE_RULES:
+            if loop_rules.get(key) is not True:
+                failures.append(f"open-loop loop_rules.{key} 必须为 true")
+        if loop_rules.get("same_root_cause_failure_limit") != 3:
+            failures.append("open-loop same_root_cause_failure_limit 必须为 3")
+    items = payload.get("items")
+    if not isinstance(items, list) or not items:
+        failures.append("open-loop 队列 items 必须非空")
+        items = []
+    for item in items:
+        if not isinstance(item, dict):
+            failures.append("open-loop 队列条目必须是对象")
+            continue
+        item_id = str(item.get("id") or "<unknown>")
+        priority = str(item.get("priority") or "")
+        status = str(item.get("status") or "")
+        for key in ["title", "root_cause"]:
+            if not isinstance(item.get(key), str) or not item[key].strip():
+                failures.append(f"{item_id}: {key} 必须非空")
+        for key in ["required_change", "runtime_checks", "evidence_required", "exit_criteria", "promotion_criteria"]:
+            values = item.get(key)
+            if not isinstance(values, list) or not values or not all(isinstance(value, str) and value.strip() for value in values):
+                failures.append(f"{item_id}: {key} 必须是非空字符串列表")
+        if status in OPEN_LOOP_CLOSING_STATUSES:
+            evidence = item.get("verified_runtime_evidence")
+            if not isinstance(evidence, list) or not evidence:
+                failures.append(f"{item_id}: 关闭状态必须包含 verified_runtime_evidence")
+            prism_status = item.get("prism_review")
+            if priority in {"P0", "P1"} and prism_status not in {"passed", "resolved", "not_required"}:
+                closeout_blockers.append(f"{item_id}: P0/P1 关闭前缺少棱镜复核状态")
+        elif priority in {"P0", "P1"}:
+            closeout_blockers.append(f"{item_id}: {priority} 仍未 verified，当前状态 {status}")
+    closeout_allowed = not failures and not closeout_blockers
+    return {
+        "schema_id": "redcap-open-loop-closure-queue-check",
+        "ok": not failures,
+        "queue": str(path),
+        "closeout_allowed": closeout_allowed,
+        "closeout_blockers": closeout_blockers,
+        "open_p0_p1_count": len(closeout_blockers),
+        "failures": failures,
+    }
+
+
+def open_loop_closeout_rules() -> dict[str, Any]:
+    return {
+        "schema_id": "redcap-open-loop-closeout-rules",
+        "closing_statuses": sorted(OPEN_LOOP_CLOSING_STATUSES),
+        "open_statuses": sorted(OPEN_LOOP_OPEN_STATUSES),
+        "required_exit_markers": OPEN_LOOP_REQUIRED_EXIT_MARKERS,
+        "required_true_loop_rules": OPEN_LOOP_REQUIRED_TRUE_RULES,
+        "same_root_cause_failure_limit": 3,
+        "closeout_formula": "closeout_allowed = failures 为空且 closeout_blockers 为空",
+        "closing_item_requirements": [
+            "关闭状态条目必须包含 verified_runtime_evidence",
+            "P0/P1 关闭状态条目必须包含 prism_review=passed|resolved|not_required",
+            "非 verified 的 P0/P1 必须进入 closeout_blockers",
+        ],
+        "boundary": "本规则只允许关闭 open-loop 队列；不允许声明 RedCap 完整复活。",
+    }
+
+
+def public_persona_boundary_rules() -> dict[str, Any]:
+    return {
+        "schema_id": "redcap-public-persona-boundary-rules",
+        "public_scan_roots": [str(path.relative_to(REPO_ROOT)) for path in PUBLIC_SCAN_ROOTS],
+        "scanned_extensions": [".json", ".md", ".txt"],
+        "private_markers": PRIVATE_PERSONA_MARKERS,
+        "match_rule": "对文本和标记做 casefold 后执行包含匹配",
+        "failure_rule": "公共资产命中任一私有人格正文标记即失败",
+        "private_storage_policy": "Cap 私有人格正文只允许保存在 $CAP_HOME 或 ~/.cap，不允许进入 RedCap 公共仓库。",
+    }
+
+
+def runtime_rule_report() -> dict[str, Any]:
+    return {
+        "schema_id": "redcap-runtime-rule-report",
+        "open_loop_closeout": open_loop_closeout_rules(),
+        "public_persona_boundary": public_persona_boundary_rules(),
+    }
+
+
+def scan_public_persona_boundary(roots: list[pathlib.Path] | None = None) -> list[str]:
+    failures: list[str] = []
+    for root in roots or PUBLIC_SCAN_ROOTS:
         if not root.exists():
             continue
         for path in sorted(root.rglob("*")):
@@ -234,7 +348,10 @@ def scan_public_persona_boundary() -> list[str]:
             lowered = text.casefold()
             leaked = [marker for marker in PRIVATE_PERSONA_MARKERS if marker.casefold() in lowered]
             if leaked:
-                rel = path.relative_to(REPO_ROOT).as_posix()
+                try:
+                    rel = path.relative_to(REPO_ROOT).as_posix()
+                except ValueError:
+                    rel = str(path)
                 failures.append(f"公共资产疑似包含私有人格正文标记：{rel}: {leaked}")
     return failures
 
@@ -652,12 +769,72 @@ def cmd_e2e_check(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_open_loop_check(args: argparse.Namespace) -> int:
+    result = validate_open_loop_queue(pathlib.Path(args.queue).resolve())
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["ok"]:
+        print("REDCAP_OPEN_LOOP_CLOSURE_QUEUE_OK")
+        return 0
+    return 1
+
+
+def cmd_rule_report(args: argparse.Namespace) -> int:
+    result = runtime_rule_report()
+    if args.out:
+        out = pathlib.Path(args.out).resolve()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print("REDCAP_REVIVAL_FOLLOWTHROUGH_RULE_REPORT_OK")
+    return 0
+
+
 def cmd_self_check(_: argparse.Namespace) -> int:
     failures: list[str] = []
     if validate_queue(DEFAULT_QUEUE):
         failures.append("当前 followthrough 队列不应失败")
+    current_open_loop = validate_open_loop_queue(DEFAULT_OPEN_LOOP_QUEUE)
+    if current_open_loop.get("ok") is not True:
+        failures.append(f"当前 open-loop 队列结构不应失败：{current_open_loop.get('failures')}")
+    if current_open_loop.get("closeout_allowed") is True:
+        failures.append("当前 open-loop 队列仍有未闭环 P0/P1，不应允许收口")
     with tempfile.TemporaryDirectory(prefix="redcap-followthrough-") as raw:
         root = pathlib.Path(raw)
+        open_loop_fixture = load_json(DEFAULT_OPEN_LOOP_QUEUE)
+        for item in open_loop_fixture["items"]:
+            if item.get("priority") in {"P0", "P1"}:
+                item["status"] = "verified"
+                item["verified_runtime_evidence"] = ["fixture-runtime-check"]
+                item["prism_review"] = "passed"
+        open_loop_fixture["status"] = "verified"
+        verified_queue = root / "open-loop-verified.json"
+        verified_queue.write_text(json.dumps(open_loop_fixture, ensure_ascii=False), encoding="utf-8")
+        verified_result = validate_open_loop_queue(verified_queue)
+        if verified_result.get("ok") is not True or verified_result.get("closeout_allowed") is not True:
+            failures.append(f"完整 open-loop fixture 应允许收口：{verified_result}")
+        missing_evidence_fixture = json.loads(json.dumps(open_loop_fixture, ensure_ascii=False))
+        missing_evidence_fixture["items"][0].pop("verified_runtime_evidence", None)
+        missing_queue = root / "open-loop-missing-evidence.json"
+        missing_queue.write_text(json.dumps(missing_evidence_fixture, ensure_ascii=False), encoding="utf-8")
+        missing_result = validate_open_loop_queue(missing_queue)
+        if missing_result.get("ok") is True or not any("verified_runtime_evidence" in item for item in missing_result.get("failures", [])):
+            failures.append("open-loop 已关闭但缺 verified_runtime_evidence 的样例没有失败")
+        contaminated_public = root / "public-docs"
+        contaminated_public.mkdir()
+        for index, marker in enumerate(PRIVATE_PERSONA_MARKERS):
+            suffix = [".md", ".json", ".txt"][index % 3]
+            content = f"这里故意写入 {marker.upper() if marker.isascii() else marker} 作为负向样例。\n"
+            (contaminated_public / f"leak-{index}{suffix}").write_text(content, encoding="utf-8")
+        contamination_failures = scan_public_persona_boundary([contaminated_public])
+        contamination_text = "\n".join(contamination_failures)
+        for marker in PRIVATE_PERSONA_MARKERS:
+            if marker not in contamination_text:
+                failures.append(f"公共人格边界扫描器没有命中负向私密正文标记样例：{marker}")
+        rules = runtime_rule_report()
+        if rules.get("open_loop_closeout", {}).get("closeout_formula") != "closeout_allowed = failures 为空且 closeout_blockers 为空":
+            failures.append("open-loop 收口规则报告缺少可审计 closeout 公式")
+        if PRIVATE_PERSONA_MARKERS != rules.get("public_persona_boundary", {}).get("private_markers"):
+            failures.append("公共人格边界规则报告没有完整暴露扫描标记")
         evidence = root / "e2e"
         evidence.mkdir()
         role_ids = {
@@ -804,6 +981,12 @@ def build_parser() -> argparse.ArgumentParser:
     e2e = sub.add_parser("e2e-check")
     e2e.add_argument("--evidence-root", required=True)
     e2e.set_defaults(func=cmd_e2e_check)
+    open_loop = sub.add_parser("open-loop-check")
+    open_loop.add_argument("--queue", default=str(DEFAULT_OPEN_LOOP_QUEUE))
+    open_loop.set_defaults(func=cmd_open_loop_check)
+    rules = sub.add_parser("rule-report")
+    rules.add_argument("--out")
+    rules.set_defaults(func=cmd_rule_report)
     sub.add_parser("self-check").set_defaults(func=cmd_self_check)
     return parser
 

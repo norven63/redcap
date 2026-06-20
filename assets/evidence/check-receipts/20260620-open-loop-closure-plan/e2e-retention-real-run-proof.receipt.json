@@ -1,0 +1,103 @@
+{
+  "schema_id": "redcap-e2e-retention-real-run-proof",
+  "ok": true,
+  "proof_type": "complete-revival-e2e-run-entry-produced-after-run-retention-receipt",
+  "manual_prune_used": false,
+  "command": "runtime/bin/redcap complete-revival-e2e run --direction 缓存治理真实入口验证 --work-root /tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-current --timeout-seconds 60",
+  "test_injection": {
+    "REDCAP_TEST_MODE": "1",
+    "REDCAP_TEST_INJECT_LAYERED_PREFLIGHT_FAILURE": "loom-runtime-self-check",
+    "purpose": "快速阻断在分层前置，验证真实 run 入口仍执行收尾缓存治理。"
+  },
+  "retention_path": "/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-current/redcap-e2e-run-retention-after-run.json",
+  "summary_path": "/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-current/redcap-e2e-run-summary.json",
+  "outer_stdout_path": "/tmp/redcap-e2e-retention-proof-20260620/outer-run.stdout.json",
+  "stale_dir_exists_after_run": false,
+  "deleted_paths": [
+    "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-stale-proof"
+  ],
+  "blocked_before_project_run": true,
+  "retention": {
+    "created_at": "2026-06-20T04:38:47+00:00",
+    "execute_requested": true,
+    "execution": {
+      "deleted": [
+        "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-stale-proof"
+      ],
+      "failures": [],
+      "ok": true,
+      "schema_id": "redcap-e2e-run-retention-execution"
+    },
+    "ok": true,
+    "plan": {
+      "created_at": "2026-06-20T04:38:47+00:00",
+      "delete_candidates": [
+        {
+          "active_packet_count": 1,
+          "active_running": true,
+          "age_seconds": 5.538928031921387,
+          "delete_allowed": true,
+          "delete_reason": "陈旧 active 目录超过 1 秒，显式允许清理",
+          "mtime": 1781930321.542172,
+          "mtime_iso": "2026-06-20T04:38:41+00:00",
+          "name": "redcap-e2e-runs-stale-proof",
+          "path": "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-stale-proof",
+          "stale_active_seconds": 1,
+          "state_file_missing": false,
+          "state_file_warning": "",
+          "status": "stale-active",
+          "summary_paths": [
+            "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-stale-proof/redcap-e2e-run-summary.json"
+          ]
+        }
+      ],
+      "delete_policy": "默认删除旧成功运行和超过阈值的陈旧 active 目录；失败、阻塞、未知和未达阈值 active 目录保留；缺状态文件目录进入警告，不静默跳过",
+      "delete_stale_active": true,
+      "failures": [],
+      "keep_latest_success": 5,
+      "ok": true,
+      "root": "/private/tmp/redcap-e2e-retention-proof-20260620",
+      "runs": [
+        {
+          "active_packet_count": 1,
+          "active_running": false,
+          "age_seconds": 0.0005168914794921875,
+          "delete_allowed": false,
+          "delete_reason": "保留 unknown 状态目录，避免删除排障证据",
+          "mtime": 1781930327.080455,
+          "mtime_iso": "2026-06-20T04:38:47+00:00",
+          "name": "redcap-e2e-runs-current",
+          "path": "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-current",
+          "stale_active_seconds": 1,
+          "state_file_missing": false,
+          "state_file_warning": "",
+          "status": "unknown",
+          "summary_paths": []
+        },
+        {
+          "active_packet_count": 1,
+          "active_running": true,
+          "age_seconds": 5.538928031921387,
+          "delete_allowed": true,
+          "delete_reason": "陈旧 active 目录超过 1 秒，显式允许清理",
+          "mtime": 1781930321.542172,
+          "mtime_iso": "2026-06-20T04:38:41+00:00",
+          "name": "redcap-e2e-runs-stale-proof",
+          "path": "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-stale-proof",
+          "stale_active_seconds": 1,
+          "state_file_missing": false,
+          "state_file_warning": "",
+          "status": "stale-active",
+          "summary_paths": [
+            "/private/tmp/redcap-e2e-retention-proof-20260620/redcap-e2e-runs-stale-proof/redcap-e2e-run-summary.json"
+          ]
+        }
+      ],
+      "schema_id": "redcap-e2e-run-retention-plan",
+      "stale_active_seconds": 1,
+      "state_file_warnings": []
+    },
+    "root": "/private/tmp/redcap-e2e-retention-proof-20260620",
+    "schema_id": "redcap-e2e-run-retention-after-run"
+  }
+}

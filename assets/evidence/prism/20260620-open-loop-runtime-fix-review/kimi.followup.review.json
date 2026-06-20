@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main AI moved from hand-waved integration to concrete evidence: a real invocation of the complete-revival-e2e run entry point wrote the after-run retention JSON and deleted stale-active fixtures with manual_prune_used=false; a machine open-loop gate now reports closeout_allowed=false and blocks premature closure; and the Cap revival manual has an auditable boundary inventory with zero private-body markers and zero absolute user paths. These are real state changes, not just documents.",
+  "main_concern": "The 'real run' evidence appears to rely on a test-injected early abort in layered preflight, so it proves the cleanup hook fires on a failed/short-circuited run, not that a complete, successful E2E run retains and cleans correctly from end to end. The strongest risk is that the integration is validated only on the failure-path, leaving the success-path retention behavior still narratively assumed.",
+  "top_risks": [
+    "A successful complete-revival-e2e run may exercise different retention decisions (e.g., old successful runs retention policy) than an aborted preflight run, so the current proof may not cover the normal operating path.",
+    "The boundary inventory scanner is custom and only checks the markers it knows; if the marker list is incomplete or the private content is expressed semantically rather than by absolute path/marker, leakage could pass undetected.",
+    "closeout_allowed=false is a useful guard, but if the rule that flips it to true contains a subjective 'agreed with Prism' clause, the infinite-loop generator risk is merely renamed rather than eliminated."
+  ],
+  "missing_evidence": [
+    "A complete-revival-e2e run receipt from a full successful run (not a test-injected preflight abort) showing the same automatic retention output and manual_prune_used=false.",
+    "The concrete decision rules for open-loop-check / closeout_allowed, so the gate can be verified as machine-evaluable and not reducible to discretionary agreement.",
+    "A validation run of the boundary scanner against a deliberately contaminated document to prove it would catch private markers if they existed."
+  ],
+  "minimum_fix": "Execute one full, successful complete-revival-e2e run (no preflight test injection) and publish its redcap-e2e-run-retention-after-run.json as the primary retention evidence. Expose the open-loop-check decision logic and make closeout_allowed depend only on verifiable objective conditions. Optionally, show the boundary scanner correctly rejecting a document seeded with known private markers.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The main AI responded to the prior concern by producing more receipts and self-checks, but the most load-bearing receipt still uses a deliberately aborted run. This is the loop signal: substituting a richer evidence package for the one missing end-to-end success path that the user's intent actually requires."
+  },
+  "user_intent_alignment": "Closer, but not fully aligned. The user asked to integrate cache governance into the per-round process and execute/test/fix until no new issues; proving it only on an aborted run leaves the success path untested. The user asked for a queue with real exit conditions; a gate that can only open on machine-verifiable criteria would align better. The user asked for a boundary-safe manual; the inventory is good but its detector needs validation."
+}

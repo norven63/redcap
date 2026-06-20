@@ -73,6 +73,14 @@ ROOT_CAUSE_FAILURE_ROUTE = {
     "review": ("reviewer", "review_and_acceptance"),
 }
 E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS = int(os.environ.get("REDCAP_E2E_RETENTION_KEEP_LATEST_SUCCESS", "5"))
+E2E_RETENTION_DEFAULT_KEEP_LATEST_FAILED = int(os.environ.get("REDCAP_E2E_RETENTION_KEEP_LATEST_FAILED", "20"))
+E2E_RETENTION_STALE_ACTIVE_SECONDS = int(os.environ.get("REDCAP_E2E_RETENTION_STALE_ACTIVE_SECONDS", str(24 * 60 * 60)))
+E2E_RETENTION_OLD_FAILED_SECONDS = int(os.environ.get("REDCAP_E2E_RETENTION_OLD_FAILED_SECONDS", str(72 * 60 * 60)))
+E2E_RETENTION_AUTO_EXECUTE = os.environ.get("REDCAP_E2E_RETENTION_AUTO_EXECUTE", "1") != "0"
+E2E_RETENTION_DELETE_STALE_ACTIVE_AFTER_RUN = os.environ.get("REDCAP_E2E_RETENTION_DELETE_STALE_ACTIVE_AFTER_RUN", "1") != "0"
+E2E_RETENTION_STALE_ACTIVE_DELETE_MAX = int(os.environ.get("REDCAP_E2E_RETENTION_STALE_ACTIVE_DELETE_MAX", "20"))
+E2E_RETENTION_DELETE_OLD_FAILED_AFTER_RUN = os.environ.get("REDCAP_E2E_RETENTION_DELETE_OLD_FAILED_AFTER_RUN", "1") != "0"
+E2E_RETENTION_OLD_FAILED_DELETE_MAX = int(os.environ.get("REDCAP_E2E_RETENTION_OLD_FAILED_DELETE_MAX", "20"))
 ROLE_TIMEOUT_SECONDS = {
     "product_manager": 420,
     "architect": 420,
@@ -8110,7 +8118,7 @@ def direct_e2e_run_dirs(root: pathlib.Path) -> list[pathlib.Path]:
         nested = nested_runs(child)
         if nested:
             candidates.extend(nested)
-        elif has_run_summary(child):
+        else:
             candidates.append(child.resolve())
     return sorted(candidates)
 
@@ -8121,19 +8129,34 @@ def run_summary_paths(run_dir: pathlib.Path) -> list[pathlib.Path]:
     return unique_preserve_order([str(path) for path in paths if path.exists()])
 
 
-def classify_e2e_run_dir(run_dir: pathlib.Path) -> dict[str, Any]:
-    summaries = [load_optional_json(pathlib.Path(path)) for path in run_summary_paths(run_dir)]
+def classify_e2e_run_dir(run_dir: pathlib.Path, *, stale_active_seconds: int = E2E_RETENTION_STALE_ACTIVE_SECONDS) -> dict[str, Any]:
+    summary_paths = run_summary_paths(run_dir)
+    summaries = [load_optional_json(pathlib.Path(path)) for path in summary_paths]
     summaries = [item for item in summaries if isinstance(item, dict)]
+    active_packet_paths = sorted(run_dir.glob("**/redcap-long-task-active-run.json"))
     active_packets = [
         payload
         for payload in [
             load_optional_json(path)
-            for path in run_dir.glob("**/redcap-long-task-active-run.json")
+            for path in active_packet_paths
         ]
         if isinstance(payload, dict)
     ]
     active_running = any(item.get("lifecycle_state") == "running" for item in active_packets)
-    if active_running:
+    try:
+        mtime = max(path.stat().st_mtime for path in [run_dir, *[pathlib.Path(item) for item in summary_paths], *active_packet_paths])
+    except OSError:
+        mtime = 0.0
+    age_seconds = max(0.0, time.time() - mtime) if mtime else None
+    stale_active = bool(
+        active_running
+        and age_seconds is not None
+        and stale_active_seconds >= 0
+        and age_seconds >= stale_active_seconds
+    )
+    if stale_active:
+        status = "stale-active"
+    elif active_running:
         status = "active"
     elif any(item.get("ok") is True or item.get("ready_for_engineering_use") is True for item in summaries):
         status = "success"
@@ -8143,17 +8166,24 @@ def classify_e2e_run_dir(run_dir: pathlib.Path) -> dict[str, Any]:
         status = "failed"
     else:
         status = "unknown"
-    try:
-        mtime = max(path.stat().st_mtime for path in [run_dir, *[pathlib.Path(item) for item in run_summary_paths(run_dir)]])
-    except OSError:
-        mtime = 0.0
     return {
         "path": str(run_dir),
         "name": run_dir.name,
         "status": status,
+        "state_file_missing": not summary_paths and not active_packet_paths,
+        "state_file_warning": (
+            "目录缺少 redcap-e2e-run-summary.json、.redcap/evidence/e2e/run-summary.json 和 redcap-long-task-active-run.json，"
+            "保留并要求人工或后续诊断确认来源。"
+            if not summary_paths and not active_packet_paths
+            else ""
+        ),
         "mtime": mtime,
         "mtime_iso": dt.datetime.fromtimestamp(mtime, dt.timezone.utc).replace(microsecond=0).isoformat() if mtime else None,
-        "summary_paths": run_summary_paths(run_dir),
+        "age_seconds": age_seconds,
+        "stale_active_seconds": stale_active_seconds,
+        "active_packet_count": len(active_packets),
+        "active_running": active_running,
+        "summary_paths": summary_paths,
         "delete_allowed": False,
         "delete_reason": "",
     }
@@ -8163,6 +8193,13 @@ def plan_e2e_run_retention(
     root: pathlib.Path,
     *,
     keep_latest_success: int = E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS,
+    keep_latest_failed: int = E2E_RETENTION_DEFAULT_KEEP_LATEST_FAILED,
+    delete_stale_active: bool = False,
+    stale_active_seconds: int = E2E_RETENTION_STALE_ACTIVE_SECONDS,
+    stale_active_delete_max: int = E2E_RETENTION_STALE_ACTIVE_DELETE_MAX,
+    delete_old_failed: bool = False,
+    old_failed_seconds: int = E2E_RETENTION_OLD_FAILED_SECONDS,
+    old_failed_delete_max: int = E2E_RETENTION_OLD_FAILED_DELETE_MAX,
 ) -> dict[str, Any]:
     resolved_root = root.expanduser().resolve()
     source = REPO_ROOT.resolve()
@@ -8171,15 +8208,79 @@ def plan_e2e_run_retention(
         failures.append("拒绝在 RedCap 源工作区内部清理 E2E 运行目录")
     if not resolved_root.exists():
         failures.append(f"清理根目录不存在：{resolved_root}")
-    summaries = [classify_e2e_run_dir(path) for path in direct_e2e_run_dirs(resolved_root)]
+    summaries = [
+        classify_e2e_run_dir(path, stale_active_seconds=stale_active_seconds)
+        for path in direct_e2e_run_dirs(resolved_root)
+    ]
     success = sorted(
         [item for item in summaries if item["status"] == "success"],
         key=lambda item: float(item.get("mtime") or 0.0),
         reverse=True,
     )
+    failed = sorted(
+        [item for item in summaries if item["status"] == "failed"],
+        key=lambda item: float(item.get("mtime") or 0.0),
+        reverse=True,
+    )
     keep_names = {item["name"] for item in success[:max(0, keep_latest_success)]}
+    keep_failed_paths = {item["path"] for item in failed[:max(0, keep_latest_failed)]}
     delete_candidates: list[dict[str, Any]] = []
+    safety_warnings: list[dict[str, Any]] = []
+    stale_active_delete_count = 0
+    old_failed_delete_count = 0
     for item in summaries:
+        if item["status"] == "stale-active":
+            if delete_stale_active:
+                if stale_active_delete_max < 0 or stale_active_delete_count < stale_active_delete_max:
+                    item["delete_allowed"] = True
+                    item["delete_reason"] = f"陈旧 active 目录超过 {stale_active_seconds} 秒，显式允许清理"
+                    delete_candidates.append(item)
+                    stale_active_delete_count += 1
+                else:
+                    item["delete_reason"] = (
+                        f"陈旧 active 目录超过 {stale_active_seconds} 秒，但本轮 stale-active 清理数量达到安全上限 "
+                        f"{stale_active_delete_max}，保留并要求后续诊断。"
+                    )
+                    safety_warnings.append({
+                        "path": item["path"],
+                        "status": item["status"],
+                        "stale_active_seconds": stale_active_seconds,
+                        "stale_active_delete_max": stale_active_delete_max,
+                        "reason": item["delete_reason"],
+                    })
+            else:
+                item["delete_reason"] = f"保留陈旧 active 目录；如确认不再需要排障证据，可显式开启 stale-active 清理"
+            continue
+        if item["status"] == "failed":
+            age_seconds = item.get("age_seconds")
+            old_enough = isinstance(age_seconds, (int, float)) and old_failed_seconds >= 0 and age_seconds >= old_failed_seconds
+            if delete_old_failed and item["path"] not in keep_failed_paths and old_enough:
+                if old_failed_delete_max < 0 or old_failed_delete_count < old_failed_delete_max:
+                    item["delete_allowed"] = True
+                    item["delete_reason"] = (
+                        f"失败运行超过 {old_failed_seconds} 秒，且不在最近失败保留数量 {keep_latest_failed} 内，显式允许清理"
+                    )
+                    delete_candidates.append(item)
+                    old_failed_delete_count += 1
+                else:
+                    item["delete_reason"] = (
+                        f"失败运行超过 {old_failed_seconds} 秒，但本轮 failed 清理数量达到安全上限 "
+                        f"{old_failed_delete_max}，保留并要求后续诊断。"
+                    )
+                    safety_warnings.append({
+                        "path": item["path"],
+                        "status": item["status"],
+                        "old_failed_seconds": old_failed_seconds,
+                        "old_failed_delete_max": old_failed_delete_max,
+                        "reason": item["delete_reason"],
+                    })
+            elif delete_old_failed and item["path"] in keep_failed_paths:
+                item["delete_reason"] = "保留最近失败运行，保留排障样本"
+            elif delete_old_failed and not old_enough:
+                item["delete_reason"] = f"保留未超过 {old_failed_seconds} 秒的失败运行"
+            else:
+                item["delete_reason"] = "保留 failed 状态目录，避免删除排障证据；如需防膨胀可显式开启 old-failed 清理"
+            continue
         if item["status"] != "success":
             item["delete_reason"] = f"保留 {item['status']} 状态目录，避免删除排障证据"
             continue
@@ -8195,8 +8296,24 @@ def plan_e2e_run_retention(
         "ok": not failures,
         "root": str(resolved_root),
         "keep_latest_success": keep_latest_success,
-        "delete_policy": "只删除旧成功运行；失败、阻塞、中断、未知和正在运行目录保留",
+        "keep_latest_failed": keep_latest_failed,
+        "delete_stale_active": delete_stale_active,
+        "stale_active_seconds": stale_active_seconds,
+        "stale_active_delete_max": stale_active_delete_max,
+        "delete_old_failed": delete_old_failed,
+        "old_failed_seconds": old_failed_seconds,
+        "old_failed_delete_max": old_failed_delete_max,
+        "delete_policy": "默认删除旧成功运行、超过阈值的陈旧 active 目录，以及超过年龄阈值且不在最近失败保留数量内的旧 failed 目录；阻塞、未知、未达阈值 active 和最近 failed 目录保留；缺状态文件目录和超过安全上限的目录进入警告，不静默跳过",
         "runs": summaries,
+        "state_file_warnings": [
+            {
+                "path": item["path"],
+                "warning": item["state_file_warning"],
+            }
+            for item in summaries
+            if item.get("state_file_missing") is True
+        ],
+        "safety_warnings": safety_warnings,
         "delete_candidates": delete_candidates,
         "failures": failures,
     }
@@ -8212,11 +8329,19 @@ def execute_e2e_run_retention(plan: dict[str, Any]) -> dict[str, Any]:
             "deleted": deleted,
             "failures": failures,
         }
+    root = pathlib.Path(str(plan.get("root") or "")).resolve()
+    if not root.exists():
+        failures.append(f"清理根目录不存在：{root}")
     for item in plan.get("delete_candidates", []):
         if not isinstance(item, dict) or item.get("delete_allowed") is not True:
             continue
         path = pathlib.Path(str(item.get("path") or "")).resolve()
-        if not path.name.startswith("redcap-e2e-runs"):
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            failures.append(f"拒绝删除不在清理根目录内的路径：{path}")
+            continue
+        if not root.name.startswith("redcap-e2e-runs") and not any(part.startswith("redcap-e2e-runs") for part in relative.parts):
             failures.append(f"拒绝删除非 E2E 运行目录：{path}")
             continue
         if path == REPO_ROOT.resolve() or REPO_ROOT.resolve() in path.parents:
@@ -8233,6 +8358,75 @@ def execute_e2e_run_retention(plan: dict[str, Any]) -> dict[str, Any]:
         "deleted": deleted,
         "failures": failures,
     }
+
+
+def e2e_retention_root_for_work_root(work_root: pathlib.Path) -> pathlib.Path:
+    resolved = work_root.expanduser().resolve()
+    for candidate in [resolved, *resolved.parents]:
+        if candidate.name.startswith("redcap-e2e-runs"):
+            return candidate.parent
+    return resolved.parent
+
+
+def attach_e2e_run_retention_result(
+    result: dict[str, Any],
+    work_root: pathlib.Path,
+    *,
+    execute: bool = E2E_RETENTION_AUTO_EXECUTE,
+    delete_stale_active: bool = E2E_RETENTION_DELETE_STALE_ACTIVE_AFTER_RUN,
+    stale_active_seconds: int = E2E_RETENTION_STALE_ACTIVE_SECONDS,
+    stale_active_delete_max: int = E2E_RETENTION_STALE_ACTIVE_DELETE_MAX,
+    delete_old_failed: bool = E2E_RETENTION_DELETE_OLD_FAILED_AFTER_RUN,
+    old_failed_seconds: int = E2E_RETENTION_OLD_FAILED_SECONDS,
+    old_failed_delete_max: int = E2E_RETENTION_OLD_FAILED_DELETE_MAX,
+) -> dict[str, Any]:
+    root = e2e_retention_root_for_work_root(work_root)
+    plan = plan_e2e_run_retention(
+        root,
+        keep_latest_success=E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS,
+        keep_latest_failed=E2E_RETENTION_DEFAULT_KEEP_LATEST_FAILED,
+        delete_stale_active=delete_stale_active,
+        stale_active_seconds=stale_active_seconds,
+        stale_active_delete_max=stale_active_delete_max,
+        delete_old_failed=delete_old_failed,
+        old_failed_seconds=old_failed_seconds,
+        old_failed_delete_max=old_failed_delete_max,
+    )
+    retention: dict[str, Any] = {
+        "schema_id": "redcap-e2e-run-retention-after-run",
+        "created_at": iso_now(),
+        "root": str(root),
+        "execute_requested": execute,
+        "plan": plan,
+        "execution": None,
+        "ok": bool(plan.get("ok")),
+    }
+    if execute:
+        retention["execution"] = execute_e2e_run_retention(plan)
+        retention["ok"] = bool(plan.get("ok")) and retention["execution"].get("ok") is True
+    result["e2e_run_retention"] = retention
+    try:
+        write_json(work_root / "redcap-e2e-run-retention-after-run.json", retention)
+    except Exception:
+        result.setdefault("failures", [])
+        if isinstance(result["failures"], list):
+            result["failures"].append("E2E 收尾缓存治理回执写入失败")
+        result["ok"] = False
+        result["ready_for_engineering_use"] = False
+    return result
+
+
+def persist_e2e_run_summary_with_retention(result: dict[str, Any], work_root: pathlib.Path) -> None:
+    try:
+        write_json(work_root / "redcap-e2e-run-summary.json", result)
+    except Exception:
+        pass
+    evidence_root = result.get("evidence_root")
+    if isinstance(evidence_root, str):
+        try:
+            write_json(pathlib.Path(evidence_root) / "run-summary.json", result)
+        except Exception:
+            pass
 
 
 def patrol_ledger_path(work_root: pathlib.Path) -> pathlib.Path:
@@ -11232,7 +11426,17 @@ def cmd_convergence_guard_check(args: argparse.Namespace) -> int:
 
 def cmd_prune_runs(args: argparse.Namespace) -> int:
     root = pathlib.Path(args.root).expanduser().resolve()
-    plan = plan_e2e_run_retention(root, keep_latest_success=args.keep_latest_success)
+    plan = plan_e2e_run_retention(
+        root,
+        keep_latest_success=args.keep_latest_success,
+        keep_latest_failed=args.keep_latest_failed,
+        delete_stale_active=args.delete_stale_active,
+        stale_active_seconds=int(args.stale_active_hours * 60 * 60),
+        stale_active_delete_max=args.stale_active_delete_max,
+        delete_old_failed=args.delete_old_failed,
+        old_failed_seconds=int(args.old_failed_hours * 60 * 60),
+        old_failed_delete_max=args.old_failed_delete_max,
+    )
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-run-retention-result",
         "plan": plan,
@@ -11640,7 +11844,11 @@ def cmd_harness_watchdog(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    result = run_e2e_harness(direction_from_args(args), resolve_work_root(args.work_root), args.timeout_seconds)
+    work_root = resolve_work_root(args.work_root)
+    result = run_e2e_harness(direction_from_args(args), work_root, args.timeout_seconds)
+    if os.environ.get("REDCAP_E2E_WORKER") != "1":
+        result = attach_e2e_run_retention_result(result, work_root)
+        persist_e2e_run_summary_with_retention(result, work_root)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result.get("ok"):
         print("REDCAP_AI_E2E_RUN_OK")
@@ -11963,19 +12171,180 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             })
             unknown_dir = retention_root / "redcap-e2e-runs-unknown"
             unknown_dir.mkdir()
+            stale_active_dir = retention_root / "redcap-e2e-runs-stale-active"
+            stale_active_dir.mkdir()
+            stale_summary = stale_active_dir / "redcap-e2e-run-summary.json"
+            write_json(stale_summary, {
+                "schema_id": "redcap-e2e-run-summary",
+                "ok": False,
+                "failures": ["fixture active but stale"],
+            })
+            stale_packet = stale_active_dir / "redcap-long-task-active-run.json"
+            write_json(stale_packet, {
+                "schema_id": "redcap-e2e-long-task-active-run",
+                "lifecycle_state": "running",
+            })
+            stale_mtime = time.time() - E2E_RETENTION_STALE_ACTIVE_SECONDS - 10
+            os.utime(stale_summary, (stale_mtime, stale_mtime))
+            os.utime(stale_packet, (stale_mtime, stale_mtime))
+            os.utime(stale_active_dir, (stale_mtime, stale_mtime))
             unrelated_dir = retention_root / "not-redcap-e2e-runs"
             unrelated_dir.mkdir()
             retention_plan = plan_e2e_run_retention(retention_root, keep_latest_success=5)
             if retention_plan.get("ok") is not True or len(retention_plan.get("delete_candidates", [])) != 2:
                 failures.append(f"E2E 运行目录保留计划没有只挑出 2 个旧成功目录：{retention_plan}")
+            stale_items = [item for item in retention_plan.get("runs", []) if item.get("status") == "stale-active"]
+            if len(stale_items) != 1 or stale_items[0].get("delete_allowed") is True:
+                failures.append(f"E2E 运行目录保留计划没有保守识别 stale-active：{retention_plan}")
+            state_warnings = retention_plan.get("state_file_warnings", [])
+            if not any(str(item.get("path") or "").endswith("redcap-e2e-runs-unknown") for item in state_warnings if isinstance(item, dict)):
+                failures.append(f"E2E 运行目录保留计划没有记录缺状态文件目录警告：{retention_plan}")
             retention_execution = execute_e2e_run_retention(retention_plan)
             if retention_execution.get("ok") is not True or len(retention_execution.get("deleted", [])) != 2:
                 failures.append(f"E2E 运行目录保留执行没有删除 2 个旧成功目录：{retention_execution}")
+            after_run_cleanup_dir = retention_root / "redcap-e2e-runs-after-run-stale-active"
+            after_run_cleanup_dir.mkdir()
+            after_run_summary = after_run_cleanup_dir / "redcap-e2e-run-summary.json"
+            write_json(after_run_summary, {
+                "schema_id": "redcap-e2e-run-summary",
+                "ok": False,
+                "failures": ["fixture after-run stale active"],
+            })
+            after_run_packet = after_run_cleanup_dir / "redcap-long-task-active-run.json"
+            write_json(after_run_packet, {
+                "schema_id": "redcap-e2e-long-task-active-run",
+                "lifecycle_state": "running",
+            })
+            after_run_mtime = time.time() - E2E_RETENTION_STALE_ACTIVE_SECONDS - 10
+            os.utime(after_run_summary, (after_run_mtime, after_run_mtime))
+            os.utime(after_run_packet, (after_run_mtime, after_run_mtime))
+            os.utime(after_run_cleanup_dir, (after_run_mtime, after_run_mtime))
+            after_run_result = attach_e2e_run_retention_result(
+                {
+                    "schema_id": "fixture-after-run-retention",
+                    "ok": True,
+                    "ready_for_engineering_use": False,
+                    "failures": [],
+                },
+                retention_root / "redcap-e2e-runs-current-run",
+            )
+            after_run_retention_file = retention_root / "redcap-e2e-runs-current-run" / "redcap-e2e-run-retention-after-run.json"
+            if not after_run_retention_file.exists():
+                failures.append("E2E 每轮收尾没有写 redcap-e2e-run-retention-after-run.json")
+            after_run_retention = load_optional_json(after_run_retention_file)
+            if not isinstance(after_run_retention, dict) or after_run_retention.get("ok") is not True:
+                failures.append(f"E2E 每轮收尾保留回执无效：{after_run_retention}")
+            if after_run_cleanup_dir.exists():
+                failures.append("E2E 每轮收尾没有自动清理陈旧 active 目录")
+            after_run_execution = after_run_result.get("e2e_run_retention", {}).get("execution") if isinstance(after_run_result.get("e2e_run_retention"), dict) else {}
+            if not isinstance(after_run_execution, dict) or not any(str(path).endswith("redcap-e2e-runs-after-run-stale-active") for path in after_run_execution.get("deleted", [])):
+                failures.append(f"E2E 每轮收尾回执没有记录陈旧 active 删除：{after_run_execution}")
+            explicit_stale_active_dir = retention_root / "redcap-e2e-runs-explicit-stale-active"
+            explicit_stale_active_dir.mkdir()
+            explicit_stale_summary = explicit_stale_active_dir / "redcap-e2e-run-summary.json"
+            write_json(explicit_stale_summary, {
+                "schema_id": "redcap-e2e-run-summary",
+                "ok": False,
+                "failures": ["fixture explicit stale active"],
+            })
+            explicit_stale_packet = explicit_stale_active_dir / "redcap-long-task-active-run.json"
+            write_json(explicit_stale_packet, {
+                "schema_id": "redcap-e2e-long-task-active-run",
+                "lifecycle_state": "running",
+            })
+            explicit_stale_mtime = time.time() - E2E_RETENTION_STALE_ACTIVE_SECONDS - 10
+            os.utime(explicit_stale_summary, (explicit_stale_mtime, explicit_stale_mtime))
+            os.utime(explicit_stale_packet, (explicit_stale_mtime, explicit_stale_mtime))
+            os.utime(explicit_stale_active_dir, (explicit_stale_mtime, explicit_stale_mtime))
+            stale_cleanup_plan = plan_e2e_run_retention(
+                retention_root,
+                keep_latest_success=5,
+                delete_stale_active=True,
+                stale_active_seconds=1,
+            )
+            if len(stale_cleanup_plan.get("delete_candidates", [])) != 1:
+                failures.append(f"E2E stale-active 显式清理计划没有挑出 1 个目录：{stale_cleanup_plan}")
+            stale_cleanup_execution = execute_e2e_run_retention(stale_cleanup_plan)
+            if stale_cleanup_execution.get("ok") is not True or len(stale_cleanup_execution.get("deleted", [])) != 1:
+                failures.append(f"E2E stale-active 显式清理执行失败：{stale_cleanup_execution}")
+            if explicit_stale_active_dir.exists():
+                failures.append("E2E stale-active 显式清理后目录仍存在")
+            failed_cleanup_root = work_root / "retention-old-failed-fixture"
+            failed_cleanup_root.mkdir()
+            for index in range(3):
+                old_failed_dir = failed_cleanup_root / f"redcap-e2e-runs-old-failed-{index}"
+                old_failed_dir.mkdir()
+                old_failed_summary = old_failed_dir / "redcap-e2e-run-summary.json"
+                write_json(old_failed_summary, {
+                    "schema_id": "redcap-e2e-run-summary",
+                    "ok": False,
+                    "failures": [f"fixture old failed {index}"],
+                })
+                old_failed_mtime = time.time() - E2E_RETENTION_OLD_FAILED_SECONDS - 30 + index
+                os.utime(old_failed_summary, (old_failed_mtime, old_failed_mtime))
+                os.utime(old_failed_dir, (old_failed_mtime, old_failed_mtime))
+            failed_cleanup_plan = plan_e2e_run_retention(
+                failed_cleanup_root,
+                keep_latest_success=5,
+                keep_latest_failed=1,
+                delete_old_failed=True,
+                old_failed_seconds=1,
+                old_failed_delete_max=1,
+            )
+            if len(failed_cleanup_plan.get("delete_candidates", [])) != 1 or len(failed_cleanup_plan.get("safety_warnings", [])) != 1:
+                failures.append(f"E2E old-failed 安全清理没有形成 1 个删除候选和 1 个 warning：{failed_cleanup_plan}")
+            failed_cleanup_execution = execute_e2e_run_retention(failed_cleanup_plan)
+            if failed_cleanup_execution.get("ok") is not True or len(failed_cleanup_execution.get("deleted", [])) != 1:
+                failures.append(f"E2E old-failed 安全清理执行没有只删除 1 个目录：{failed_cleanup_execution}")
+            remaining_old_failed = [
+                path
+                for path in failed_cleanup_root.iterdir()
+                if path.is_dir() and path.name.startswith("redcap-e2e-runs-old-failed")
+            ]
+            if len(remaining_old_failed) != 2:
+                failures.append(f"E2E old-failed 安全清理没有同时保留最近失败和超额诊断目录：{[str(path) for path in remaining_old_failed]}")
+            safety_root = work_root / "retention-safety-ceiling-fixture"
+            safety_root.mkdir()
+            for index in range(2):
+                ceiling_dir = safety_root / f"redcap-e2e-runs-stale-active-ceiling-{index}"
+                ceiling_dir.mkdir()
+                ceiling_summary = ceiling_dir / "redcap-e2e-run-summary.json"
+                write_json(ceiling_summary, {
+                    "schema_id": "redcap-e2e-run-summary",
+                    "ok": False,
+                    "failures": [f"fixture stale active ceiling {index}"],
+                })
+                ceiling_packet = ceiling_dir / "redcap-long-task-active-run.json"
+                write_json(ceiling_packet, {
+                    "schema_id": "redcap-e2e-long-task-active-run",
+                    "lifecycle_state": "running",
+                })
+                ceiling_mtime = time.time() - E2E_RETENTION_STALE_ACTIVE_SECONDS - 10
+                os.utime(ceiling_summary, (ceiling_mtime, ceiling_mtime))
+                os.utime(ceiling_packet, (ceiling_mtime, ceiling_mtime))
+                os.utime(ceiling_dir, (ceiling_mtime, ceiling_mtime))
+            safety_plan = plan_e2e_run_retention(
+                safety_root,
+                keep_latest_success=5,
+                delete_stale_active=True,
+                stale_active_seconds=1,
+                stale_active_delete_max=1,
+            )
+            if len(safety_plan.get("delete_candidates", [])) != 1 or len(safety_plan.get("safety_warnings", [])) != 1:
+                failures.append(f"E2E stale-active 安全上限没有形成 1 个删除候选和 1 个 warning：{safety_plan}")
+            safety_execution = execute_e2e_run_retention(safety_plan)
+            if safety_execution.get("ok") is not True or len(safety_execution.get("deleted", [])) != 1:
+                failures.append(f"E2E stale-active 安全上限执行没有只删除 1 个目录：{safety_execution}")
+            remaining_ceiling_dirs = [path for path in safety_root.iterdir() if path.is_dir() and path.name.startswith("redcap-e2e-runs-stale-active-ceiling")]
+            if len(remaining_ceiling_dirs) != 1:
+                failures.append(f"E2E stale-active 安全上限没有保留超额目录：{[str(path) for path in remaining_ceiling_dirs]}")
             if not failed_dir.exists() or not unknown_dir.exists() or not unrelated_dir.exists():
                 failures.append("E2E 运行目录保留执行误删了失败、未知或非 E2E 目录")
             source_retention_plan = plan_e2e_run_retention(REPO_ROOT, keep_latest_success=5)
             if source_retention_plan.get("ok") is True:
                 failures.append("E2E 运行目录保留计划不应允许在 RedCap 源工作区内清理")
+            if "attach_e2e_run_retention_result" not in current_source or "redcap-e2e-run-retention-after-run.json" not in current_source:
+                failures.append("E2E run 收尾必须自动附加缓存保留计划回执")
             if CODEX_PROJECT_TRUST_MODE == "persist":
                 failures.append("项目级 trust 默认不得持久写入 Codex config；必须优先使用单次 -c 覆盖，避免 E2E 污染用户全局配置")
             if "prepare_isolated_codex_home" not in current_source or "CODEX_HOME" not in current_source:
@@ -13656,6 +14025,13 @@ def build_parser() -> argparse.ArgumentParser:
     prune = sub.add_parser("prune-runs")
     prune.add_argument("--root", default=str(DEFAULT_PERSISTENT_WORK_ROOT.parent))
     prune.add_argument("--keep-latest-success", type=int, default=E2E_RETENTION_DEFAULT_KEEP_LATEST_SUCCESS)
+    prune.add_argument("--keep-latest-failed", type=int, default=E2E_RETENTION_DEFAULT_KEEP_LATEST_FAILED)
+    prune.add_argument("--delete-stale-active", action="store_true")
+    prune.add_argument("--stale-active-hours", type=float, default=E2E_RETENTION_STALE_ACTIVE_SECONDS / 3600)
+    prune.add_argument("--stale-active-delete-max", type=int, default=E2E_RETENTION_STALE_ACTIVE_DELETE_MAX)
+    prune.add_argument("--delete-old-failed", action="store_true")
+    prune.add_argument("--old-failed-hours", type=float, default=E2E_RETENTION_OLD_FAILED_SECONDS / 3600)
+    prune.add_argument("--old-failed-delete-max", type=int, default=E2E_RETENTION_OLD_FAILED_DELETE_MAX)
     prune.add_argument("--execute", action="store_true")
     prune.add_argument("--out")
     prune.set_defaults(func=cmd_prune_runs)

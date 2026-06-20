@@ -1,0 +1,23 @@
+{
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "queue exit criteria reference pending verification that is independently checkable"
+  },
+  "confidence": "low",
+  "main_concern": "Cannot verify E2E retention call site without code access — watchdog-only integration would violate previous prism concern about manual-only cache governance",
+  "minimum_fix": "Show call-site context; mirror to carrier_loop if watchdog-only; add state-file-missing warning; add check-receipt gates for OL-06/OL-08",
+  "missing_evidence": [
+    "Code diff with retention call-site context",
+    "Automated-run retention receipt",
+    "Stale-active safety ceiling pass/fail log"
+  ],
+  "provider": "claude-code",
+  "reality_delta": "'每轮外层 run 后' ambiguous between main loop and recovery path — critical for 'integrated' vs 'manual' claim",
+  "top_risks": [
+    "Watchdog-only retention = normal runs never trigger cache governance",
+    "Stale-active safety silent-skip",
+    "OL closure gates reference pending evidence"
+  ],
+  "user_intent_alignment": "unclear",
+  "verdict": "concern"
+}
