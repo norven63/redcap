@@ -1,0 +1,51 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260620-knowledge-recall-search-hardening",
+  "merge_path": "assets/evidence/prism/20260620-knowledge-recall-search-hardening/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260620-knowledge-recall-search-hardening/kimi.review.json",
+    "assets/evidence/prism/20260620-knowledge-recall-search-hardening/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。已补充明确设计规范，限定搜索范围只包括 id、title、summary、tags；实现了 Unicode 规范化、连字符和下划线拆分、中英文 token、CJK 双字窗口、静态别名表、评分阈值和路由优先排序；自检覆盖正向混合查询与无关负向查询。",
+      "implementation_evidence": [
+        "assets/evidence/prism/20260620-knowledge-recall-search-hardening/search-design-spec.json",
+        "runtime/core/knowledge_gateway.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/knowledge-gateway-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/knowledge-search-mixed-en.receipt.json",
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/knowledge-search-negative.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。实现不把搜索命中等同于最终决策质量，而是作为 R2-03 的召回层补强；生命周期和知识检索证据要求后续任务继续说明命中条目的采用方式。测试用例包含中英文混合查询、no-promote 相关查询、Loom session_id 报警查询、raw evidence 边界查询和两组无关负向查询。",
+      "implementation_evidence": [
+        "assets/evidence/prism/20260620-knowledge-recall-search-hardening/search-design-spec.json",
+        "runtime/core/knowledge_gateway.py",
+        "assets/evidence/self-purification/20260620-knowledge-recall-search-hardening/knowledge-retrieval-evidence.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/knowledge-gateway-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/knowledge-search-mixed-zh.receipt.json",
+        "assets/evidence/check-receipts/20260620-knowledge-recall-search-hardening/complete-revival-e2e-preflight.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两项 concern 均已接受并落实到设计规范、运行时实现和正负样例验证；本结论只覆盖知识召回搜索增强，不覆盖 RedCap 完整复活或二次完整 E2E。"
+  }
+}

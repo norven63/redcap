@@ -11,6 +11,7 @@ import pathlib
 import re
 import sys
 import tempfile
+import unicodedata
 from typing import Any
 
 
@@ -44,6 +45,37 @@ RAW_EVIDENCE_REQUIRED_TERMS = {
     "minimum run count",
     "release blocker",
 }
+ASCII_TOKEN_RE = re.compile(r"[a-z0-9]+")
+CJK_SEQUENCE_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
+SEARCH_MINIMUM_SCORE = 6
+SEARCH_MINIMUM_COVERAGE = 0.18
+SEARCH_STOP_TOKENS = {"id"}
+SEARCH_ALIAS_GROUPS = [
+    {"loom", "角色化", "角色工作流", "角色化工作流"},
+    {"session", "sessions", "sessionid", "session_id", "会话"},
+    {"continuity", "continuous", "resume", "续接", "连续", "连续性"},
+    {"self", "purification", "selfpurification", "自我净化"},
+    {"e2e", "端到端", "端到端验收"},
+    {"layered", "acceptance", "preflight", "分层", "分层验收", "验收"},
+    {"candidate", "harvest", "promotion", "promote", "候选", "晋升", "沉淀"},
+    {"raw", "evidence", "archive", "package", "cleanup", "release", "原始", "证据", "归档", "清理", "发布"},
+]
+ROUTE_SEARCH_PRIORITY = {
+    "active-local-index": 0,
+    "revival-doc": 1,
+    "controlled-archaeology": 2,
+    "old-redcap-reference": 3,
+}
+SEARCH_ALIAS_MAP: dict[str, set[str]] = {}
+for group in SEARCH_ALIAS_GROUPS:
+    expanded: set[str] = set()
+    for value in group:
+        expanded.update([])  # keep mypy/simple linters happy for the in-place build below
+        expanded.update(re.findall(r"[a-z0-9]+|[\u3400-\u4dbf\u4e00-\u9fff]+", unicodedata.normalize("NFKC", value).casefold()))
+        expanded.add(unicodedata.normalize("NFKC", value).casefold().replace("_", ""))
+    expanded = {item for item in expanded if item}
+    for token in expanded:
+        SEARCH_ALIAS_MAP[token] = expanded
 
 
 def iso_now() -> str:
@@ -170,29 +202,80 @@ def validate_raw_evidence_boundary_entry(entry: dict[str, Any] | None) -> list[s
     return failures
 
 
+def normalize_search_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    normalized = re.sub(r"[_\-/]+", " ", normalized)
+    normalized = re.sub(r"[^\w\u3400-\u4dbf\u4e00-\u9fff]+", " ", normalized, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def cjk_windows(sequence: str) -> set[str]:
+    if len(sequence) <= 2:
+        return {sequence}
+    windows = {sequence}
+    windows.update(sequence[index : index + 2] for index in range(0, len(sequence) - 1))
+    return windows
+
+
+def search_tokens(value: str) -> set[str]:
+    normalized = normalize_search_text(value)
+    tokens = set(ASCII_TOKEN_RE.findall(normalized)) - SEARCH_STOP_TOKENS
+    for sequence in CJK_SEQUENCE_RE.findall(normalized):
+        tokens.update(cjk_windows(sequence))
+    expanded = set(tokens)
+    for token in list(tokens):
+        compact = token.replace("_", "")
+        if compact in SEARCH_ALIAS_MAP:
+            expanded.update(SEARCH_ALIAS_MAP[compact])
+    return {token for token in expanded if token and token not in SEARCH_STOP_TOKENS}
+
+
+def entry_search_fields(entry: dict[str, Any]) -> dict[str, set[str]]:
+    tags = " ".join(str(tag) for tag in entry.get("tags", []) if isinstance(tag, str))
+    return {
+        "id": search_tokens(str(entry.get("id", ""))),
+        "title": search_tokens(str(entry.get("title", ""))),
+        "summary": search_tokens(str(entry.get("summary", ""))),
+        "tags": search_tokens(tags),
+    }
+
+
+def entry_search_score(entry: dict[str, Any], query_tokens: set[str]) -> tuple[int, float, int]:
+    fields = entry_search_fields(entry)
+    weighted_score = 0
+    matched_tokens: set[str] = set()
+    for field, weight in {"id": 3, "title": 3, "tags": 3, "summary": 1}.items():
+        field_matches = query_tokens & fields[field]
+        if field_matches:
+            weighted_score += len(field_matches) * weight
+            matched_tokens.update(field_matches)
+    coverage = len(matched_tokens) / max(len(query_tokens), 1)
+    return weighted_score, coverage, len(matched_tokens)
+
+
 def search_entries(payload: dict[str, Any], query: str) -> list[dict[str, Any]]:
-    terms = [term.casefold() for term in query.split() if term.strip()]
+    query_tokens = search_tokens(query)
     entries = payload.get("entries", [])
-    matches: list[dict[str, Any]] = []
+    scored_matches: list[tuple[int, float, int, str, dict[str, Any]]] = []
     for entry in entries if isinstance(entries, list) else []:
         if not isinstance(entry, dict):
             continue
-        haystack = " ".join([
-            str(entry.get("id", "")),
-            str(entry.get("title", "")),
-            str(entry.get("summary", "")),
-            " ".join(str(tag) for tag in entry.get("tags", []) if isinstance(tag, str)),
-        ]).casefold()
-        if not terms or all(term in haystack for term in terms):
-            matches.append({
+        score, coverage, matched_count = entry_search_score(entry, query_tokens)
+        if not query_tokens or (
+            score >= SEARCH_MINIMUM_SCORE
+            and (coverage >= SEARCH_MINIMUM_COVERAGE or matched_count >= 2)
+        ):
+            route_priority = ROUTE_SEARCH_PRIORITY.get(str(entry.get("route", "")), 9)
+            scored_matches.append((score, coverage, route_priority, str(entry.get("id", "")), {
                 "id": entry.get("id"),
                 "title": entry.get("title"),
                 "route": entry.get("route"),
                 "summary": entry.get("summary"),
                 "first_read": entry.get("first_read"),
                 "body_read_rule": entry.get("body_read_rule"),
-            })
-    return matches
+            }))
+    scored_matches.sort(key=lambda item: (item[2], -item[0], -item[1], item[3]))
+    return [item[4] for item in scored_matches]
 
 
 def parse_tags(value: str) -> list[str]:
@@ -379,12 +462,66 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             [sys.executable, str(script), "promote", "--review", "assets/evidence/knowledge/reviews/fixture-entry.review.json"],
             [sys.executable, str(script), "check"],
             [sys.executable, str(script), "search", "fixture", "--require-match"],
+            [sys.executable, str(script), "search", "seed fixture unrelated", "--require-match"],
         ]
         failures: list[str] = []
         for command in commands:
             completed = __import__("subprocess").run(command, cwd=str(root_path), env=env, capture_output=True, text=True, check=False)
             if completed.returncode != 0:
                 failures.append(f"{' '.join(command[2:])}: exit {completed.returncode}: {completed.stderr or completed.stdout}")
+        positive_index = {
+            "schema_id": "redcap-knowledge-index",
+            "version": 1,
+            "default_read": "index-only",
+            "raw_archive_default": "forbidden",
+            "entries": [
+                {
+                    "id": "self-purification-runtime-loop",
+                    "title": "自我净化运行闭环",
+                    "route": "active-local-index",
+                    "path": "assets/knowledge/entries/seed.md",
+                    "first_read": "assets/knowledge/entries/seed.md",
+                    "body_read_rule": "index-first",
+                    "tags": ["self-purification", "runtime", "knowledge", "anti-loop"],
+                    "summary": "自我净化必须把任务前检索、任务后候选、评审决策和后续召回串成闭环，不能停留在合同检查。",
+                },
+                {
+                    "id": "loom-runtime-session-continuity",
+                    "title": "Loom 角色会话连续性",
+                    "route": "active-local-index",
+                    "path": "assets/knowledge/entries/seed.md",
+                    "first_read": "assets/knowledge/entries/seed.md",
+                    "body_read_rule": "index-first",
+                    "tags": ["loom", "runtime", "session", "codex-cli"],
+                    "summary": "Loom 必须在普通项目中记录角色会话、续接关系、丢失报警和上下游交付证据，不能由共享上下文冒充多角色。",
+                },
+                {
+                    "id": RAW_EVIDENCE_BOUNDARY_ID,
+                    "title": "Raw Evidence Access Boundary",
+                    "route": "active-local-index",
+                    "path": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+                    "first_read": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+                    "body_read_rule": "index-first",
+                    "tags": ["raw", "evidence", "archive", "package", "cleanup", "lifecycle", "release"],
+                    "summary": "Raw evidence is explicit-access only: not default context, not a package candidate, not physically cleaned, no cleanup apply, protected by minimum run count and release blocker rules.",
+                },
+            ],
+        }
+        expected_cases = [
+            ("loom session continuity self-purification E2E layered acceptance", {"loom-runtime-session-continuity", "self-purification-runtime-loop"}),
+            ("Loom 角色 会话 连续 自我净化 E2E 分层验收", {"loom-runtime-session-continuity", "self-purification-runtime-loop"}),
+            ("任务后候选 晋升 no promote 自我净化", {"self-purification-runtime-loop"}),
+            ("角色化工作流 session_id 丢失报警", {"loom-runtime-session-continuity"}),
+            ("raw evidence package cleanup release blocker", {RAW_EVIDENCE_BOUNDARY_ID}),
+        ]
+        for query, expected_ids in expected_cases:
+            found = {str(item.get("id")) for item in search_entries(positive_index, query)}
+            if not found & expected_ids:
+                failures.append(f"search fixture failed for {query!r}: found {sorted(found)}, expected one of {sorted(expected_ids)}")
+        for query in ["banana invoice mineral unrelated", "天气 菜谱 星座 完全无关"]:
+            found = search_entries(positive_index, query)
+            if found:
+                failures.append(f"negative search fixture should not match {query!r}: {found}")
         result = {"ok": not failures, "failures": failures}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if failures:

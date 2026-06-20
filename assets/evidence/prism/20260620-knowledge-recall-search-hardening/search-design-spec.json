@@ -1,0 +1,83 @@
+{
+  "schema_id": "redcap-knowledge-search-hardening-design",
+  "task_id": "20260620-knowledge-recall-search-hardening",
+  "search_scope": {
+    "included_fields": [
+      "id",
+      "title",
+      "summary",
+      "tags"
+    ],
+    "excluded_fields": [
+      "body",
+      "first_read file body",
+      "raw evidence",
+      "old-redcap source body"
+    ],
+    "boundary": "index-first only; search never opens entry body files during matching"
+  },
+  "normalization": [
+    "Unicode NFKC normalization",
+    "casefold for Latin text",
+    "hyphen, underscore, slash and punctuation become separators",
+    "CJK sequences are kept and also expanded into two-character windows"
+  ],
+  "alias_source": {
+    "type": "static reviewed map in runtime/core/knowledge_gateway.py",
+    "maintenance": "new aliases require code review and self-check cases",
+    "no_llm_alias_generation": true
+  },
+  "scoring": {
+    "token_weights": {
+      "id": 3,
+      "title": 3,
+      "tags": 3,
+      "summary": 1
+    },
+    "minimum_score": 3,
+    "minimum_coverage": 0.18,
+    "anti_flood_rule": "match requires minimum_score and either minimum_coverage or at least two matched query tokens"
+  },
+  "test_cases": [
+    {
+      "query": "loom session continuity self-purification E2E layered acceptance",
+      "expected_contains_any": [
+        "loom-runtime-session-continuity",
+        "self-purification-runtime-loop"
+      ]
+    },
+    {
+      "query": "Loom 角色 会话 连续 自我净化 E2E 分层验收",
+      "expected_contains_any": [
+        "loom-runtime-session-continuity",
+        "self-purification-runtime-loop"
+      ]
+    },
+    {
+      "query": "任务后候选 晋升 no promote 自我净化",
+      "expected_contains_any": [
+        "self-purification-runtime-loop"
+      ]
+    },
+    {
+      "query": "角色化工作流 session_id 丢失报警",
+      "expected_contains_any": [
+        "loom-runtime-session-continuity"
+      ]
+    },
+    {
+      "query": "raw evidence package cleanup release blocker",
+      "expected_contains_any": [
+        "raw-evidence-access-boundary"
+      ]
+    },
+    {
+      "query": "banana invoice mineral unrelated",
+      "expected_empty": true
+    },
+    {
+      "query": "天气 菜谱 星座 完全无关",
+      "expected_empty": true
+    }
+  ]
+}

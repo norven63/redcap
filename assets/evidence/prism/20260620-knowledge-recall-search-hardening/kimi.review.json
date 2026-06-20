@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "当前只有设计方向和漏召回复现证据，尚未实施搜索增强，现实变化幅度仍然很低。",
+  "main_concern": "The main AI is proposing a design direction for search hardening, not reporting a completed reality change. The design is still described in broad natural-language terms ('normalized, alias-expanded, tokenized scoring and threshold filtering') without a concrete algorithm spec, alias source, scoring formula, threshold criteria, or negative test plan. In design_review mode this is a valid starting point, but the evidence does not yet show that the four known constraints will be satisfied.",
+  "top_risks": [
+    "Plan-as-progress drift: approving the direction may let implementation proceed without binding precision/recall acceptance criteria, risking either irrelevant result flooding or thresholds tight enough to keep missing real queries.",
+    "Index-first boundary erosion: alias expansion and tokenization could inadvertently pull in raw evidence bodies or full documents as search sources if the implementation spec does not explicitly forbid it.",
+    "Negative-test omission: only one failing mixed query is evidenced; there is no representative positive/negative test set or baseline, so the new scoring/threshold mechanism has no verifiable stop condition."
+  ],
+  "missing_evidence": [
+    "A written design specification with exact normalization rules, tokenization rules, alias/ontology source and update process, scoring function, and threshold formula with tunable parameters.",
+    "A representative query test set (positive + negative cases) and expected precision/recall or pass/fail criteria, satisfying the 'self-check and negative samples' constraint.",
+    "An explicit, binding implementation detail confirming that raw evidence bodies and full documents remain excluded from the default search source (index-first enforcement)."
+  ],
+  "minimum_fix": "Before writing code, the main AI must produce a design specification that defines: (a) normalization and tokenization rules, (b) alias/ontology source and maintenance process, (c) scoring and threshold formula with parameters, (d) a representative positive and negative query test set with expected results, and (e) an explicit guarantee that raw evidence bodies are not indexed or queried by default. This spec should be reviewed and accepted before implementation begins.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The main AI must not treat design-review approval as implementation completion. The next deliverable must be the concrete design spec and test plan, not a restatement of intent or additional undocumented queries."
+  },
+  "user_intent_alignment": "medium"
+}

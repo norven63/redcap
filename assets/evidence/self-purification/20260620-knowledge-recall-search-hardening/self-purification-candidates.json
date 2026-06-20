@@ -1,0 +1,30 @@
+{
+  "candidates": [
+    {
+      "created_at": "2026-06-20T02:40:30+00:00",
+      "evidence": {
+        "knowledge_retrieval": "assets/evidence/self-purification/20260620-knowledge-recall-search-hardening/knowledge-retrieval-evidence.json",
+        "lesson_chars": 70,
+        "lesson_sha256": "3e1c7798291573be3e3869190c5f498fab10348d752cbad9f258afaa046970a8"
+      },
+      "id": "knowledge-recall-natural-language-hardening",
+      "lesson": "知识召回不能只依赖固定关键词；任务前检索需要支持中英文、连字符、会话术语和多主题自然语言查询，同时仍必须保持 index-first 边界。",
+      "privacy_class": "public",
+      "proposed_destination": "assets/knowledge/entries",
+      "source_task": "知识召回搜索增强：自然语言混合查询应召回 Loom 与自我净化经验",
+      "trigger": "workflow_drift"
+    }
+  ],
+  "decisions": [
+    {
+      "candidate_id": "knowledge-recall-natural-language-hardening",
+      "decided_at": "2026-06-20T02:40:30+00:00",
+      "decision": "defer_with_owner",
+      "reason": "候选需要后续责任人复核，暂不晋升。"
+    }
+  ],
+  "promotion_result": null,
+  "recorded_at": "2026-06-20T02:40:30+00:00",
+  "schema_id": "redcap-self-purification-candidates",
+  "task_summary": "知识召回搜索增强：自然语言混合查询应召回 Loom 与自我净化经验"
+}

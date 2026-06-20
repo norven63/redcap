@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The main AI is proposing a design direction for search hardening, not reporting a completed reality change. The design is still described in broad natural-language terms ('normalized, alias-expanded, tokenized scoring and threshold filtering') without a concrete algorithm spec, alias source, scoring formula, threshold criteria, or negative test plan. In design_review mode this is a valid starting point, but the evidence does not yet show that the four known constraints will be satisfied."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "提案将更好的字符串匹配等同于知识召回影响任务决策，混淆了症状与目标。即使搜索100%召回相关条目，知识条目本身的权威性、结构化程度和与决策上下文的关联方式才真正决定是否影响决策。提案在搜索层投入复杂度，却未论证搜索命中率提升与任务决策质量改善之间的因果关系，存在修错层的风险。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before writing code, the main AI must produce a design specification that defines: (a) normalization and tokenization rules, (b) alias/ontology source and maintenance process, (c) scoring and threshold formula with parameters, (d) a representative positive and negative query test set with expected results, and (e) an explicit guarantee that raw evidence bodies are not indexed or queried by default. This spec should be reviewed and accepted before implementation begins."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在实施前：(1)定义至少5组具体的中英混合查询到期望知识条目配对，含2组负向样例；(2)明确双语分词方案如jieba加CJK宽度归一化加英文lowercase-stemming，说明token权重如何在语言间不偏斜；(3)指定别名来源及验证机制；(4)确定搜索范围是仅标题还是标题加摘要还是标题加结构化标签后再设计算法。在此基础上才能判断方案是否真正对应用户意图。"
+    }
+  ],
+  "anti_loop_detected": true
+}

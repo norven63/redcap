@@ -100,6 +100,10 @@
         "assets/knowledge/entries/loom-runtime-session-continuity.md",
         "runtime/bin/redcap knowledge-gateway search self-purification --require-hit",
         "runtime/bin/redcap knowledge-gateway search loom --require-hit",
+        "runtime/bin/redcap knowledge-gateway search \"loom session continuity self-purification E2E layered acceptance\" --require-hit",
+        "runtime/bin/redcap knowledge-gateway search \"Loom 角色 会话 连续 自我净化 E2E 分层验收\" --require-hit",
+        "assets/evidence/prism/20260620-knowledge-recall-search-hardening/search-design-spec.json",
+        "assets/evidence/prism/20260620-knowledge-recall-search-hardening/resolution.json",
         "runtime/bin/redcap complete-revival-e2e preflight --work-root /tmp/redcap-e2e-preflight-check"
       ],
       "remaining_e2e_question": "下一轮完整 E2E 仍需验证命中知识是否真实影响角色计划、实现和验收裁决。",
