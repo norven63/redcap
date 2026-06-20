@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "外部验证脚本本身未包含在证据包中，我们只能看到它生成的 JSON/txt 结果。这意味着独立性是被断言的，而非可审计的；本质上仍是一层自证收据，只是从模块自检换到了同环境脚本输出。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "外部验证脚本与 RedCap pruner 在同一编排上下文运行的风险未被排除。process-fixture 流程中 prune-execute.json 由 RedCap pruner 执行，随后由\"外部脚本\"读取结果出 external-validation-summary.json——但若两者均由同一 AI 会话串行编排、且无独立实体（不同 AI/不同用户/CI runner）审计中间状态，则外部性仅限于代码路径隔离，而非观察者独立性。这是上一轮\"自证风险\"的核心指控在本轮的延续。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在证据包中补充 external-validation 脚本源码与调用方式，使独立性可审计；在进入 OL-01 前发布 OL-01 验收契约，明确'完整复活'的判定标准。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在 OL-01 外部 E2E 启动前，须由独立实体执行一次交叉验证：用不同的 AI 提供商/different session/human 操作员运行同样的 process-fixture 流程，并独立产出 external-validation-summary，与当前结果比对。或在 OL-01 计划中明确要求外部 E2E 的编排者与被测 RedCap 实例运行在不同的进程树/用户/会话下，并将此作为 OL-01 的准入条件而非结论。"
+    }
+  ],
+  "anti_loop_detected": true
+}

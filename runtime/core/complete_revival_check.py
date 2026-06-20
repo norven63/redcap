@@ -133,6 +133,17 @@ def validate_revival_queue(payload: dict[str, Any], failures: list[str]) -> None
                 failures.append(f"复活队列条目命令失败：{entry.get('id')}")
 
 
+def validate_open_loop_queue(payload: dict[str, Any], failures: list[str]) -> None:
+    if payload.get("schema_id") != "redcap-open-loop-closure-queue-check":
+        failures.append("open-loop 队列输出 schema_id 错误")
+        return
+    if payload.get("ok") is not True:
+        failures.append(f"open-loop 队列结构检查失败：{payload.get('failures')}")
+    if payload.get("closeout_allowed") is not True:
+        blockers = payload.get("closeout_blockers")
+        failures.append(f"open-loop 队列仍有未闭环 P0/P1：{blockers}")
+
+
 def validate_status(payload: dict[str, Any], failures: list[str], *, require_terminal_verified: bool) -> None:
     if payload.get("schema_id") != "redcap-status-surface":
         failures.append("状态面 schema_id 错误")
@@ -209,6 +220,7 @@ def check_complete_revival(
         "status": run(["runtime/bin/redcap", "status", "--json", "--require-scan-complete", "--fail-on-open"]),
         "revive": run(["runtime/bin/redcap", "revive", "--json", "--no-write-evidence", "--require-scan-complete", "--fail-on-open"]),
         "revival_queue": run(["runtime/bin/redcap", "revival-queue", "check", "--skip-heavy-host-audit"]),
+        "open_loop_queue": run(["runtime/bin/redcap", "revival-followthrough", "open-loop-check"]),
         "formal_usable": run(["runtime/bin/redcap", "formal-usable-check", "--skip-host-hook-audit"]),
         "scan_conclusion": run(["runtime/bin/redcap", "scan-conclusion", "check"]),
         "phase2_blueprint": run(["runtime/bin/redcap", "phase2-blueprint", "check"]),
@@ -233,6 +245,7 @@ def check_complete_revival(
             failures.append(f"{name} 命令失败")
     validate_status(leading_json(commands["status"].get("stdout", "")), failures, require_terminal_verified=require_terminal_verified)
     validate_revival_queue(leading_json(commands["revival_queue"].get("stdout", "")), failures)
+    validate_open_loop_queue(leading_json(commands["open_loop_queue"].get("stdout", "")), failures)
     validate_terminal_goal(leading_json(commands["terminal_goal"].get("stdout", "")), failures, require_terminal_verified=require_terminal_verified)
     validate_contract(failures)
     validate_no_promote_records(failures)
@@ -305,6 +318,28 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     validate_revival_queue(bad_queue, bad_failures)
     if not bad_failures:
         failures.append("开放队列样例没有失败")
+    closed_open_loop = {
+        "schema_id": "redcap-open-loop-closure-queue-check",
+        "ok": True,
+        "closeout_allowed": True,
+        "closeout_blockers": [],
+        "failures": [],
+    }
+    closed_open_loop_failures: list[str] = []
+    validate_open_loop_queue(closed_open_loop, closed_open_loop_failures)
+    if closed_open_loop_failures:
+        failures.append(f"已闭环 open-loop 样例不应失败：{closed_open_loop_failures}")
+    open_loop = {
+        "schema_id": "redcap-open-loop-closure-queue-check",
+        "ok": True,
+        "closeout_allowed": False,
+        "closeout_blockers": ["OL-01-second-e2e-acceptance: P0 仍未 verified"],
+        "failures": [],
+    }
+    open_loop_failures: list[str] = []
+    validate_open_loop_queue(open_loop, open_loop_failures)
+    if not any("open-loop 队列仍有未闭环" in item for item in open_loop_failures):
+        failures.append("完整复活检查没有把 open-loop 未闭环队列视为阻断项")
     open_status = {
         "schema_id": "redcap-status-surface",
         "ok": True,

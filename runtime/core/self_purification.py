@@ -470,8 +470,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         missing_forbidden = missing(FORBIDDEN_PUBLIC_DESTINATIONS, forbidden)
         if missing_forbidden:
             failures.append(f"Cap 私有人格公共禁写目录缺失：{missing_forbidden}")
-        if persona.get("private_identity_source") != "/Users/norven/.cap/identity.md":
-            failures.append("Cap 私有人格必须绑定私有身份源")
+        if persona.get("private_identity_source") != "$CAP_HOME/identity.md":
+            failures.append("Cap 私有人格必须绑定路径可迁移的私有身份源")
         missing_evidence_fields = missing(REQUIRED_PERSONA_EVIDENCE_FIELDS, as_set(persona, "evidence_may_contain"))
         if missing_evidence_fields:
             failures.append(f"Cap 人格证据允许字段缺失：{missing_evidence_fields}")

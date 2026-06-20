@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "本轮确实新增了外部验证 fixture（真实 sleep 进程、ps 快照、独立读取 CAP_HOME/ fallback identity），证据内容也显示 live 目录保留、stale 目录删除、进程存活。但所有证据仍是同一运行环境生成的输出产物；'外部' 与 '被测模块' 之间的独立性边界无法从当前 bundle 中审计。",
+  "main_concern": "外部验证脚本本身未包含在证据包中，我们只能看到它生成的 JSON/txt 结果。这意味着独立性是被断言的，而非可审计的；本质上仍是一层自证收据，只是从模块自检换到了同环境脚本输出。",
+  "top_risks": [
+    "无法确认 external-validation 脚本是否与 complete_revival_e2e / soul_loader 共享逻辑或环境变量，独立性可能流于形式。",
+    "complete_revival_e2e.py 体积 758KB 且被截断，无法审查自检逻辑是否仍包含上一轮指出的自证风险。",
+    "未看到 OL-01 外部 E2E 的验收契约或入口定义，'进入下一阶段' 缺乏可验证的终止条件。"
+  ],
+  "missing_evidence": [
+    "外部验证脚本/工具的源码，以及它如何被调用、环境如何隔离。",
+    "complete_revival_e2e.py 中 self-check 相关函数的完整源码。",
+    "OL-01 外部 E2E 的验收设计文档或契约。"
+  ],
+  "minimum_fix": "在证据包中补充 external-validation 脚本源码与调用方式，使独立性可审计；在进入 OL-01 前发布 OL-01 验收契约，明确'完整复活'的判定标准。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "本轮主张已从'完整复活'收窄为'基础修复通过、等待 OL-01'，这是正确的收敛信号；但需警惕把'我们补了外部检查'等同于'外部已验证'。"
+  },
+  "user_intent_alignment": "良好。主张未冒充 RedCap 完整复活，且明确将本轮定位为下一阶段入口验收，符合 Norven 对阶段成果不得越级声明的要求。"
+}

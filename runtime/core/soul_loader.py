@@ -17,20 +17,34 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_EVIDENCE_DIR = REPO_ROOT / "assets" / "evidence" / "soul"
-DEFAULT_SOURCES = [
-    {
-        "id": "legacy_soul",
-        "path": "~/.codex/skills/redcap/soul.md",
-        "required": False,
-        "role": "AGENTS.md 引用的旧 RedCap 灵魂锚点",
-    },
-    {
-        "id": "cap_identity",
-        "path": "/Users/norven/.cap/identity.md",
-        "required": True,
-        "role": "Cap 私有身份源",
-    },
-]
+CAP_HOME_ENV = "CAP_HOME"
+
+
+def cap_home_path() -> tuple[pathlib.Path, str, str]:
+    raw = os.environ.get(CAP_HOME_ENV)
+    if isinstance(raw, str) and raw.strip():
+        return resolve_path(raw), "$CAP_HOME", "env"
+    return resolve_path("~/.cap"), "~/.cap", "default"
+
+
+def default_sources() -> list[dict[str, Any]]:
+    cap_home, configured_home, source_kind = cap_home_path()
+    return [
+        {
+            "id": "legacy_soul",
+            "path": "~/.codex/skills/redcap/soul.md",
+            "required": False,
+            "role": "AGENTS.md 引用的旧 RedCap 灵魂锚点",
+        },
+        {
+            "id": "cap_identity",
+            "path": str(cap_home / "identity.md"),
+            "configured_path": f"{configured_home}/identity.md",
+            "required": True,
+            "role": "Cap 私有身份源",
+            "cap_home_source": source_kind,
+        },
+    ]
 
 SECRET_LINE = re.compile(
     r"(?i)\b(api[_-]?key|secret|token|password|credential|private[_-]?key)\b|^[A-Z0-9_]{8,}\s*="
@@ -68,9 +82,10 @@ def summarize_source(source: dict[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {
         "id": source["id"],
         "role": source.get("role"),
-        "configured_path": source["path"],
+        "configured_path": source.get("configured_path", source["path"]),
         "resolved_path": str(path),
         "required": bool(source.get("required")),
+        "cap_home_source": source.get("cap_home_source"),
         "exists": path.exists(),
         "readable": False,
         "sha256": None,
@@ -84,10 +99,16 @@ def summarize_source(source: dict[str, Any]) -> dict[str, Any]:
         if result["required"]:
             result["error"] = "required source is missing"
         return result
+    if not path.is_file():
+        result["error"] = "source is not a regular file"
+        return result
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         result["error"] = f"could not read source: {exc}"
+        return result
+    if result["required"] and not text.strip():
+        result["error"] = "required source is empty"
         return result
     redacted_lines = [redact_line(line) for line in text.splitlines()]
     result.update(
@@ -107,7 +128,7 @@ def summarize_source(source: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_packet(sources: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-    sources = sources or DEFAULT_SOURCES
+    sources = sources or default_sources()
     summaries = [summarize_source(source) for source in sources]
     failures = [
         f"{item['id']}: {item['error']}"
@@ -246,6 +267,77 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("secret-like line was not counted for redaction")
         if "fixture-value" in json.dumps(latest, ensure_ascii=False):
             failures.append("evidence leaked fixture secret")
+        old_cap_home = os.environ.get(CAP_HOME_ENV)
+        old_home = os.environ.get("HOME")
+        try:
+            env_home = tmp / "env-cap-home"
+            env_home.mkdir()
+            (env_home / "identity.md").write_text("# Env Cap\n\nfixture\n", encoding="utf-8")
+            os.environ[CAP_HOME_ENV] = str(env_home)
+            env_packet = build_packet()
+            env_identity = next((item for item in env_packet["sources"] if item["id"] == "cap_identity"), {})
+            if env_packet.get("ok") is not True or env_identity.get("configured_path") != "$CAP_HOME/identity.md":
+                failures.append("CAP_HOME identity source did not load through portable configured path")
+
+            os.environ.pop(CAP_HOME_ENV, None)
+            fallback_home = tmp / "fallback-home"
+            fallback_identity = fallback_home / ".cap" / "identity.md"
+            fallback_identity.parent.mkdir(parents=True)
+            fallback_identity.write_text("# Fallback Cap\n\nfixture\n", encoding="utf-8")
+            os.environ["HOME"] = str(fallback_home)
+            fallback_packet = build_packet()
+            fallback_identity_summary = next((item for item in fallback_packet["sources"] if item["id"] == "cap_identity"), {})
+            if fallback_packet.get("ok") is not True or fallback_identity_summary.get("configured_path") != "~/.cap/identity.md":
+                failures.append("default ~/.cap identity source did not load when CAP_HOME is absent")
+
+            os.environ[CAP_HOME_ENV] = str(tmp / "missing-cap-home")
+            missing_dir_packet = build_packet()
+            if missing_dir_packet.get("ok") is True or not missing_dir_packet.get("failures"):
+                failures.append("missing CAP_HOME directory should block required identity loading")
+
+            missing_identity_home = tmp / "missing-identity-home"
+            missing_identity_home.mkdir()
+            os.environ[CAP_HOME_ENV] = str(missing_identity_home)
+            missing_identity_packet = build_packet()
+            if missing_identity_packet.get("ok") is True or not missing_identity_packet.get("failures"):
+                failures.append("CAP_HOME without identity.md should block required identity loading")
+
+            empty_identity_home = tmp / "empty-identity-home"
+            empty_identity_home.mkdir()
+            (empty_identity_home / "identity.md").write_text("", encoding="utf-8")
+            os.environ[CAP_HOME_ENV] = str(empty_identity_home)
+            empty_identity_packet = build_packet()
+            if empty_identity_packet.get("ok") is True or not any("empty" in item for item in empty_identity_packet.get("failures", [])):
+                failures.append("empty CAP_HOME identity.md should block required identity loading")
+
+            non_directory_home = tmp / "cap-home-is-file"
+            non_directory_home.write_text("not a directory\n", encoding="utf-8")
+            os.environ[CAP_HOME_ENV] = str(non_directory_home)
+            non_directory_packet = build_packet()
+            if non_directory_packet.get("ok") is True or not non_directory_packet.get("failures"):
+                failures.append("CAP_HOME pointing to a file should block required identity loading")
+
+            unreadable_identity_home = tmp / "unreadable-identity-home"
+            unreadable_identity_home.mkdir()
+            unreadable_identity = unreadable_identity_home / "identity.md"
+            unreadable_identity.write_text("# Unreadable Cap\n\nfixture\n", encoding="utf-8")
+            unreadable_identity.chmod(0)
+            try:
+                os.environ[CAP_HOME_ENV] = str(unreadable_identity_home)
+                unreadable_packet = build_packet()
+                if unreadable_packet.get("ok") is True or not unreadable_packet.get("failures"):
+                    failures.append("unreadable CAP_HOME identity.md should block required identity loading")
+            finally:
+                unreadable_identity.chmod(0o600)
+        finally:
+            if old_cap_home is None:
+                os.environ.pop(CAP_HOME_ENV, None)
+            else:
+                os.environ[CAP_HOME_ENV] = old_cap_home
+            if old_home is None:
+                os.environ.pop("HOME", None)
+            else:
+                os.environ["HOME"] = old_home
         result = {"ok": not failures, "failures": failures}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if failures:

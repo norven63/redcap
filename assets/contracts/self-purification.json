@@ -71,7 +71,7 @@
       "assets/contracts",
       "assets/docs"
     ],
-    "private_identity_source": "/Users/norven/.cap/identity.md",
+    "private_identity_source": "$CAP_HOME/identity.md",
     "evidence_may_contain": [
       "candidate_id",
       "decision",

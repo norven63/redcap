@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "外部验证的独立性在脚本层面成立（ps 快照、独立 identity 读取不调被测模块），但在编排层面未证明独立——若 prune-execute 由 RedCap pruner 执行、外部脚本在同一会话/同一 AI 编排下运行并解读结果，则本轮只是将自证拆分为两个函数调用，而非引入独立观察者。这与上一轮指出的自证风险本质相同，只是粒度更细。",
+  "main_concern": "外部验证脚本与 RedCap pruner 在同一编排上下文运行的风险未被排除。process-fixture 流程中 prune-execute.json 由 RedCap pruner 执行，随后由\"外部脚本\"读取结果出 external-validation-summary.json——但若两者均由同一 AI 会话串行编排、且无独立实体（不同 AI/不同用户/CI runner）审计中间状态，则外部性仅限于代码路径隔离，而非观察者独立性。这是上一轮\"自证风险\"的核心指控在本轮的延续。",
+  "top_risks": [
+    "外部验证的编排者与被测模块为同一执行上下文，ps-before/ps-after 快照的真值无法被独立审计方确认",
+    "soul_loader 自检仍覆盖异常路径但本轮审查无法读取其源码验证——若上一轮指出的 soul_loader 问题未实质性修复，则 '补足外部验证' 只是绕过而非解决",
+    "OL-01 外部 E2E 若仍由同一 AI 会话执行，本轮建立的 '基础修复可进入下一阶段' 结论将成为新的自证循环起点"
+  ],
+  "missing_evidence": [
+    "全部 7 个授权证据文件因工具权限不可读——ps-before/after 的实际内容、prune-execute 的执行者身份、external-validation-summary 的生成者身份均无法核验",
+    "上一轮棱镜审查的具体指控内容未提供——无法判断本轮变更是否精确回应了上一轮指出的每一条风险",
+    "外部验证脚本的源码——无法判断其是否真正独立于被测模块的 import 链或共享 fixture 工厂函数"
+  ],
+  "minimum_fix": "在 OL-01 外部 E2E 启动前，须由独立实体执行一次交叉验证：用不同的 AI 提供商/different session/human 操作员运行同样的 process-fixture 流程，并独立产出 external-validation-summary，与当前结果比对。或在 OL-01 计划中明确要求外部 E2E 的编排者与被测 RedCap 实例运行在不同的进程树/用户/会话下，并将此作为 OL-01 的准入条件而非结论。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "本轮 changed_reality 第5条和 known_constraints 第1条都明确禁止声明 RedCap 完整复活；main_claim 也以 '但这仍不代表 RedCap 完整复活完成' 收尾。约束在前，声明在后，形成了闭合的防越权信号。但需警惕：如果 OL-01 外部 E2E 同样由本轮 AI 编排，第5条约束将在下一轮被同样的模式绕过——'通过但不代表完整复活' 变成可循环使用的护身符。"
+  },
+  "user_intent_alignment": "aligned"
+}

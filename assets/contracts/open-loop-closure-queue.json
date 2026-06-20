@@ -40,26 +40,43 @@
         "验收关注 RedCap 能力，而不仅是目标应用能否打开。",
         "每轮失败必须进入失败回流和新任务队列。"
       ],
-      "runtime_checks": [
-        "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>",
-        "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
-        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-e2e-dir>"
-      ],
-      "evidence_required": [
-        "外部项目运行摘要",
-        "外部项目最终证据包",
-        "外部项目迭代裁决"
-      ],
-      "exit_criteria": [
-        "外部项目完整端到端验收成功结束，且 evidence_root 通过 revival-followthrough e2e-check。",
-        "最终证据包必须包含 Loom 角色证据、自我净化证据、知识消费证据、失败回流证据和缓存治理回执。",
-        "若 failure_backlog 存在开放 P0/P1，则本条不得关闭。"
-      ],
+            "runtime_checks": [
+                "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>",
+                "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
+                "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-e2e-dir>",
+                "python3 runtime/audit/e2e_retention_external_validation.py --prune-result <json> --live-dir <dir> --stale-dir <dir> --sleep-pid <pid> --out <json>"
+            ],
+            "evidence_required": [
+                "外部项目运行摘要",
+                "外部项目最终证据包",
+                "外部项目迭代裁决",
+                "外部验证器源码快照",
+                "外部验证器调用记录",
+                "外部验证器运行时隔离记录",
+                "OL-01 编排者独立身份回执"
+            ],
+            "exit_criteria": [
+                "外部项目完整端到端验收成功结束，且 evidence_root 通过 revival-followthrough e2e-check。",
+                "最终证据包必须包含 Loom 角色证据、自我净化证据、知识消费证据、失败回流证据和缓存治理回执。",
+                "缓存治理、进程保护或证据保留能力若作为通过依据，必须同时提供验证器源码快照、调用记录和独立验证输出。",
+                "OL-01 启动前必须证明编排者与当前开发会话是不同实体，并写入 ol01-orchestrator-identity.json 与 ol01-orchestrator-independence-receipt.json。",
+                "若 failure_backlog 存在开放 P0/P1，则本条不得关闭。"
+            ],
       "promotion_criteria": [
         "complete-revival-e2e run 在非 RedCap 源仓库的外部项目目录执行。",
         "redcap-e2e-run-retention-after-run.json 在成功路径结束后自动产出。",
         "棱镜对完整证据包给出 passed 或 Cap 记录已解决的分歧仲裁。"
-      ]
+      ],
+      "verified_runtime_evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/audit/e2e_retention_external_validation.py",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-source.txt",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-invocation.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/enforcement-receipts/complete-revival-e2e-design-check/receipt.json",
+        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json"
+      ],
+      "bounded_closure_note": "本轮只验证 OL-01 外部验证器、编排者独立身份硬门禁和证据要求已经进入合同；OL-01 完整外部端到端验收仍保持 open。"
     },
     {
       "id": "OL-02-loom-independent-role-runtime",
@@ -271,13 +288,20 @@
       ],
       "verified_runtime_evidence": [
         "assets/docs/cap-revival-manual.md",
+        "assets/docs/cap-soul-loader.md",
+        "runtime/core/soul_loader.py",
+        "runtime/core/self_purification.py",
+        "assets/contracts/self-purification.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/sessionstart-soul-load-smoke",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/final-checks",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/cap-revival-manual-boundary-inventory.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/runtime-rule-report.json",
         "runtime/bin/redcap revival-followthrough check",
         "runtime/bin/redcap soul-load self-check",
-        "runtime/bin/redcap check"
+        "runtime/bin/redcap check",
+        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json"
       ],
-      "prism_review": "pending-rerun",
+      "prism_review": "passed-for-bounded-runtime-closure",
       "remaining_scope": [
         "第二轮外部 E2E 中仍要证明人格沉淀候选和边界裁决自然触发。"
       ]
@@ -355,15 +379,22 @@
       ],
       "verified_runtime_evidence": [
         "runtime/core/complete_revival_e2e.py",
+        "runtime/audit/e2e_retention_external_validation.py",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-source.txt",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-invocation.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-execute-final.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-postcheck-final.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-stale-active-execute.receipt.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-after-cleanup.receipt.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-real-run-proof.receipt.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-real-run-after-run.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-safety-ceiling.receipt.json",
         "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
-        "runtime/bin/redcap check"
+        "runtime/bin/redcap check",
+        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json"
       ],
-      "prism_review": "pending-rerun",
+      "prism_review": "passed-for-bounded-runtime-closure",
       "remaining_scope": [
         "下一轮完整外部 E2E 结束后仍必须检查 redcap-e2e-run-retention-after-run.json 是否随运行自动产出；当前已用快速阻断的真实 run 入口证明收尾路径会自动产证并清理陈旧 active。"
       ]
@@ -400,9 +431,12 @@
       ],
       "verified_runtime_evidence": [
         "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-execute-final.json",
+        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-postcheck-final.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-current-execute-failed-retention.json",
         "assets/evidence/check-receipts/20260620-open-loop-closure-plan/complete-revival-e2e-self-check-old-failed.receipt.json",
-        "assets/evidence/prism/20260620-e2e-failed-retention-followup/merge.final.json"
+        "assets/evidence/prism/20260620-e2e-failed-retention-followup/merge.final.json",
+        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json"
       ],
       "prism_review": "passed",
       "remaining_scope": [

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import copy
 import datetime as dt
 import errno
@@ -37,6 +38,11 @@ from revival_followthrough import PRIVATE_PERSONA_MARKERS, REQUIRED_EVIDENCE_CHE
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance-design.json"
+E2E_RETENTION_EXTERNAL_VALIDATOR = REPO_ROOT / "runtime" / "audit" / "e2e_retention_external_validation.py"
+E2E_RETENTION_EXTERNAL_VALIDATOR_COMMAND = (
+    "python3 runtime/audit/e2e_retention_external_validation.py "
+    "--prune-result <json> --live-dir <dir> --stale-dir <dir> --sleep-pid <pid> --out <json>"
+)
 LONG_TASK_CONTRACT = REPO_ROOT / "assets" / "contracts" / "long-task-contract.json"
 DEFAULT_PERSISTENT_WORK_ROOT = pathlib.Path.home() / "workspace" / "redcap-e2e-runs"
 PLACEHOLDER_PNG_BYTES = bytes.fromhex(
@@ -2047,9 +2053,70 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         "runtime/bin/redcap complete-revival-e2e harness-timeout-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e runner-negative-probe-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e self-check",
+        E2E_RETENTION_EXTERNAL_VALIDATOR_COMMAND,
     ]:
         if required not in commands:
             failures.append(f"E2E 合同缺少命令定义：{required}")
+    external_observer = contract.get("external_validation_observer")
+    if not isinstance(external_observer, dict):
+        failures.append("E2E 合同缺少 external_validation_observer")
+    else:
+        if external_observer.get("status") != "hard_evidence_gate":
+            failures.append("external_validation_observer.status 必须为 hard_evidence_gate")
+        if external_observer.get("script") != "runtime/audit/e2e_retention_external_validation.py":
+            failures.append("external_validation_observer.script 必须指向独立保留策略验证器")
+        if external_observer.get("source_snapshot_required") is not True:
+            failures.append("external_validation_observer.source_snapshot_required 必须为 true")
+        if external_observer.get("invocation_record_required") is not True:
+            failures.append("external_validation_observer.invocation_record_required 必须为 true")
+        if external_observer.get("runtime_isolation_required") is not True:
+            failures.append("external_validation_observer.runtime_isolation_required 必须为 true")
+        evidence_required = external_observer.get("evidence_required")
+        for required_evidence in [
+            "retention-external-validation.json",
+            "retention-external-validation-source.txt",
+            "retention-external-validation-invocation.json",
+            "retention-external-validation.json#validator.runtime_isolation",
+        ]:
+            if not isinstance(evidence_required, list) or required_evidence not in evidence_required:
+                failures.append(f"external_validation_observer.evidence_required 缺少：{required_evidence}")
+        if not E2E_RETENTION_EXTERNAL_VALIDATOR.exists():
+            failures.append("独立保留策略验证器源码不存在")
+        else:
+            validator_source = E2E_RETENTION_EXTERNAL_VALIDATOR.read_text(encoding="utf-8")
+            forbidden_imports = external_observer.get("must_not_import")
+            if not isinstance(forbidden_imports, list) or not forbidden_imports:
+                failures.append("external_validation_observer.must_not_import 必须声明禁止导入列表")
+            else:
+                hits: list[str] = []
+                validator_tree = ast.parse(validator_source)
+                forbidden_modules = {str(item) for item in forbidden_imports if str(item)}
+                for node in ast.walk(validator_tree):
+                    if isinstance(node, ast.Import):
+                        for alias in node.names:
+                            if alias.name in forbidden_modules:
+                                hits.append(alias.name)
+                    elif isinstance(node, ast.ImportFrom):
+                        module = node.module or ""
+                        if module in forbidden_modules:
+                            hits.append(module)
+                if hits:
+                    failures.append(f"独立保留策略验证器含有禁止导入：{sorted(set(hits))}")
+    orchestrator_independence = contract.get("ol01_orchestrator_independence")
+    if not isinstance(orchestrator_independence, dict):
+        failures.append("E2E 合同缺少 ol01_orchestrator_independence")
+    else:
+        if orchestrator_independence.get("status") != "hard_entry_gate":
+            failures.append("ol01_orchestrator_independence.status 必须为 hard_entry_gate")
+        if orchestrator_independence.get("different_entity_required") is not True:
+            failures.append("ol01_orchestrator_independence.different_entity_required 必须为 true")
+        evidence_required = orchestrator_independence.get("evidence_required")
+        for required_evidence in [
+            "ol01-orchestrator-identity.json",
+            "ol01-orchestrator-independence-receipt.json",
+        ]:
+            if not isinstance(evidence_required, list) or required_evidence not in evidence_required:
+                failures.append(f"ol01_orchestrator_independence.evidence_required 缺少：{required_evidence}")
     roles = contract.get("roles")
     if not isinstance(roles, dict):
         failures.append("E2E 合同缺少 roles")
@@ -8398,6 +8465,27 @@ def run_summary_paths(run_dir: pathlib.Path) -> list[pathlib.Path]:
     return unique_preserve_order([str(path) for path in paths if path.exists()])
 
 
+def active_packet_worker_state(packet: dict[str, Any]) -> dict[str, Any]:
+    """把运行标记和真实进程状态拆开，避免仅凭旧标记误判。"""
+    declared_running = packet.get("lifecycle_state") == "running"
+    worker_pid = int(packet.get("worker_pid") or 0)
+    worker_identity = packet.get("worker_identity") if isinstance(packet.get("worker_identity"), dict) else None
+    command_substrings = [str(item) for item in packet.get("worker_command_substrings", []) if str(item)]
+    process_checked = worker_pid > 0
+    process_running = False
+    reason = "worker-pid-missing"
+    if process_checked:
+        process_running = process_matches_identity(worker_pid, worker_identity, command_substrings) and not process_is_zombie(worker_pid)
+        reason = "worker-process-alive" if process_running else "worker-process-missing-or-identity-mismatch"
+    return {
+        "declared_running": declared_running,
+        "worker_pid": worker_pid if worker_pid > 0 else None,
+        "process_checked": process_checked,
+        "process_running": process_running,
+        "reason": reason,
+    }
+
+
 def classify_e2e_run_dir(run_dir: pathlib.Path, *, stale_active_seconds: int = E2E_RETENTION_STALE_ACTIVE_SECONDS) -> dict[str, Any]:
     summary_paths = run_summary_paths(run_dir)
     summaries = [load_optional_json(pathlib.Path(path)) for path in summary_paths]
@@ -8411,18 +8499,29 @@ def classify_e2e_run_dir(run_dir: pathlib.Path, *, stale_active_seconds: int = E
         ]
         if isinstance(payload, dict)
     ]
-    active_running = any(item.get("lifecycle_state") == "running" for item in active_packets)
+    active_packet_states = [active_packet_worker_state(item) for item in active_packets]
+    active_marker_running = any(item.get("declared_running") is True for item in active_packet_states)
+    active_process_running = any(
+        item.get("declared_running") is True and item.get("process_running") is True
+        for item in active_packet_states
+    )
+    active_unverified_running = any(
+        item.get("declared_running") is True and item.get("process_checked") is False
+        for item in active_packet_states
+    )
     try:
         mtime = max(path.stat().st_mtime for path in [run_dir, *[pathlib.Path(item) for item in summary_paths], *active_packet_paths])
     except OSError:
         mtime = 0.0
     age_seconds = max(0.0, time.time() - mtime) if mtime else None
     stale_active = bool(
-        active_running
+        active_marker_running
+        and not active_process_running
         and age_seconds is not None
         and stale_active_seconds >= 0
         and age_seconds >= stale_active_seconds
     )
+    active_running = bool(active_process_running or (active_unverified_running and not stale_active))
     if stale_active:
         status = "stale-active"
     elif active_running:
@@ -8451,7 +8550,11 @@ def classify_e2e_run_dir(run_dir: pathlib.Path, *, stale_active_seconds: int = E
         "age_seconds": age_seconds,
         "stale_active_seconds": stale_active_seconds,
         "active_packet_count": len(active_packets),
+        "active_marker_running": active_marker_running,
+        "active_process_running": active_process_running,
+        "active_unverified_running": active_unverified_running,
         "active_running": active_running,
+        "active_packet_states": active_packet_states,
         "summary_paths": summary_paths,
         "delete_allowed": False,
         "delete_reason": "",
@@ -12576,6 +12679,26 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             os.utime(stale_summary, (stale_mtime, stale_mtime))
             os.utime(stale_packet, (stale_mtime, stale_mtime))
             os.utime(stale_active_dir, (stale_mtime, stale_mtime))
+            live_active_dir = retention_root / "redcap-e2e-runs-live-active"
+            live_active_dir.mkdir()
+            live_active_summary = live_active_dir / "redcap-e2e-run-summary.json"
+            write_json(live_active_summary, {
+                "schema_id": "redcap-e2e-run-summary",
+                "ok": False,
+                "failures": ["fixture active and live"],
+            })
+            live_active_packet = live_active_dir / "redcap-long-task-active-run.json"
+            write_json(live_active_packet, {
+                "schema_id": "redcap-e2e-long-task-active-run",
+                "lifecycle_state": "running",
+                "worker_pid": os.getpid(),
+                "worker_identity": process_identity(os.getpid()),
+                "worker_command_substrings": [],
+            })
+            live_active_mtime = time.time() - E2E_RETENTION_STALE_ACTIVE_SECONDS - 10
+            os.utime(live_active_summary, (live_active_mtime, live_active_mtime))
+            os.utime(live_active_packet, (live_active_mtime, live_active_mtime))
+            os.utime(live_active_dir, (live_active_mtime, live_active_mtime))
             unrelated_dir = retention_root / "not-redcap-e2e-runs"
             unrelated_dir.mkdir()
             retention_plan = plan_e2e_run_retention(retention_root, keep_latest_success=5)
@@ -12584,6 +12707,14 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             stale_items = [item for item in retention_plan.get("runs", []) if item.get("status") == "stale-active"]
             if len(stale_items) != 1 or stale_items[0].get("delete_allowed") is True:
                 failures.append(f"E2E 运行目录保留计划没有保守识别 stale-active：{retention_plan}")
+            live_items = [item for item in retention_plan.get("runs", []) if item.get("name") == "redcap-e2e-runs-live-active"]
+            if (
+                len(live_items) != 1
+                or live_items[0].get("status") != "active"
+                or live_items[0].get("active_process_running") is not True
+                or live_items[0].get("delete_allowed") is True
+            ):
+                failures.append(f"E2E 运行目录保留计划没有保护真实存活的 active 目录：{retention_plan}")
             state_warnings = retention_plan.get("state_file_warnings", [])
             if not any(str(item.get("path") or "").endswith("redcap-e2e-runs-unknown") for item in state_warnings if isinstance(item, dict)):
                 failures.append(f"E2E 运行目录保留计划没有记录缺状态文件目录警告：{retention_plan}")
@@ -12726,8 +12857,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             remaining_ceiling_dirs = [path for path in safety_root.iterdir() if path.is_dir() and path.name.startswith("redcap-e2e-runs-stale-active-ceiling")]
             if len(remaining_ceiling_dirs) != 1:
                 failures.append(f"E2E stale-active 安全上限没有保留超额目录：{[str(path) for path in remaining_ceiling_dirs]}")
-            if not failed_dir.exists() or not unknown_dir.exists() or not unrelated_dir.exists():
-                failures.append("E2E 运行目录保留执行误删了失败、未知或非 E2E 目录")
+            if not failed_dir.exists() or not unknown_dir.exists() or not unrelated_dir.exists() or not live_active_dir.exists():
+                failures.append("E2E 运行目录保留执行误删了失败、未知、真实 active 或非 E2E 目录")
             source_retention_plan = plan_e2e_run_retention(REPO_ROOT, keep_latest_success=5)
             if source_retention_plan.get("ok") is True:
                 failures.append("E2E 运行目录保留计划不应允许在 RedCap 源工作区内清理")

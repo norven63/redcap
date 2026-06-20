@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "外部验证的可审计性确有真实改进：新增独立验证器源码、调用记录、源码快照和 import 白名单检查，验证器仅依赖标准库和 ps/os.kill 等系统调用，未导入 complete_revival_e2e 或 soul_loader。合同与队列文件也同步更新。但关键 enforcement 代码位于被截断的 complete_revival_e2e.py 中，无法从当前证据包确认 'external_validation_observer' 在运行时真正被强制检查；design-check 与 py_compile 通过也缺乏回执。",
+  "main_concern": "合同更新与源码快照解决了'能不能审计'的问题，但尚未证明'运行时真的会失败'。如果 validate_contract 只是读取合同条目而未硬阻塞，或代码路径存在绕过，则外部验证仍可能在未来运行中被跳过。",
+  "top_risks": [
+    "complete_revival_e2e.py 在证据包中被截断，无法审计 external_validation_observer 的强制检查逻辑是否真实存在且无绕过。",
+    "缺少 design-check 与 py_compile 的执行回执，当前只有文字声明其通过。",
+    "源码快照 retention-external-validation-source.txt 由同一运行流程生成，若运行器先篡改再快照，则 sha256 自洽也可能是自证。"
+  ],
+  "missing_evidence": [
+    "complete_revival_e2e.py 中 validate_contract 处理 external_validation_observer 的关键代码片段（或对应行号/函数名）。",
+    "runtime/bin/redcap complete-revival-e2e design-check 的执行回执。",
+    "python3 -m py_compile 对新验证器和 E2E 运行器的执行回执。"
+  ],
+  "minimum_fix": "在证据包中补充 complete_revival_e2e.py 里 external_validation_observer 检查相关源码片段，并补充 design-check 与 py_compile 的执行回执；若 enforcement 只是读取合同条目，应改为未通过外部验证时非零退出。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "团队没有空转：新增了真实源码文件、调用记录和合同条款，问题范围持续收窄。但要防止把'合同写了'当成'运行时 enforcement 生效'。"
+  },
+  "user_intent_alignment": "良好。本轮仍不声明 RedCap 完整复活，只聚焦上一轮两个具体 concern 的修复，符合 Norven 对阶段成果不得冒充完整完成的要求。"
+}

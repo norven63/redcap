@@ -118,6 +118,20 @@
         "codex-cli"
       ],
       "title": "Loom 角色会话连续性"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/open-loop-terminal-closeout-hard-block.md",
+      "id": "open-loop-terminal-closeout-hard-block",
+      "path": "assets/knowledge/entries/open-loop-terminal-closeout-hard-block.md",
+      "route": "active-local-index",
+      "summary": "当任务存在终局目标时，完整完成检查必须读取开放 P0/P1 队列，并在队列未闭环时硬失败，避免阶段成果被说成终局完成。",
+      "tags": [
+        "terminal-goal",
+        "open-loop",
+        "completion-guard"
+      ],
+      "title": "终局验收必须绑定开放队列"
     }
   ],
   "raw_archive_default": "forbidden",
