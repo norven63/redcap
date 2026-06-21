@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap check",
+  "executed_at": "2026-06-20T16:49:05+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/redcap-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/redcap-check.stdout.txt",
+  "stdout_sha256": "900755dfd84dbcccdacd31e08d00c431ecd777fb99560a46b75752b04480dc78"
+}

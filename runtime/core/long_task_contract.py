@@ -54,7 +54,7 @@ CAPABILITY_LAYERS = {
     "prism_review_resolution",
 }
 REQUIRED_CODE_POINTERS = {
-    "runtime/bin/redcap": "long-task check|decide|start|record|complete|self-check",
+    "runtime/bin/redcap": "long-task check|decide|start|record|complete|boundary-check|self-check",
     "runtime/core/check_runner.py": "long-task-contract-self-check",
 }
 RISK_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
@@ -597,6 +597,7 @@ def validate_iteration_ledger(iterations: Any, failures: list[str], *, active_ru
         failures.append("active_run iteration_ledger must be non-empty")
     empty_delta_streak = 0
     previous: dict[str, Any] | None = None
+    repeated_same_root_streak = 1
     for index, item in enumerate(iterations):
         if not isinstance(item, dict):
             failures.append(f"iteration_ledger[{index}] must be an object")
@@ -625,8 +626,20 @@ def validate_iteration_ledger(iterations: Any, failures: list[str], *, active_ru
             same_blocker = signature_of(previous, "blocker_signature") == signature_of(item, "blocker_signature")
             same_source = signature_of(previous, "source_signature") == signature_of(item, "source_signature")
             same_evidence = signature_of(previous, "evidence_signature") == signature_of(item, "evidence_signature")
+            if same_blocker and same_source and same_evidence:
+                repeated_same_root_streak += 1
+            else:
+                repeated_same_root_streak = 1
             if same_blocker and same_source and same_evidence and previous.get("auto_rerun_allowed") is False:
                 failures.append("blind rerun detected after auto_rerun_allowed=false with unchanged blocker/source/evidence signatures")
+            if (
+                repeated_same_root_streak > 2
+                and status in {"running", "failed", "blocked"}
+                and item.get("auto_rerun_allowed") is not False
+            ):
+                failures.append(
+                    "same blocker/source/evidence repeated more than threshold without arbitration or evidence delta"
+                )
         previous = item
 
 
@@ -643,7 +656,7 @@ def derive_capability_layers() -> set[str]:
     redcap = read("runtime/bin/redcap")
     runner = read("runtime/core/check_runner.py")
     evidence_gitignore = read("assets/evidence/.gitignore")
-    if "def cmd_decide" in source and "long-task check|decide|start|record|complete|self-check" in redcap:
+    if "def cmd_decide" in source and "long-task check|decide|start|record|complete|boundary-check|self-check" in redcap:
         layers.add("task_entry_decision")
     if (
         "def cmd_start" in source
@@ -660,7 +673,7 @@ def derive_capability_layers() -> set[str]:
         and "completion_relevance_failures" in source
         and "record requires active_run.lifecycle_state=running" in source
         and "objective_delta must differ from previous iteration" in source
-        and "long-task check|decide|start|record|complete|self-check" in redcap
+        and "long-task check|decide|start|record|complete|boundary-check|self-check" in redcap
     ):
         layers.add("generic_active_run_entry")
     if "def validate_contract_kind" in source and "contract_kind" in source:
@@ -1552,6 +1565,267 @@ def _complete_long_task_unlocked(
     return result
 
 
+def add_boundary_probe(
+    checks: list[dict[str, Any]],
+    probe_id: str,
+    *,
+    ok: bool,
+    expected: str,
+    observed: Any,
+    artifacts: list[str] | None = None,
+) -> None:
+    checks.append({
+        "id": probe_id,
+        "status": "pass" if ok else "fail",
+        "expected": expected,
+        "observed": observed,
+        "artifacts": artifacts or [],
+    })
+
+
+def run_boundary_probe_suite() -> dict[str, Any]:
+    checks: list[dict[str, Any]] = []
+    artifacts: list[str] = [
+        "runtime/core/long_task_contract.py",
+        "assets/contracts/long-task-contract.json",
+        "assets/contracts/long-task-loop-boundary.json",
+        "runtime/bin/redcap long-task boundary-check",
+    ]
+    artifact_root = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-10-long-task-loop-boundary-artifacts"
+    artifact_root.mkdir(parents=True, exist_ok=True)
+    with contextlib.nullcontext(artifact_root) as tmp:
+
+        short_decision = decide_long_task_mode("解释这个字段是什么意思", risk_level="low")
+        short_start = start_long_task(
+            "解释这个字段是什么意思",
+            risk_level="low",
+            run_dir=tmp / "short-task",
+        )
+        add_boundary_probe(
+            checks,
+            "short_task_misroute",
+            ok=short_decision.get("mode") == "fast_path"
+            and short_start.get("mode") == "fast_path"
+            and short_start.get("active_run_created") is False,
+            expected="低风险问答走 fast_path，且不创建 active_run。",
+            observed={"decision": short_decision, "start": short_start},
+            artifacts=[str(tmp / "short-task" / "redcap-long-task-start-result.json")],
+        )
+
+        complex_start = start_long_task(
+            "持续推进 RedCap 自开发 E2E 巡检，直到每轮问题都进入失败回流并完成真实修复。",
+            risk_level="medium",
+            run_dir=tmp / "complex-task",
+            action_evidence=["runtime/bin/redcap long-task boundary-check complex start"],
+        )
+        complex_active_run = pathlib.Path(str(complex_start.get("active_run", tmp / "complex-task" / "missing.json")))
+        behavior_artifact = tmp / "complex-task" / "behavior-artifact.json"
+        behavior_artifact.write_text(json.dumps({
+            "schema_id": "boundary-behavior-artifact",
+            "command": "runtime/bin/redcap long-task boundary-check behavior probe",
+            "exit_code": 0,
+            "ok": False,
+            "stdout": "failed probe produced structured evidence and changed failure_backlog",
+            "evidence": "本文件证明 boundary-check 真实执行 record，而不是只读取合同。",
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        record_result = record_long_task_iteration(
+            complex_active_run,
+            status="failed",
+            objective_delta="边界探针写入真实行为证据，并把失败项加入 failure_backlog。",
+            action_evidence=[str(behavior_artifact)],
+            blocker_signature="boundary-fixture-first-failure",
+            failure_summary="边界探针验证 record 能推进 active_run 并维护失败回流。",
+        ) if complex_start.get("ok") else {"ok": False, "failures": ["complex start failed"]}
+        final_receipt = tmp / "complex-task" / "final-receipt.json"
+        final_receipt.write_text(json.dumps({
+            "schema_id": "boundary-final-receipt",
+            "command": "runtime/bin/redcap long-task boundary-check final probe",
+            "exit_code": 0,
+            "ok": True,
+            "stdout": "passed completion boundary",
+            "evidence": "完成回执证明当前 active_run 已达到终止条件。",
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        complete_result = complete_long_task(
+            complex_active_run,
+            outcome="completed",
+            final_objective_delta="结构化完成回执证明当前 active_run 已达到终止条件，允许关闭本轮运行包。",
+            completion_evidence=[str(final_receipt)],
+            final_summary="RSP-10 边界探针中的复杂任务 active_run 已由完成回执关闭。",
+            blocker_signature="none",
+        ) if record_result.get("ok") else {"ok": False, "failures": ["record probe failed"]}
+        completed_packet = load_json(complex_active_run) if complex_active_run.exists() else {}
+        add_boundary_probe(
+            checks,
+            "complex_task_progress_and_close",
+            ok=complex_start.get("active_run_created") is True
+            and record_result.get("ok") is True
+            and complete_result.get("ok") is True
+            and completed_packet.get("lifecycle_state") == "completed"
+            and bool(completed_packet.get("completion_boundary")),
+            expected="复杂任务通过 decide/start/record/complete 推进，并写入 completion_boundary。",
+            observed={
+                "start": complex_start,
+                "record": record_result,
+                "complete": complete_result,
+                "lifecycle_state": completed_packet.get("lifecycle_state"),
+                "completion_boundary_present": bool(completed_packet.get("completion_boundary")),
+            },
+            artifacts=[str(behavior_artifact), str(final_receipt), str(complex_active_run)],
+        )
+
+        blind_retry = valid_enabled_fixture()
+        blind_retry["iteration_ledger"] = [
+            {
+                "iteration_id": "round-1",
+                "status": "failed",
+                "action_evidence": ["same command output"],
+                "objective_delta": "第一次发现同一结构性阻塞。",
+                "blocker_signature": "same-root-cause",
+                "source_signature": "same-source",
+                "evidence_signature": "same-evidence",
+                "auto_rerun_allowed": True,
+            },
+            {
+                "iteration_id": "round-2",
+                "status": "failed",
+                "action_evidence": ["same command output again"],
+                "objective_delta": "第二次仍是同一结构性阻塞，尚未出现源码或证据变化。",
+                "blocker_signature": "same-root-cause",
+                "source_signature": "same-source",
+                "evidence_signature": "same-evidence",
+                "auto_rerun_allowed": True,
+            },
+            {
+                "iteration_id": "round-3",
+                "status": "failed",
+                "action_evidence": ["same command output third time"],
+                "objective_delta": "第三次仍是同一结构性阻塞，继续自动重跑必须被拒绝。",
+                "blocker_signature": "same-root-cause",
+                "source_signature": "same-source",
+                "evidence_signature": "same-evidence",
+                "auto_rerun_allowed": True,
+            },
+        ]
+        blind_retry_path = tmp / "blind-retry.json"
+        write_json(blind_retry_path, blind_retry)
+        blind_failures = validate_contract(blind_retry)
+        add_boundary_probe(
+            checks,
+            "blind_retry_loop",
+            ok=any("same blocker/source/evidence repeated" in item for item in blind_failures),
+            expected="同根因、同源码、同证据重复第三轮且仍允许自动重跑时必须失败。",
+            observed=blind_failures,
+            artifacts=[str(blind_retry_path)],
+        )
+
+        low_quality_start = start_long_task(
+            "持续推进 RedCap 自开发 E2E 巡检，验证低质量完成证据不能收口。",
+            risk_level="medium",
+            run_dir=tmp / "low-quality-completion",
+            action_evidence=["runtime/bin/redcap long-task boundary-check low quality"],
+        )
+        low_quality_artifact = tmp / "low-quality-completion" / "random-filler.txt"
+        low_quality_artifact.write_text("qwertyuiopasdfghjklzxcvbnm1234567890" * 3 + "\n", encoding="utf-8")
+        low_quality_complete = complete_long_task(
+            pathlib.Path(str(low_quality_start.get("active_run", tmp / "low-quality-completion" / "missing.json"))),
+            outcome="completed",
+            final_objective_delta="这轮故意使用随机填充证据收口，complete 必须拒绝。",
+            completion_evidence=[str(low_quality_artifact)],
+            final_summary="随机填充证据不应关闭 active_run。",
+            blocker_signature="low-quality-completion",
+        ) if low_quality_start.get("ok") else {"ok": False, "failures": ["low quality start failed"]}
+        add_boundary_probe(
+            checks,
+            "low_quality_completion",
+            ok=low_quality_complete.get("ok") is False
+            and any("low confidence" in item for item in low_quality_complete.get("failures", [])),
+            expected="低置信完成证据必须被 complete 拒绝。",
+            observed=low_quality_complete,
+            artifacts=[str(low_quality_artifact)],
+        )
+
+        missing_start = start_long_task(
+            "持续推进 RedCap 自开发 E2E 巡检，验证缺少动作证据和失败账本时必须失败。",
+            risk_level="medium",
+            run_dir=tmp / "missing-required-fields",
+            action_evidence=["runtime/bin/redcap long-task boundary-check missing fields"],
+        )
+        missing_packet = pathlib.Path(str(missing_start.get("active_run", tmp / "missing-required-fields" / "missing.json")))
+        empty_record = record_long_task_iteration(
+            missing_packet,
+            status="failed",
+            objective_delta="这轮故意缺少动作证据，record 必须拒绝。",
+            action_evidence=[],
+            blocker_signature="missing-action-evidence",
+            failure_summary="缺少动作证据不应进入长任务账本。",
+        ) if missing_start.get("ok") else {"ok": False, "failures": ["missing fields start failed"]}
+        missing_backlog = valid_enabled_fixture()
+        missing_backlog.pop("failure_backlog")
+        missing_backlog_failures = validate_contract(missing_backlog)
+        missing_delta = valid_enabled_fixture()
+        missing_delta["iteration_ledger"][0].pop("objective_delta", None)
+        missing_delta_failures = validate_contract(missing_delta)
+        add_boundary_probe(
+            checks,
+            "missing_required_fields",
+            ok=empty_record.get("ok") is False
+            and any("action_evidence" in item for item in empty_record.get("failures", []))
+            and any("failure_backlog" in item for item in missing_backlog_failures)
+            and any("objective_delta" in item for item in missing_delta_failures),
+            expected="缺少 action_evidence、objective_delta 或 failure_backlog 时必须失败。",
+            observed={
+                "empty_record": empty_record,
+                "missing_backlog_failures": missing_backlog_failures,
+                "missing_delta_failures": missing_delta_failures,
+            },
+            artifacts=[str(missing_packet)],
+        )
+
+    failures = [item for item in checks if item["status"] != "pass"]
+    return {
+        "schema_id": "redcap-rsp-10-long-task-loop-boundary",
+        "rsp": "RSP-10",
+        "ok": not failures,
+        "acceptance": {
+            "positive": {
+                "status": "pass" if all(
+                    item["status"] == "pass"
+                    for item in checks
+                    if item["id"] in {"short_task_misroute", "complex_task_progress_and_close"}
+                ) else "fail",
+                "checks": [item for item in checks if item["id"] in {"short_task_misroute", "complex_task_progress_and_close"}],
+            },
+            "negative": {
+                "status": "pass" if all(
+                    item["status"] == "pass"
+                    for item in checks
+                    if item["id"] in {"blind_retry_loop", "low_quality_completion", "missing_required_fields"}
+                ) else "fail",
+                "checks": [item for item in checks if item["id"] in {"blind_retry_loop", "low_quality_completion", "missing_required_fields"}],
+            },
+        },
+        "changed_reality": [
+            "runtime/bin/redcap long-task boundary-check 真实调用 decide/start/record/complete，而不是只检查合同文本。",
+            "同根因、同源码、同证据第三轮仍自动重跑会被 validate_iteration_ledger 阻断。",
+            "低风险短任务不会创建 active_run，降低过度治理风险。",
+            "低置信完成证据、缺失动作证据、缺失目标推进差量和缺失失败账本均会被拒绝。"
+        ],
+        "artifacts": artifacts,
+        "failures": failures,
+    }
+
+
+def cmd_boundary_check(args: argparse.Namespace) -> int:
+    result = run_boundary_probe_suite()
+    if args.out:
+        write_json(pathlib.Path(args.out).resolve(), result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ok"]:
+        return 1
+    print("REDCAP_LONG_TASK_BOUNDARY_CHECK_OK")
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     result = check_payload(pathlib.Path(args.packet).resolve(), require_integration=args.require_integration)
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -2071,6 +2345,9 @@ def build_parser() -> argparse.ArgumentParser:
     complete.add_argument("--final-summary", required=True)
     complete.add_argument("--blocker-signature", default="none")
     complete.set_defaults(func=cmd_complete)
+    boundary_check = sub.add_parser("boundary-check")
+    boundary_check.add_argument("--out")
+    boundary_check.set_defaults(func=cmd_boundary_check)
     self_check = sub.add_parser("self-check")
     self_check.set_defaults(func=cmd_self_check)
     return parser

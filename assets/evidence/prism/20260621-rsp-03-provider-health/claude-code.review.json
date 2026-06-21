@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "主 AI 声称\"准备新增\"四个文件和集成点，但所有 changed_reality 条目均为未来时态。当前无 diff、无合约、无 runtime 模块可审。设计评审的结论不能替代实现评审的证据——一个写得好的计划不等于一个可工作的 health check。用户意图是\"建立可验证健康巡检\"，不是\"写一份健康巡检设计文档\"。",
+  "main_concern": "双层设计（离线+live）在概念上合理，但失败分类的粒度是决定设计成败的关键：如果 provider_health.py 只输出 healthy/degraded 二元分类，超时、配额耗尽、会话断开、认证失败将被错误归并，导致 RedCap 把真实 provider 波动误判为永久失败——这正是用户约束明确禁止的。",
+  "top_risks": [
+    "失败分类粒度不足：二元 healthy/degraded 无法区分 transient timeout 和 permanent auth failure，违反约束'不把真实 provider 波动写成 RedCap 永久失败'",
+    "预算声明性 vs 可执行性：若限定文件读取的预算仅写在合约 JSON 描述字段中而不被 runtime 消费，则无实际约束力，stdout 上下文膨胀风险未解决",
+    "设计评审产出替代实现评审：当前无任何代码变更可审，验收证据可能退化为'合约已写=问题已解决'的 closeout artifact"
+  ],
+  "missing_evidence": [
+    "provider-health.json 合约草稿：需要确认探针定义、分类枚举、预算字段是否为 machine-readable",
+    "provider_health.py 的失败分类逻辑：需确认至少区分 timeout/refused/quota/auth/unknown + retryable 标志",
+    "限定文件读取的预算执行路径：runtime 如何读取合约预算并在 live-check 中截断/拒绝超限读取"
+  ],
+  "minimum_fix": "在实现 provider_health.py 之前，先在合约 provider-health.json 中定义具体的失败分类枚举（至少 5 类：timeout/connection_refused/quota_exhausted/auth_failure/unknown），每类附带 retryable 布尔值和建议退避策略；限定文件读取的预算字段（max_bytes_per_file、max_total_bytes、allowed_extensions）必须是 runtime 可解析的 JSON 值而非注释文本；live-check 验收标准必须包含'在当前机器执行并产生真实 stdout 证据'而非仅检查模块能否导入。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "RSP-03 与已有的 advisory-stop health check 可能在 check_runner 聚合层产生功能重叠。如果 provider_health.py 不明确复用 check_runner 的现有聚合模式，会导致两个 health check 路径各自维护、各自产生分类报告——形成'修一个 health check 引出另一个 health check'的循环。"
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,51 @@
+{
+  "schema_id": "redcap-knowledge-quality-contract",
+  "version": 1,
+  "rsp": "RSP-26",
+  "purpose": "防止陈旧、冲突、不适用或 no-promote 的知识命中直接驱动 RedCap 实现决策。",
+  "required_fields": [
+    "applicability",
+    "confidence",
+    "expiry_condition",
+    "reviewed_at",
+    "source_refs",
+    "status",
+    "usage_policy"
+  ],
+  "allowed_statuses": [
+    "active",
+    "stale",
+    "conflict",
+    "no_promote",
+    "deprecated",
+    "legacy_reference"
+  ],
+  "allowed_usage_policies": [
+    "direct_driver",
+    "review_required",
+    "hint_only",
+    "blocked"
+  ],
+  "default_policies": {
+    "missing_quality": "review_required",
+    "old_redcap_reference": "review_required",
+    "low_confidence": "hint_only",
+    "conflict": "review_required",
+    "no_promote": "hint_only"
+  },
+  "hard_rules": [
+    "缺失质量元数据的知识条目不得作为 direct_driver。",
+    "old-redcap-reference 路由不得作为 direct_driver。",
+    "过期知识不得保持 active 或 direct_driver。",
+    "存在 conflicts_with 的知识必须有 conflict_resolution，且不得作为 direct_driver。",
+    "存在 no_promote_refs 的知识不得作为 direct_driver。",
+    "source_refs 必须是仓库相对路径，且不得包含私人人格、凭据或私有身份正文标记。"
+  ],
+  "gateway_integration": {
+    "required": true,
+    "search_results_must_include_quality_decision": true,
+    "direct_driver_filter_must_use_quality_decision": true,
+    "missing_quality_default": "review_required"
+  },
+  "completion_boundary": "本合同只定义 RSP-26 当前知识正确性治理，不声明知识库永久正确，也不声明 RedCap 完整复活。"
+}

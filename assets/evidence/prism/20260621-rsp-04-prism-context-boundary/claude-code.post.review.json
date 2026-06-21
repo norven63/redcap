@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "low",
+  "reality_delta": "The implementation claims address every concern from the design review: hard 8192-byte budget, active cap-load gate, 7 negative fixture categories, stat-only raw verification, self-check, and full integration. But zero of 16 authorized files could be read (no Bash/Read tools, GitHub permissions not granted). The claims are structurally coherent and detailed — the contract budget, the three-command checker, the 7092-byte consumption measurement — but none of it is verifiable. The delta is between a well-written closeout narrative and confirmed implementation artifacts on disk.",
+  "main_concern": "The cap-load command is described as one of three checker commands (check/self-check/cap-load), suggesting a one-time load operation rather than a persistent file-read interceptor. If Cap reads any file after the initial cap-load completes — through error tracebacks, log output, dynamic imports, or secondary check invocations — those reads bypass the manifest entirely. A command-based loader secures only the first context window, not every subsequent read. Without code access, cannot confirm whether loader is a one-shot or an interceptor, but the command-name pattern ('cap-load' alongside 'check' and 'self-check') strongly implies a discrete operation, not a continuous gate.",
+  "top_risks": [
+    "8192-byte budget may be too tight for practical Cap operation: a structured review JSON alone can be 2-4KB, summary excerpts consume more, and the manifest metadata itself counts against the budget — if Cap lacks sufficient context to judge correctly, the boundary becomes self-defeating (violates constraint #2).",
+    "Post-load context leakage: if cap-load is a one-time operation, any file read after loading — error tracebacks that include file contents, log dumps during check failures, revival_followthrough reading Prism outputs, or nested check invocations — bypasses the manifest gate entirely and re-pollutes context.",
+    "Self-check contamination: the self-check command must verify that the checker itself hasn't consumed raw files; if the self-check reads any file metadata beyond stat (e.g., parsing JSON to verify structure), it could be the very context expansion it's designed to detect."
+  ],
+  "missing_evidence": [
+    "All 16 authorized files are unreadable (no Bash/Read/GitHub access) — contract budget definitions, checker enforcement logic, negative fixture contents, consumption manifest structure, cap-loader output, and all 5 check receipts cannot be verified against claims.",
+    "No inline audit evidence in request — the request references file paths only, with no compact inline excerpts from receipts or check outputs that could substitute for direct file reads.",
+    "The '七类负例按预期失败' claim lacks specification of failure mode — does 'fail' mean the checker flags a violation (detection), or the loader rejects the load (prevention)? Without this distinction, cannot assess whether the gate is active or passive."
+  ],
+  "minimum_fix": "Before closing RSP-04: (1) Verify that cap-load is a persistent interceptor, not a one-shot command — it must gate every file read operation in Cap's lifecycle, not just the initial context load; (2) Validate the 8192-byte budget against actual Cap operation with real RSP-03 outputs — if the budget starves Cap of necessary context, raise it or redesign the summary compression; (3) Confirm that self-check uses only stat (size, mtime, path), never reads raw or brief file contents — a single os.path.getsize() call per raw file, not a json.load(); (4) Specify failure modes for each of the 7 negative fixtures — detection-only vs. rejection — and ensure at minimum raw-in-context and summary-exceeds-budget are rejection failures, not just detection flags.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The self-check command introduces a structural recursion risk: to verify that the checker hasn't consumed raw files, the self-check must inspect checker state or output. If the self-check reads any checker output file that contains context derived from raw files, the self-check itself consumes that context. If the self-check then writes its own output, and a subsequent self-check reads that output, the chain expands unboundedly. The three-command structure (check/self-check/cap-load) creates a checking loop where each layer of verification requires another layer of verification."
+  },
+  "user_intent_alignment": "aligned"
+}

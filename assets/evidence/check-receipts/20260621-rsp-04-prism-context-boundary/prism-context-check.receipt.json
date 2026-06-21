@@ -1,0 +1,24 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-context-check",
+  "command": "runtime/bin/redcap prism-context check",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-context",
+    "check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.075,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-check.stderr.txt",
+  "stdout_sha256": "a5343f31625d26140cdc9f11411f40879064df9971d9ab7cdc84d3050b520096",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1330,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:10:16+00:00",
+  "executor": "cap"
+}

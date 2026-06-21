@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "residual-batch",
+    "check",
+    "--out",
+    "assets/evidence/rsp/rsp-09-13-14-17-18-22-batch-integration.json"
+  ],
+  "command": "runtime/bin/redcap residual-batch check --out assets/evidence/rsp/rsp-09-13-14-17-18-22-batch-integration.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 1.007,
+  "executed_at": "2026-06-21T06:12:30Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "rsp-residual-batch-integration-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-residual-batch-integration-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 37517,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-residual-batch-integration-check.stdout.txt",
+  "stdout_sha256": "8a45a1cec11a530a37e716987b357839e74f543e7d23885184b5bf816c8f8ce7"
+}

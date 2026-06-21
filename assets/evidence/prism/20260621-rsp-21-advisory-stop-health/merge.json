@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "设计停留在三态口号层面：合同对 stop_degraded 的 host_effect 描述仍允许“仅记录健康状态而不阻断”，这正好会把 degraded 当作事实上的 healthy 通过；同时缺少降级原因分类、升级规则、输出模式以及与 check_runner 的隔离集成细节，存在用文档替代实现的风险。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "健康检查三态分类缺乏机器可验证的信号定义。请求中列出的四个 degraded 原因（语义评审不可用、规则冲突、回放失败、证据缺失）均未绑定到具体可检测条件（如：API 返回 5xx 超过 N 次、回放确定性偏差超过阈值、证据链哈希断裂）。没有这些信号定义，任何实现都将依赖主观阈值，degraded 要么被当作 healthy 漏过（因为信号太弱），要么被当作 blocked 误杀（因为信号太敏感）。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在实施前补齐：1) 明确 degraded 原因分类表（语义评审不可用、规则冲突、回放失败、证据缺失等）；2) 定义升级至 blocked 的确定性条件（如关键完成声明场景、连续 degraded 次数阈值）；3) 设计输出 schema 明确区分 healthy/degraded/blocked，并禁止 degraded 映射为 pass；4) 在 check_runner 中以独立步骤/独立健康证据文件接入，附带超时、重试和失败隔离；5) 提供可复现的测试样本与断言。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在编写任何运行时代码之前，先为 advisory-stop health-check 产出一份机器可验证的信号矩阵：(1) 每个 degraded/blocked 原因绑定至少一个具体检测条件（如 API 超时 > 30s 且重试 3 次仍失败 → degraded/语义不可用）；(2) 定义连续 degraded 计数器阈值（如 N≥3）和冷却重置条件；(3) 在 check_runner 中为 health-check 结果设置独立缓存 TTL，确保单次瞬态故障不污染聚合状态。此矩阵应作为合同文件的一部分（如 advisory-stop.json 的 health_signals 字段）而非仅存在于设计文档中。"
+    }
+  ],
+  "anti_loop_detected": true
+}

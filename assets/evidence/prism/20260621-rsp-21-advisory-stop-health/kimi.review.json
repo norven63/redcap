@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "没有可验证的现实改变。证据包显示 advisory-stop 合同仅定义了 stop_degraded 的语义，现有 check_runner 未出现独立的健康检查入口，也没有看到 healthy/degraded/blocked 三态输出或正负样本。主 AI 目前只提出了设计意向，未提交运行代码或测试证据。",
+  "main_concern": "设计停留在三态口号层面：合同对 stop_degraded 的 host_effect 描述仍允许“仅记录健康状态而不阻断”，这正好会把 degraded 当作事实上的 healthy 通过；同时缺少降级原因分类、升级规则、输出模式以及与 check_runner 的隔离集成细节，存在用文档替代实现的风险。",
+  "top_risks": [
+    "stop_degraded 被解释为可继续通过的“软提醒”，导致用户意图中的降级状态被 healthy 掩盖。",
+    "缺乏 degraded 原因分类和升级至 blocked 的确定性规则，报告不可执行，易引入人工/LLM 回退的灰色地带。",
+    "接入 check_runner 时没有隔离机制，Stop 健康检查可能因环境噪声拖垮整条常规检查链路，或被反向降级为无阻断提醒。"
+  ],
+  "missing_evidence": [
+    "advisory_stop.py 中 health-check 函数的具体签名、返回 schema 及与既有 Stop 检查的调用关系（完整代码）。",
+    "check_runner.py 中 Stop 健康检查步骤的接入方式、失败隔离策略和输出消费路径（完整代码）。",
+    "可运行的正负样本与预期输出，证明 degraded 状态不会被当作 healthy 通过。"
+  ],
+  "minimum_fix": "在实施前补齐：1) 明确 degraded 原因分类表（语义评审不可用、规则冲突、回放失败、证据缺失等）；2) 定义升级至 blocked 的确定性条件（如关键完成声明场景、连续 degraded 次数阈值）；3) 设计输出 schema 明确区分 healthy/degraded/blocked，并禁止 degraded 映射为 pass；4) 在 check_runner 中以独立步骤/独立健康证据文件接入，附带超时、重试和失败隔离；5) 提供可复现的测试样本与断言。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "如果下一轮输出仍是“已设计/已定义三态”但没有可运行的 health-check 代码和证明 degraded≠healthy 的样本，即视为循环；应停止并索取机器化证据。"
+  },
+  "user_intent_alignment": "方向一致（让 degraded 可见、可分类、可升级），但当前设计深度不足以保证 degraded 不会被 healthy 路径吞没；需要把“三态输出”从意图转化为不可抵赖的机器行为。"
+}

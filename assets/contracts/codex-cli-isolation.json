@@ -1,0 +1,64 @@
+{
+  "schema_id": "redcap-codex-cli-isolation-contract",
+  "schema_version": 1,
+  "rsp": "RSP-20",
+  "purpose": "验证 Codex CLI 隔离与插件配置噪声治理，确保外部 E2E 证据不依赖宿主个人插件、MCP 配置或全局 Codex 状态。",
+  "scope": "current-machine-current-codex-cli-and-redcap-runner",
+  "required_dimensions": [
+    "isolated_codex_home",
+    "mcp_override_policy",
+    "plugin_noise_policy",
+    "project_hook_carrier",
+    "user_codex_home_guard",
+    "negative_probes"
+  ],
+  "positive_acceptance": [
+    {
+      "id": "isolated-home-no-mcp-overrides",
+      "rule": "isolated_home 模式下 codex_mcp_isolation_argv 必须返回空列表，避免向干净 config 注入 mcp_servers 覆盖。"
+    },
+    {
+      "id": "non-isolated-keeps-mcp-overrides",
+      "rule": "非 isolated_home 模式下，若存在 REDCAP_E2E_CODEX_DISABLED_MCP_SERVERS，必须保留 mcp_servers.<name>.enabled=false 覆盖。"
+    },
+    {
+      "id": "minimal-isolated-config",
+      "rule": "项目 .redcap/codex-home/config.toml 只能包含必要 features.hooks 配置，不得包含 mcp_servers。"
+    },
+    {
+      "id": "plugin-noise-reduced-not-hook-disabled",
+      "rule": "交互式承载探针和 Loom 角色默认禁用 plugins/apps，但必须显式启用 hooks 并验证项目级 Hook 事件。"
+    },
+    {
+      "id": "user-codex-home-guard",
+      "rule": "每次承载探针必须记录用户真实 Codex Home 的 config/auth/logs 前后状态，发生变化必须失败。"
+    }
+  ],
+  "negative_acceptance": [
+    {
+      "id": "bad-isolated-mcp-override",
+      "rule": "若 isolated_home 模式仍出现 mcp_servers 覆盖，检查必须失败。"
+    },
+    {
+      "id": "bad-non-isolated-missing-mcp-override",
+      "rule": "若非 isolated_home 模式配置了 disabled servers 却没有覆盖参数，检查必须失败。"
+    },
+    {
+      "id": "bad-user-codex-home-mutated",
+      "rule": "若用户真实 Codex Home 的 config/auth/logs 前后状态变化，检查必须失败。"
+    },
+    {
+      "id": "bad-plugin-disable-off",
+      "rule": "若 carrier-probe 或 Loom 角色默认不禁用 plugins，检查必须失败。"
+    }
+  ],
+  "completion_boundary": {
+    "allowed_claim": "只能声明 RSP-20 在当前机器、当前 Codex CLI 版本和当前证据范围内通过。",
+    "forbidden_claims": [
+      "RedCap 完整复活",
+      "跨机器长期稳定",
+      "所有外部项目 E2E 均不受宿主噪声影响",
+      "历史 carrier-probe 可替代每轮 E2E 的当轮探针"
+    ]
+  }
+}

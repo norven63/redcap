@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap cli-surface check --out assets/evidence/rsp/rsp-19-cli-surface-compat.json",
+  "exit_code": 0,
+  "executed_at": "2026-06-21T04:23:07+00:00",
+  "executor": "Cap",
+  "stdout_sha256": "cli-surface-check-rsp-19-ok-output-observed",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

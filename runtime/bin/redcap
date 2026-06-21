@@ -19,15 +19,17 @@ Usage:
   runtime/bin/redcap phase2-blueprint check|self-check [...]
   runtime/bin/redcap full-revival-amendment check|self-check [...]
   runtime/bin/redcap e2e-trace check|self-check [...]
-  runtime/bin/redcap complete-revival-e2e design-check|prepare|preflight|preflight-regression-test|carrier-probe|convergence-check|convergence-guard-check|prune-runs|harness-timeout-regression-test|runner-negative-probe-regression-test|run|self-check [...]
+  runtime/bin/redcap complete-revival-e2e design-check|codex-isolation-check|prepare|preflight|preflight-regression-test|carrier-probe|convergence-check|convergence-guard-check|prune-runs|prune-check|report-check|external-sample-check|contract-map-check|harness-timeout-regression-test|runner-negative-probe-regression-test|run|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
-  runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|failure-route|self-check [...]
+  runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|failure-route|role-chain-check|session-check|self-check [...]
+  runtime/bin/redcap loom role-chain-check|session-check [...]
   runtime/bin/redcap forge check|self-check [...]
   runtime/bin/redcap arsenal check|self-check [...]
-  runtime/bin/redcap project-install check|package|audit-package|release-check|init|self-check [...]
-  runtime/bin/redcap knowledge-gateway check|search|draft|review|promote|self-check [...]
-  runtime/bin/redcap self-purification check|run-loop|self-check [...]
+  runtime/bin/redcap project-install check|package|audit-package|release-check|init|matrix-check|self-check [...]
+  runtime/bin/redcap knowledge-gateway check|search|impact-check|draft|review|promote|self-check [...]
+  runtime/bin/redcap knowledge-quality check|self-check [...]
+  runtime/bin/redcap self-purification check|run-loop|loop-check|self-check [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
@@ -35,23 +37,36 @@ Usage:
   runtime/bin/redcap prism-dispatch [...]
   runtime/bin/redcap prism-resolution [...]
   runtime/bin/redcap prism-rebuttal-request [...]
+  runtime/bin/redcap prism-consensus check|self-check|trace [...]
   runtime/bin/redcap prism-ledger [...]
+  runtime/bin/redcap executed-check run|self-check [...]
   runtime/bin/redcap task-facts record|summary|check|self-check [...]
   runtime/bin/redcap completion-evidence check|self-check [...]
   runtime/bin/redcap terminal-goal check|context|self-check [...]
   runtime/bin/redcap human-output check|self-check|lint-text|lint-file [...]
   runtime/bin/redcap prism-shard [...]
   runtime/bin/redcap scan-conclusion check|self-check [...]
-  runtime/bin/redcap intent-judge classify|self-check [...]
-  runtime/bin/redcap advisory-stop check|self-check
-  runtime/bin/redcap soul-load check|load|self-check [...]
+  runtime/bin/redcap intent-judge classify|matrix-check|self-check [...]
+  runtime/bin/redcap advisory-stop check|self-check|health-check
+  runtime/bin/redcap hook-quality check|self-check [...]
+  runtime/bin/redcap provider-health check|self-check|live-check [...]
+  runtime/bin/redcap runtime-health check|self-check|independent-probe|divergence-probe [...]
+  runtime/bin/redcap config compat-check|migrate|self-check|external-probe [...]
+  runtime/bin/redcap prism-context check|self-check|cap-load|cap-input-check|cap-consume [...]
+  runtime/bin/redcap soul-load check|load|public-leak-scan|self-check [...]
   runtime/bin/redcap status [...]
   runtime/bin/redcap revive [...]
   runtime/bin/redcap revival-followthrough check|e2e-check|open-loop-check|open-loop-close|self-check [...]
+  runtime/bin/redcap rsp-contract check|self-check [...]
   runtime/bin/redcap revival-queue check|self-check [...]
+  runtime/bin/redcap residual-batch check|mutation-check|self-check [...]
   runtime/bin/redcap known-issues-order check|self-check [...]
   runtime/bin/redcap known-issues-queue check|self-check [...]
-  runtime/bin/redcap long-task check|decide|start|record|complete|self-check [...]
+  runtime/bin/redcap long-task check|decide|start|record|complete|boundary-check|self-check [...]
+  runtime/bin/redcap cli-surface check|self-check|extract [...]
+  runtime/bin/redcap fsm-check [...]
+  runtime/bin/redcap knowledge-gateway-check [...]
+  runtime/bin/redcap session-ownership-check [...]
   runtime/bin/redcap formal-usable-check [--skip-host-hook-audit]
   runtime/bin/redcap complete-revival-check [--require-terminal-verified] [--skip-host-hook-audit]
   runtime/bin/redcap temporary-usable-check
@@ -82,12 +97,15 @@ Commands:
   fsm           Run the RedCap workflow FSM kernel.
   loom-workflow Verify the role-based Loom engineering workflow contract.
   loom-runtime  Run the project-level Loom role session manifest and loss alarms.
+  loom          Alias for loom-runtime role/session checks.
   forge         Verify RedCap Forge and redcap-arsenal promotion rules.
   arsenal       Verify the public reusable redcap-arsenal index.
   project-install
                 Package RedCap as .redcap, audit release artifacts, and initialize project-level runtime.
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
+  knowledge-quality
+                Verify knowledge freshness, conflict, no-promote, and direct-driver eligibility metadata.
   self-purification
                 Run and verify pre-task retrieval, post-task harvest, promotion decisions, and Cap private persona boundaries.
   evidence-restore
@@ -104,7 +122,11 @@ Commands:
                 Verify accept/reject/escalate resolution for Prism concern/block verdicts.
   prism-rebuttal-request
                 Generate a bounded same-provider rebuttal request for a rejected concern.
+  prism-consensus
+                Verify Prism provider consensus, disagreement handling, and rebuttal gates.
   prism-ledger  Record and summarize Prism task execution health.
+  executed-check
+                Run a command and write a RedCap executed-check receipt with stdout/stderr files.
   task-facts    Record and summarize RedCap task fact status.
   completion-evidence
                 Verify completion judgments are backed by source, contract, negative, and runtime evidence.
@@ -116,17 +138,34 @@ Commands:
                 Guard 360-degree old RedCap scan conclusions with structured scan facts.
   intent-judge  Classify prompt intent with deterministic rules and bounded Prism LLM fallback.
   advisory-stop Check advisory Stop closeout contract and deployment.
-  soul-load     Load or verify Cap identity sources without leaking private text.
+  hook-quality Verify Hook false-positive and false-negative quality metrics.
+  provider-health
+                Verify provider command path, session, bounded file access, and failure classification.
+  runtime-health
+                Verify critical Cap runtime entrypoints and failure classification.
+  config       Verify RedCap-owned config schema versions, migrations, unknown-version rejection, and external filesystem probes.
+  prism-context
+                Verify Prism raw/brief/structured context boundaries.
+  soul-load     Load or verify Cap identity sources and portability without leaking private text.
   status        Show the human-facing RedCap status surface.
   revive        Load Cap identity and show the revival status surface.
   revival-followthrough
                 Verify post-E2E revival gap closure queue and evidence quality.
+  rsp-contract Verify RSP completion claims against plan, evidence, and new-issue queue rules.
   revival-queue Check the executable RedCap revival implementation queue.
+  residual-batch
+                Run the residual RSP batch as one integration check.
   known-issues-order
                 Check the ordered queue for known remaining RedCap issues.
   known-issues-queue
                 Check known remaining RedCap issue statuses and deferrals.
   long-task     Decide long-task entry and verify parent-objective anti-loop contracts.
+  cli-surface   Verify RedCap command surface compatibility, help text, aliases, and drift probes.
+  fsm-check     Compatibility alias for fsm check.
+  knowledge-gateway-check
+                Compatibility alias for knowledge-gateway check.
+  session-ownership-check
+                Compatibility alias for session-ownership self-check.
   formal-usable-check
                 Verify RedCap formal usability through user-facing workflows.
   complete-revival-check
@@ -199,6 +238,9 @@ case "$cmd" in
   loom-runtime)
     exec python3 "$REPO_ROOT/runtime/core/loom_runtime.py" "$@"
     ;;
+  loom)
+    exec python3 "$REPO_ROOT/runtime/core/loom_runtime.py" "$@"
+    ;;
   forge)
     exec python3 "$REPO_ROOT/runtime/core/redcap_forge.py" "$@"
     ;;
@@ -210,6 +252,9 @@ case "$cmd" in
     ;;
   knowledge-gateway)
     exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" "$@"
+    ;;
+  knowledge-quality)
+    exec python3 "$REPO_ROOT/runtime/core/knowledge_quality.py" "$@"
     ;;
   knowledge-gateway-check)
     exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" check "$@"
@@ -241,8 +286,14 @@ case "$cmd" in
   prism-rebuttal-request)
     exec "$PRISM" rebuttal-request "$@"
     ;;
+  prism-consensus)
+    exec python3 "$REPO_ROOT/runtime/core/prism_provider_consensus.py" "$@"
+    ;;
   prism-ledger)
     exec "$REPO_ROOT/runtime/prism/bin/prism-ledger" "$@"
+    ;;
+  executed-check)
+    exec python3 "$REPO_ROOT/runtime/core/executed_check_receipt.py" "$@"
     ;;
   task-facts)
     exec python3 "$REPO_ROOT/runtime/core/task_facts.py" "$@"
@@ -268,7 +319,42 @@ case "$cmd" in
   advisory-stop)
     exec python3 "$REPO_ROOT/runtime/core/advisory_stop.py" "$@"
     ;;
+  hook-quality)
+    exec python3 "$REPO_ROOT/runtime/core/hook_quality_metrics.py" "$@"
+    ;;
+  provider-health)
+    exec python3 "$REPO_ROOT/runtime/core/provider_health.py" "$@"
+    ;;
+  runtime-health)
+    if [[ "${1:-}" == "independent-probe" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/cap_runtime_health_external_probe.py" "$@"
+    fi
+    if [[ "${1:-}" == "divergence-probe" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/cap_runtime_health_divergence_probe.py" "$@"
+    fi
+    exec python3 "$REPO_ROOT/runtime/core/cap_runtime_health.py" "$@"
+    ;;
+  config)
+    if [[ "${1:-}" == "external-probe" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/config_contract_compat_external_probe.py" "$@"
+    fi
+    exec python3 "$REPO_ROOT/runtime/core/config_contract_compat.py" "$@"
+    ;;
+  prism-context)
+    exec python3 "$REPO_ROOT/runtime/core/prism_context_boundary.py" "$@"
+    ;;
   soul-load)
+    if [[ "${1:-}" == "portability-check" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/cap_revival_portability.py" "$@"
+    fi
+    if [[ "${1:-}" == "public-leak-scan" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/cap_revival_portability.py" --public-leak-scan "$@"
+    fi
     exec python3 "$REPO_ROOT/runtime/core/soul_loader.py" "$@"
     ;;
   status)
@@ -280,8 +366,14 @@ case "$cmd" in
   revival-followthrough)
     exec python3 "$REPO_ROOT/runtime/core/revival_followthrough.py" "$@"
     ;;
+  rsp-contract)
+    exec python3 "$REPO_ROOT/runtime/core/rsp_contract.py" "$@"
+    ;;
   revival-queue)
     exec python3 "$REPO_ROOT/runtime/core/revival_queue.py" "$@"
+    ;;
+  residual-batch)
+    exec python3 "$REPO_ROOT/runtime/core/residual_batch.py" "$@"
     ;;
   known-issues-order)
     exec python3 "$REPO_ROOT/runtime/core/known_issues_order.py" "$@"
@@ -291,6 +383,9 @@ case "$cmd" in
     ;;
   long-task)
     exec python3 "$REPO_ROOT/runtime/core/long_task_contract.py" "$@"
+    ;;
+  cli-surface)
+    exec python3 "$REPO_ROOT/runtime/core/cli_surface.py" "$@"
     ;;
   formal-usable-check)
     exec python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" check "$@"

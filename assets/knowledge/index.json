@@ -132,6 +132,116 @@
         "completion-guard"
       ],
       "title": "终局验收必须绑定开放队列"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/rsp-contract-reality-evidence-gate.md",
+      "id": "rsp-contract-reality-evidence-gate",
+      "path": "assets/knowledge/entries/rsp-contract-reality-evidence-gate.md",
+      "route": "active-local-index",
+      "summary": "关闭残留事项时，必须用可运行检查同时验证正向验收、负向探针、证据路径、真实行为变化和新问题入队，防止文档或账本替代完成。",
+      "tags": [
+        "rsp",
+        "completion",
+        "evidence",
+        "self-development"
+      ],
+      "title": "RSP 完成口径必须绑定现实变化"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/stop-advisory-main-axis-meta-guidance.md",
+      "id": "stop-advisory-main-axis-meta-guidance",
+      "path": "assets/knowledge/entries/stop-advisory-main-axis-meta-guidance.md",
+      "route": "active-local-index",
+      "summary": "Stop 或 Hook 的建议只能修正错误、证据或完成口径，不能成为新的回复主题；验证时必须用正负样本证明回答先满足用户原问题。",
+      "tags": [
+        "stop",
+        "hook",
+        "main-axis",
+        "false-positive"
+      ],
+      "title": "Stop 建议必须保持用户原问题主轴"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/hook-intent-matrix-conservative-degraded.md",
+      "id": "hook-intent-matrix-conservative-degraded",
+      "path": "assets/knowledge/entries/hook-intent-matrix-conservative-degraded.md",
+      "route": "active-local-index",
+      "summary": "Hook 意图判断应输出固定矩阵字段；语义评审失败时，高风险歧义请求必须记录 degraded 并保守阻断变更，而不是沿用 implementation。",
+      "tags": [
+        "hook",
+        "intent",
+        "semantic",
+        "degraded",
+        "false-positive"
+      ],
+      "title": "Hook 意图矩阵必须保守处理语义失败"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/rsp-21-advisory-stop-health.md",
+      "id": "rsp-21-advisory-stop-health",
+      "path": "assets/knowledge/entries/rsp-21-advisory-stop-health.md",
+      "route": "active-local-index",
+      "summary": "建议型停止前检查的退化状态必须机器可见，默认失败，并且能在关键完成声明或连续退化时升级为阻塞；只有显式观测参数才能允许退化样例通过。",
+      "tags": [
+        "hook",
+        "advisory-stop",
+        "health",
+        "degraded",
+        "blocked"
+      ],
+      "title": "建议型 Stop 健康状态不得把退化冒充健康"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/rsp-25-hook-quality-metrics.md",
+      "id": "rsp-25-hook-quality-metrics",
+      "path": "assets/knowledge/entries/rsp-25-hook-quality-metrics.md",
+      "route": "active-local-index",
+      "summary": "Hook 逻辑变更后必须回放误伤、漏检、正确阻断、正确放行样本；误伤或漏检负向探针必须失败，阈值变更必须有评审证据。",
+      "tags": [
+        "hook",
+        "quality",
+        "false-positive",
+        "false-negative",
+        "metrics"
+      ],
+      "title": "Hook 质量必须用误伤率和漏检率持续度量"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/rsp-03-provider-health.md",
+      "id": "rsp-03-provider-health",
+      "path": "assets/knowledge/entries/rsp-03-provider-health.md",
+      "route": "active-local-index",
+      "summary": "外部评审方工具健康巡检必须区分路径、权限、超时、会话、文件预算、配额、认证、连接和未知失败；真实调用检查不能进入常规聚合。",
+      "tags": [
+        "prism",
+        "provider",
+        "kimi",
+        "health",
+        "timeout"
+      ],
+      "title": "Provider 健康巡检必须区分调用失败类型"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/rsp-residual-batch-mutation-cross-check.md",
+      "id": "rsp-residual-batch-mutation-cross-check",
+      "path": "assets/knowledge/entries/rsp-residual-batch-mutation-cross-check.md",
+      "route": "active-local-index",
+      "summary": "把多个残留项收口时，优先用单次批量集成检查、负向探针故障注入和跨检查断言证明行为变化，避免用更多证据清单回应证据不足。",
+      "tags": [
+        "redcap",
+        "rsp",
+        "prism",
+        "negative-probe",
+        "integration-check"
+      ],
+      "title": "残留批量验证应使用故障注入和跨检查断言"
     }
   ],
   "raw_archive_default": "forbidden",

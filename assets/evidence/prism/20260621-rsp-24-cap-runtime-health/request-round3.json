@@ -1,0 +1,80 @@
+{
+  "task": "Final follow-up review for RSP-24 after adding raw matrix and divergence evidence.",
+  "user_intent": "Norven requires RSP-24 runtime health to avoid self-referential proof. After round 2 concerns, the implementation must show raw matrix details and a reversible real divergence run where both systems observe a broken entrypoint.",
+  "main_claim": "RSP-24 round 2 concerns have been addressed within scope: the independent probe publishes the full 35-cell matrix, a reversible divergence probe temporarily hides runtime/core/loom_runtime.py, the main checker classifies the broken entrypoint as command_missing and blocked, the independent probe observes the same failure, the target is restored, and a direct Python invocation receipt exists outside the redcap command wrapper.",
+  "changed_reality": [
+    "Added runtime/core/cap_runtime_health_divergence_probe.py.",
+    "Added runtime/bin/redcap runtime-health divergence-probe.",
+    "Generated assets/evidence/rsp/rsp-24-divergence-test.json.",
+    "Generated assets/evidence/rsp/rsp-24-divergence-main.json.",
+    "Generated assets/evidence/rsp/rsp-24-divergence-independent.json.",
+    "Regenerated assets/evidence/rsp/rsp-24-cap-runtime-health.json with divergence_test and independent_cross_validation fields.",
+    "Generated direct Python receipt assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-direct-python.receipt.json."
+  ],
+  "review_mode": "implementation_followup_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "accepted_concerns": [
+    {
+      "provider": "kimi",
+      "accepted": true,
+      "response": "The raw 35-cell matrix is published in assets/evidence/rsp/rsp-24-independent-runtime-health.json under injected_failure_matrix; each cell includes entrypoint, injected_category, expected_entrypoint_status, aggregate_status, and probe_passed."
+    },
+    {
+      "provider": "claude-code",
+      "accepted": true,
+      "response": "A real divergence run temporarily hides runtime/core/loom_runtime.py and restores it. Main checker reports loom_runtime category=command_missing and status=blocked; independent probe observes the same command failure; restoration self-check passes."
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/cap_runtime_health_divergence_probe.py",
+      "summary": "Reusable reversible divergence probe."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-independent-runtime-health.json",
+      "summary": "Independent probe output with raw 35-cell injected_failure_matrix."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-divergence-test.json",
+      "summary": "Real divergence transcript: temporary hide, main checker failure, independent probe observation, restore self-check."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-divergence-main.json",
+      "summary": "Main checker report during hidden loom_runtime.py; status blocked, loom_runtime category command_missing."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-divergence-independent.json",
+      "summary": "Independent probe report during hidden loom_runtime.py; loom_runtime ok=false and probe ok=true because it agreed with the failed runtime state."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-cap-runtime-health.json",
+      "summary": "Current healthy report after restoration, including independent_cross_validation and divergence_test fields."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-direct-python.receipt.json",
+      "summary": "Direct python3 execution of the divergence probe, not through runtime/bin/redcap."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/rsp-contract-rsp-24.receipt.json",
+      "summary": "RSP-24 contract still passes after divergence evidence was added."
+    }
+  ],
+  "review_question": "Does this close your round 2 concern within RSP-24 scope? If not, state one concrete remaining minimum fix and do not expand into complete RedCap revival.",
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "Stay within RSP-24 scope.",
+    "The divergence mutation must be reversible and must not leave the workspace broken."
+  ]
+}

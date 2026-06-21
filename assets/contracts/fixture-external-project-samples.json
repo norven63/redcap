@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-fixture-external-project-samples-contract",
+  "rsp": "RSP-18",
+  "command": "runtime/bin/redcap complete-revival-e2e external-sample-check",
+  "positive_acceptance": [
+    "三类 fixture 外部项目样本均包含目标交付和 RedCap 能力改进证据",
+    "每个 fixture 样本引用项目级 .redcap/evidence/e2e 证据"
+  ],
+  "negative_probe": [
+    "只交付目标应用、不沉淀 RedCap 能力改进必须失败"
+  ],
+  "evidence_file": "assets/evidence/rsp/rsp-18-fixture-external-project-samples.json",
+  "scope_boundary": "本合同只验证 fixture 外部项目样本形态；不能作为真实长期生产项目批次验证。"
+}

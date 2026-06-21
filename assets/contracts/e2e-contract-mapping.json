@@ -1,0 +1,13 @@
+{
+  "schema_id": "redcap-e2e-contract-mapping-contract",
+  "rsp": "RSP-22",
+  "command": "runtime/bin/redcap complete-revival-e2e contract-map-check",
+  "positive_acceptance": [
+    "E2E 合同 required_item_ids 均映射到报告字段",
+    "每个映射包含状态字段和证据字段"
+  ],
+  "negative_probe": [
+    "缺少任一合同条目映射时必须失败"
+  ],
+  "evidence_file": "assets/evidence/rsp/rsp-22-e2e-contract-mapping.json"
+}

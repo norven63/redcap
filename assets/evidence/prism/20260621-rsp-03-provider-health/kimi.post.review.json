@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "确实有新代码和证据落地：provider-health.json 合同、provider_health.py 实现、redcap 入口、聚合接入、Kimi live-check 报告和 RSP-03 证据包均已在 bundle 中列出。但 bundle 中关键文件内容因单行过长被截断，且缺少聚合检查（provider-health-check / check-provider-health-check）的实际 receipt，因此“常规聚合不调用真实 provider”这一点尚未被独立验证。",
+  "main_concern": "评审包把“实现已完成、检查已通过”作为结论，但 Prism 无法直接审阅合同完整分类、provider_health.py 的核心探针逻辑、以及聚合检查 receipt。这属于“生成证据即完成”的叙事风险：证据文件存在不等于其内容已被异构 reviewer 交叉验证。",
+  "top_risks": [
+    "聚合检查是否真正与 live-check 解耦无法确认；若 runtime/core/check_runner.py 的 provider-health-check 步骤误把 live-check 纳入常规 redcap check，会在 provider 波动时破坏常规检查稳定性。",
+    "合同中的失败分类与 provider_health.py 的分类逻辑在 bundle 中仅能看到片段，无法独立核实十类失败是否真的被区分（尤其是 timeout / auth / quota / path / permission / session-resume）。",
+    "session_resume 与 bounded_file_read 的真实验证细节被截断，仅凭报告顶层的 ok:true 不能确认 Kimi 真的完成了会话续接和受控文件读取。"
+  ],
+  "missing_evidence": [
+    "聚合检查 receipt：provider-health-check.receipt.json 与 check-provider-health-check.receipt.json，以及它们对应的命令行，用于证明常规 redcap check 不调用 kimi live-check。",
+    "provider-health.json 与 provider_health.py 的完整可读内容，特别是 failure_categories 全表、live_check 实现、session_resume 和 bounded_file_read 探针逻辑。",
+    "负向探针 receipt 与 live-check stdout/stderr，用于验证失败分类、prompt/session 信息未外泄、stdout 确实只含摘要。"
+  ],
+  "minimum_fix": "在不重新运行命令的前提下，补充一份非截断的可读摘录：1) 合同的完整 failure_categories 与 live_check_policy；2) provider_health.py 中 live-check、session_resume、bounded_file_read 三个函数/分支的源码；3) provider-health-check 与 check-provider-health-check 的 receipt 命令行。补充后重新提交 Prism 复审。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "合同已显式声明 live_check_included_in_aggregate=false 且 max_retries=1，具备基本反循环设计；但需由聚合 receipt 证明该策略确实被 check_runner 遵守，否则一个误纳入聚合的 live-check 失败会触发反复验收循环。"
+  },
+  "user_intent_alignment": "与用户当前指定的“当前机器当前版本”范围一致，不声明长期稳定或 RedCap 完整复活，也不禁止必要文件读取。但用户原问题中的“长期稳定性证明”并未被本次实现覆盖，只是在约束中明确排除，需确保后续 RSP 或运行监控继续承接。"
+}

@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "py_compile",
+    "runtime/core/soul_loader.py",
+    "runtime/core/cap_revival_portability.py",
+    "runtime/core/check_runner.py",
+    "runtime/core/redcap_forge.py"
+  ],
+  "command": "python3 -m py_compile runtime/core/soul_loader.py runtime/core/cap_revival_portability.py runtime/core/check_runner.py runtime/core/redcap_forge.py",
+  "created_at": "2026-06-20T21:27:22+00:00",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.026,
+  "executed_at": "2026-06-20T21:27:22+00:00",
+  "executor": "redcap-rsp-16-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "py-compile",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/py-compile.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/py-compile.stdout.txt",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": ""
+}

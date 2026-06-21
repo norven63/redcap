@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "low",
+  "reality_delta": "本次证据刷新确实补充了上一轮 concern 要求的关键内容：新增 cap-input-check 命令、cap-input-unlisted-file / cap-input-extra-content 两个负例、rsp-04-readable-excerpts.md 可读摘录，以及 check_runner 中的 prism-context-boundary-self-check 聚合步骤。收据显示正向检查通过、两个新增负例以 exit_code=1 按预期失败、聚合检查通过。但 bundle 仍未包含 cap-input-check 及其负例的 stdout.txt，且源码与可读摘录以超长 JSON 字符串内联导致显示截断，Prism 仍无法逐行复核 _check_raw_stat_only、_validate_request_file_access、完整 self-check 输出与 cap-input 失败原因。因此“证据已刷新”不等于“证据已可被 reviewer 完整审计”。",
+  "main_concern": "cap-input-check 被定位成 RedCap 自有入口上的“可执行约束”，但当前证据只证明它可以作为独立命令运行并通过/失败；没有证据表明 Cap 在真实任务流中构造上下文时必须先调用 cap-input-check 并在失败时中止。同时，bundle 未提供 stdout.txt 内容，无法独立确认负例失败信息是否与预期一致， readable-excerpts 也受长行截断影响。这延续了 RSP-03 的模式：命令存在且 exit_code 正确，但审计路径不完整。",
+  "top_risks": [
+    "cap-input-check 可能只是可选测试而非强制 gate：Cap 仍可在不调用它的情况下直接读取 manifest 或原文件，边界靠约定而非运行时拦截维持。",
+    "可读摘录虽声称包含完整 self-check 输出与核心实现，但 bundle 内联长字符串导致显示截断，Prism 无法复核 stat-only、file_access 校验与 9 个负例的实际失败信息。",
+    "两个新增负例的 stdout 未入包，无法确认 cap-input-unlisted-file 与 cap-input-extra-content 的失败原因确实对应“未列文件”和“夹带正文”，而非其他实现错误。"
+  ],
+  "missing_evidence": [
+    "prism-context-cap-input-check、fixture-cap-input-unlisted-file、fixture-cap-input-extra-content 的 stdout.txt，展示通过/失败的具体原因。",
+    "非截断且行宽受控的可读摘录（或分文件摘录），完整展示 _check_raw_stat_only、_validate_request_file_access 函数与 9 个负例的 expected/actual 结果。",
+    "至少一个真实 Cap 任务流证据，证明 Cap 在消费棱镜结果前调用 cap-input-check 并在失败时中止，或明确文档声明此项为后续 RSP 而非 RSP-04 范围。"
+  ],
+  "minimum_fix": "在不重新运行命令的前提下，将 cap-input-check 与两个负例的 stdout 内容加入 bundle；若行过长导致截断，可对 readable-excerpts 按函数/按 fixture 分文件或强制换行。同时明确以下二者之一：(a) 提供 Cap 调用 cap-input-check 作为 gate 的证据；或 (b) 在 RSP-04 关闭文档中声明“运行时 gate  enforcement 超出本条范围，已入后续队列”。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "已知约束诚实限定 RSP-04 只关闭 RedCap 自有棱镜结果消费入口，不伪装拦截 Codex 宿主任意文件读取；post-merge.json 也如实保留了上一轮 concern。但新增命令/负例本身容易形成“我们又加了一个检查”的循环叙事，必须要求证明检查被调用或明确其范围，否则下一轮仍会回到同一 concern。"
+  },
+  "user_intent_alignment": "与用户意图一致：回应上一轮 concern、不越权声明 RedCap 完整复活、只在 RSP-04 范围内收口。但“回应 concern”与“可独立审计”之间仍有差距，需要把 stdout 和可读摘录补齐，或在文档中明确运行时 gate 为后续工作，才能避免用户误以为边界已被强制 enforcement。"
+}

@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The plan contains a direct contradiction in its risk controls: RSP-16 is supposed to 'not read, copy, or write actual private $CAP_HOME identity body,' yet it also says 'If real current identity is checked, only record path status, sha256, counts, title, and configured_path.' Checking a real identity file requires reading its body to compute sha256/counts/title. That read crosses the boundary the plan claims to enforce, and could lead to real private content being hashed or summarized into public evidence under the RSP-16 label."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Co-locating portability_check inside runtime/core/soul_loader.py — the module that already loads and returns real Cap identity content — creates a leak boundary risk that contradicts the plan's own constraint of not reading private identity body. The module already has access to real identity loading paths; adding portability code there means a future conditional, exception handler, or maintainer refactor could leak real identity through the portability code path by proximity. The safe alternative is a separate module (e.g., runtime/core/portability_check.py) with an explicit import ban on real identity paths, or with runtime guard logic that refuses execution when real $CAP_HOME contains identity.md with non-zero content."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Amend the plan/contract to state: RSP-16 evidence generation is fixture-only and must not open, hash, count, or summarize the real $CAP_HOME/identity.md. Real-identity checks remain the separate responsibility of the normal soul-load command, outside RSP-16 evidence. Define how synthetic fixture strings are generated and stored for the leak scan."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Move portability_check to a separate module (runtime/core/portability_check.py) that is explicitly banned from importing or accessing real identity paths, with a runtime guard that refuses execution when real $CAP_HOME exists and contains identity.md with non-zero content. Invert the leak scan to search for actual private content patterns (not just fixture strings) across the full public evidence tree. Add a specification for what redcap soul-load portability-check does when real identity directories are detected."
+    }
+  ],
+  "anti_loop_detected": true
+}

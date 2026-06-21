@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "soul-load",
+    "self-check"
+  ],
+  "command": "runtime/bin/redcap soul-load self-check",
+  "created_at": "2026-06-20T21:27:23+00:00",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.693,
+  "executed_at": "2026-06-20T21:27:23+00:00",
+  "executor": "redcap-rsp-16-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "soul-load-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/soul-load-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/soul-load-self-check.stdout.txt",
+  "stdout_sha256": "f1f682a220813f4e25f8ab2da2dcb89eb76904284c2553ee716e70c65462016f",
+  "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_SOUL_LOADER_OK\n"
+}

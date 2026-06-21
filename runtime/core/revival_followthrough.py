@@ -246,6 +246,47 @@ def validate_queue(path: pathlib.Path = DEFAULT_QUEUE) -> list[str]:
     return failures
 
 
+def open_loop_closeout_allowed(failures: list[str], closeout_blockers: list[str]) -> bool:
+    return not failures and not closeout_blockers
+
+
+def open_loop_closeout_matrix_self_check() -> list[str]:
+    failures: list[str] = []
+    cases = [
+        {
+            "name": "clean-queue",
+            "failures": [],
+            "blockers": [],
+            "expected": True,
+        },
+        {
+            "name": "structural-failure-without-open-blocker",
+            "failures": ["schema failure"],
+            "blockers": [],
+            "expected": False,
+        },
+        {
+            "name": "open-p0-p1-without-structural-failure",
+            "failures": [],
+            "blockers": ["P0 item remains open"],
+            "expected": False,
+        },
+        {
+            "name": "structural-failure-and-open-p0-p1",
+            "failures": ["schema failure"],
+            "blockers": ["P1 item remains open"],
+            "expected": False,
+        },
+    ]
+    for case in cases:
+        actual = open_loop_closeout_allowed(case["failures"], case["blockers"])
+        if actual is not case["expected"]:
+            failures.append(
+                f"open-loop closeout matrix {case['name']} expected {case['expected']} but got {actual}"
+            )
+    return failures
+
+
 def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> dict[str, Any]:
     payload = load_json(path)
     failures: list[str] = []
@@ -301,7 +342,7 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
                 closeout_blockers.append(f"{item_id}: P0/P1 关闭前缺少棱镜复核状态")
         elif priority in {"P0", "P1"}:
             closeout_blockers.append(f"{item_id}: {priority} 仍未 verified，当前状态 {status}")
-    closeout_allowed = not failures and not closeout_blockers
+    closeout_allowed = open_loop_closeout_allowed(failures, closeout_blockers)
     return {
         "schema_id": "redcap-open-loop-closure-queue-check",
         "ok": not failures,
@@ -1039,16 +1080,38 @@ def cmd_rule_report(args: argparse.Namespace) -> int:
 
 def cmd_self_check(_: argparse.Namespace) -> int:
     failures: list[str] = []
+    failures.extend(open_loop_closeout_matrix_self_check())
     if validate_queue(DEFAULT_QUEUE):
         failures.append("当前 followthrough 队列不应失败")
     current_open_loop = validate_open_loop_queue(DEFAULT_OPEN_LOOP_QUEUE)
     if current_open_loop.get("ok") is not True:
         failures.append(f"当前 open-loop 队列结构不应失败：{current_open_loop.get('failures')}")
-    if current_open_loop.get("closeout_allowed") is True:
+    current_open_p0_p1 = int(current_open_loop.get("open_p0_p1_count") or 0)
+    if current_open_p0_p1 > 0 and current_open_loop.get("closeout_allowed") is True:
         failures.append("当前 open-loop 队列仍有未闭环 P0/P1，不应允许收口")
+    if current_open_p0_p1 == 0 and current_open_loop.get("closeout_allowed") is not True:
+        failures.append(f"当前 open-loop 队列 P0/P1 已闭环，应允许收口：{current_open_loop.get('closeout_blockers')}")
     with tempfile.TemporaryDirectory(prefix="redcap-followthrough-") as raw:
         root = pathlib.Path(raw)
         open_loop_fixture = load_json(DEFAULT_OPEN_LOOP_QUEUE)
+        dirty_open_loop_fixture = json.loads(json.dumps(open_loop_fixture, ensure_ascii=False))
+        for item in dirty_open_loop_fixture["items"]:
+            if item.get("priority") in {"P0", "P1"}:
+                item["status"] = "open"
+                item.pop("verified_runtime_evidence", None)
+                item.pop("prism_review", None)
+                break
+        dirty_queue = root / "open-loop-dirty.json"
+        dirty_queue.write_text(json.dumps(dirty_open_loop_fixture, ensure_ascii=False), encoding="utf-8")
+        dirty_result = validate_open_loop_queue(dirty_queue)
+        if dirty_result.get("ok") is not True:
+            failures.append(f"未闭环 open-loop fixture 结构不应失败：{dirty_result.get('failures')}")
+        if dirty_result.get("closeout_allowed") is True:
+            failures.append(f"未闭环 open-loop fixture 错误允许收口：{dirty_result}")
+        if int(dirty_result.get("open_p0_p1_count") or 0) < 1:
+            failures.append(f"未闭环 open-loop fixture 未报告 open P0/P1：{dirty_result}")
+        if not dirty_result.get("closeout_blockers"):
+            failures.append(f"未闭环 open-loop fixture 缺少 closeout_blockers：{dirty_result}")
         for item in open_loop_fixture["items"]:
             if item.get("priority") in {"P0", "P1"}:
                 item["status"] = "verified"

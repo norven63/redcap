@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "forge-boundary-check"
+  ],
+  "command": "runtime/bin/redcap check --only forge-boundary-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.089,
+  "executed_at": "2026-06-20T21:42:56+00:00",
+  "executor": "redcap-rsp-15-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "redcap-check-forge-boundary",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/redcap-check-forge-boundary.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/redcap-check-forge-boundary.stdout.txt",
+  "stdout_sha256": "0dffac9188bd60e1d7c3d32403086c3a69d9bc8a48f800633bdf0bd5276edba5",
+  "stdout_tail": "REDCAP_CHECK_STEP_START name=forge-boundary-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=forge-boundary-check elapsed_seconds=0.053\n{\n  \"schema_id\": \"redcap-check-summary\",\n  \"ok\": true,\n  \"completed_steps\": 1,\n  \"total_steps\": 1\n}\nREDCAP_CHECK_OK\n"
+}

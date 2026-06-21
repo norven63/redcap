@@ -1,0 +1,17 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "runtime-health-self-check-final",
+  "argv": [
+    "runtime/bin/redcap",
+    "runtime-health",
+    "self-check"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:35:01+00:00",
+  "ended_at": "2026-06-20T20:35:01+00:00",
+  "elapsed_seconds": 0.035,
+  "stdout_tail": "{\n  \"schema_id\": \"redcap-cap-runtime-health-self-check\",\n  \"ok\": true,\n  \"cases\": [\n    {\n      \"fixture\": \"healthy\",\n      \"ok\": true,\n      \"status\": \"healthy\",\n      \"expected_ok\": true,\n      \"expected_status\": \"healthy\",\n      \"failure_summary\": {},\n      \"failures\": []\n    },\n    {\n      \"fixture\": \"command-missing\",\n      \"ok\": false,\n      \"status\": \"blocked\",\n      \"expected_ok\": false,\n      \"expected_status\": \"blocked\",\n      \"failure_summary\": {\n        \"command_missing\": 1\n      },\n      \"failures\": []\n    },\n    {\n      \"fixture\": \"config-error\",\n      \"ok\": false,\n      \"status\": \"blocked\",\n      \"expected_ok\": false,\n      \"expected_status\": \"blocked\",\n      \"failure_summary\": {\n        \"config_error\": 1\n      },\n      \"failures\": []\n    },\n    {\n      \"fixture\": \"permission-error\",\n      \"ok\": false,\n      \"status\": \"blocked\",\n      \"expected_ok\": false,\n      \"expected_status\": \"blocked\",\n      \"failure_summary\": {\n        \"permission_error\": 1\n      },\n      \"failures\": []\n    },\n    {\n      \"fixture\": \"provider-unavailable\",\n      \"ok\": false,\n      \"status\": \"degraded\",\n      \"expected_ok\": false,\n      \"expected_status\": \"degraded\",\n      \"failure_summary\": {\n        \"provider_unavailable\": 1\n      },\n      \"failures\": []\n    },\n    {\n      \"fixture\": \"evidence-missing\",\n      \"ok\": false,\n      \"status\": \"blocked\",\n      \"expected_ok\": false,\n      \"expected_status\": \"blocked\",\n      \"failure_summary\": {\n        \"evidence_missing\": 1\n      },\n      \"failures\": []\n    }\n  ],\n  \"failures\": []\n}\nREDCAP_CAP_RUNTIME_HEALTH_SELF_CHECK_OK\n",
+  "stderr_tail": ""
+}

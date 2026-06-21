@@ -180,6 +180,7 @@
         ".jsonl",
         ".lock",
         ".md",
+        ".patch",
         ".tmp",
         ".txt"
       ],
@@ -191,6 +192,7 @@
       "recursive": true,
       "allowed_extensions": [
         ".json",
+        ".jsonl",
         ".md"
       ],
       "deny_executable_bits": true

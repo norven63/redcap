@@ -1,0 +1,77 @@
+{
+  "task": "Review RSP-16 implementation plan before coding: Cap revival portability and private persona boundary.",
+  "user_intent": "Norven wants Cap revival to work across machine migration, multi-user setups, and path changes, while keeping Cap private identity material separate from the public RedCap workflow repository.",
+  "main_claim": "This is a pre-implementation review. Cap proposes to implement only path/hash/boundary verification for RSP-16: no copying, migrating, editing, committing, or pushing private $CAP_HOME identity content.",
+  "changed_reality": [
+    "No implementation change yet; gate required full Prism before implementation.",
+    "Existing files already include assets/docs/cap-revival-manual.md, assets/docs/cap-soul-loader.md, and runtime/core/soul_loader.py.",
+    "Proposed implementation will add assets/contracts/cap-revival-portability.json and extend soul-load with portability-check.",
+    "Proposed evidence will be assets/evidence/rsp/rsp-16-cap-revival-portability.json and scoped claim assets/evidence/rsp/rsp-16-claim.json."
+  ],
+  "implementation_plan": [
+    "Add a contract describing allowed public evidence: existence, hash, counts, title, configured_path; forbidden: private body, secret-like raw lines, host-specific absolute path as only reference.",
+    "Extend runtime/core/soul_loader.py with portability_check that uses temp fixture CAP_HOME and HOME values to test $CAP_HOME and ~/.cap resolution, missing/empty/not-file/unreadable blocking, and evidence redaction.",
+    "Add a public repository leak scan over bounded RedCap public docs/contracts/evidence for fixture private body strings and secret fixture strings.",
+    "Connect runtime/bin/redcap soul-load portability-check and check_runner step soul-load-portability-check.",
+    "Generate RSP-16 evidence and completion claim with explicit non-goals."
+  ],
+  "risk_controls": [
+    "Do not read, copy, or write actual private $CAP_HOME identity body for RSP-16 checks.",
+    "Use temporary fixture identity files for body-leak negative probes.",
+    "If real current identity is checked, only record path status, sha256, counts, title, and configured_path.",
+    "Do not put $CAP_HOME private text into public evidence.",
+    "Do not claim RedCap complete revival."
+  ],
+  "review_mode": "implementation_plan_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "RSP-16 has a human decision boundary for private persona migration or copying.",
+    "This plan intentionally avoids private migration/copying and only implements verification.",
+    "If the plan would require reading or copying private identity body, mark concern/block and state the safe alternative."
+  ],
+  "evidence": [
+    {
+      "kind": "lifecycle",
+      "reference": "assets/evidence/lifecycle/20260621-rsp-16-cap-revival-portability.json"
+    },
+    {
+      "kind": "doc",
+      "reference": "assets/docs/cap-revival-manual.md"
+    },
+    {
+      "kind": "doc",
+      "reference": "assets/docs/cap-soul-loader.md"
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/soul_loader.py"
+    },
+    {
+      "kind": "plan",
+      "reference": "assets/docs/residual-todo-final-solution-plan.md"
+    }
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review RSP-16 public implementation plan only; do not read private identity body.",
+    "allowed_paths": [
+      "assets/evidence/lifecycle/20260621-rsp-16-cap-revival-portability.json",
+      "assets/docs/cap-revival-manual.md",
+      "assets/docs/cap-soul-loader.md",
+      "runtime/core/soul_loader.py",
+      "assets/docs/residual-todo-final-solution-plan.md"
+    ],
+    "forbidden_paths": [
+      "$CAP_HOME/identity.md",
+      "~/.cap/identity.md",
+      "$CAP_HOME/identity.md"
+    ],
+    "max_files": 5,
+    "max_bytes_per_file": 60000,
+    "max_total_bytes": 180000
+  }
+}

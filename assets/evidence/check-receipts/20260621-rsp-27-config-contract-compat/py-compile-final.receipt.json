@@ -1,0 +1,20 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "py-compile-final",
+  "argv": [
+    "python3",
+    "-m",
+    "py_compile",
+    "runtime/core/config_contract_compat.py",
+    "runtime/core/project_install.py",
+    "runtime/core/check_runner.py"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:42:01+00:00",
+  "ended_at": "2026-06-20T20:42:01+00:00",
+  "elapsed_seconds": 0.027,
+  "stdout_tail": "",
+  "stderr_tail": ""
+}

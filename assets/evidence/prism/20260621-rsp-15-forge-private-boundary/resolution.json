@@ -1,0 +1,54 @@
+{
+  "conclusion": {
+    "reason": "Both provider concerns were accepted and mapped to content-level privacy scanning, tamper-evident ledger checks, mandatory check-runner integration, and adversarial negative probes. This resolves RSP-15 only.",
+    "state": "resolved"
+  },
+  "created_at": "2026-06-20T21:43:26+00:00",
+  "merge_path": "assets/evidence/prism/20260621-rsp-15-forge-private-boundary/merge.json",
+  "resolutions": [
+    {
+      "concern_ref": "main_concern",
+      "decision": "accept",
+      "implementation_evidence": [
+        "assets/contracts/forge-private-boundary.json",
+        "assets/knowledge/arsenal/promotion-ledger.jsonl",
+        "runtime/core/redcap_forge.py",
+        "runtime/core/check_runner.py"
+      ],
+      "minimum_fix_ref": "minimum_fix",
+      "provider": "kimi",
+      "rationale": "Kimi 的 concern 正确：只靠路径、标记和 ledger 覆盖会掩盖真实私密泄漏。Cap 已增加 forge-private-boundary 合同中的 private_patterns，检查正文内容、索引元数据、source_refs 和 ledger；self-check 包含正文含凭据、正文目录越界、ledger 哈希篡改负向样本。",
+      "verdict": "concern",
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/forge-boundary-check.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/forge-self-check.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/rsp-contract-rsp-15.executed.receipt.json"
+      ]
+    },
+    {
+      "concern_ref": "main_concern",
+      "decision": "accept",
+      "implementation_evidence": [
+        "assets/contracts/forge-private-boundary.json",
+        "assets/knowledge/arsenal/promotion-ledger.jsonl",
+        "runtime/core/redcap_forge.py",
+        "runtime/core/check_runner.py"
+      ],
+      "minimum_fix_ref": "minimum_fix",
+      "provider": "claude-code",
+      "rationale": "Claude Code 的 concern 正确：普通 JSONL 不能天然称为 append-only。Cap 已让 ledger 条目绑定 body_sha256、index_entry_sha256、previous_entry_hash 和 entry_hash，并在 boundary-check 中验证哈希链；同时定义机器可读 private_patterns，并把 forge-boundary-check 接入 check_runner，避免检查只停留在可选脚本。",
+      "verdict": "concern",
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/forge-boundary-check.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/redcap-check-forge-boundary.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/lifecycle-check.executed.receipt.json"
+      ]
+    }
+  ],
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-15-forge-private-boundary/kimi.review.json",
+    "assets/evidence/prism/20260621-rsp-15-forge-private-boundary/claude-code.review.json"
+  ],
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-15-forge-private-boundary"
+}

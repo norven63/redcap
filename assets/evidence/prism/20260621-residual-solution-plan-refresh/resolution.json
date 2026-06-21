@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-residual-solution-plan-refresh",
+  "merge_path": "assets/evidence/prism/20260621-residual-solution-plan-refresh/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-residual-solution-plan-refresh/kimi.r3.review.json",
+    "assets/evidence/prism/20260621-residual-solution-plan-refresh/claude-code.r3.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "escalate",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的核心提醒有效：不能用方案文件或证据目录本身替代真实内容，也不能继续进行纯方案循环。该部分已通过方案书 2.2.3、2.2.4、plan-excerpt-and-hash.md 和反空转边界处理。Kimi 要求用全工作区 diff 证明本轮没有 runtime 改动，但当前工作区在本轮前已存在历史未提交 runtime 变更，不能用全局干净状态证明本轮边界；若强行满足该要求，会把历史工作区状态混入本轮方案刷新任务。由于 provider 轮次已满，本问题升级为边界说明：本轮只能声明方案书已补齐并完成三轮评审，不能声明所有 RSP 闭环，也不能继续纯方案补丁。",
+      "escalation": {
+        "target": "Cap decision with user-visible boundary",
+        "blocking_reason": "无法在当前 dirty worktree 中提供全工作区无 runtime 变更证明，同时本轮任务明确禁止开发实现。",
+        "user_visible_question": "若后续需要把 Kimi 的全局无 runtime 改动要求作为硬验收，是否先清理或提交历史 runtime 变更，再重新跑方案刷新验收？"
+      }
+    }
+  ],
+  "conclusion": {
+    "state": "escalated",
+    "reason": "第三轮 Prism 合并结果仍为 concern。方案书已补充状态基线、执行映射和反空转边界，但由于全工作区历史未提交 runtime 变更无法与本轮方案刷新隔离证明，本轮不能声明完全 pass；后续应停止纯方案循环，进入至少一个 contract/check/runtime 的实际 RSP 实施，或由 Norven 决定是否先清理工作区历史变更。"
+  }
+}

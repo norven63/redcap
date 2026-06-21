@@ -1,0 +1,56 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-23-prism-provider-consensus",
+  "merge_path": "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/kimi.review.json",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 正确：第一版证据偏结构化和自指。Cap 已补真实 provider 差异轨迹，使用本轮实际 Kimi/Claude Code 评审与 raw 输出生成 must_respond=true、refuses_silent_pass=true 的运行证据。",
+      "implementation_evidence": [
+        "runtime/core/prism_provider_consensus.py",
+        "assets/contracts/prism-provider-consensus.json",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py",
+        "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-trace-real-providers.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-check-real-providers.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/rsp-contract-rsp-23-v2.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 正确：第一版缺少真实 provider 输出参与的运行时证明。Cap 已补 trace 命令、真实 raw 输出引用、材料差异检测和拒绝静默通过判断。",
+      "implementation_evidence": [
+        "runtime/core/prism_provider_consensus.py",
+        "assets/contracts/prism-provider-consensus.json",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py",
+        "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-trace-real-providers.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-check-real-providers.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/redcap-check-prism-provider-consensus-v2.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/rsp-contract-rsp-23-v2.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both provider concerns were accepted and mapped to runtime changes, real provider disagreement trace evidence, and executed-check receipts. This resolves RSP-23 only; it does not close RedCap 完整复活."
+  }
+}

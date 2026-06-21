@@ -44,6 +44,13 @@ def load_json(path: pathlib.Path) -> dict[str, Any]:
     return payload
 
 
+def write_json(path: pathlib.Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def should_exclude(path: pathlib.Path) -> bool:
     rel = path.relative_to(REPO_ROOT).as_posix()
     if rel == "assets/evidence" or rel.startswith("assets/evidence/"):
@@ -121,6 +128,50 @@ def restore_executable_bits(package_root: pathlib.Path) -> list[str]:
     return changed
 
 
+def existing_install_compatibility_guard(install_json: pathlib.Path) -> dict[str, Any]:
+    if not install_json.exists():
+        return {"ok": True, "created": [], "status": "absent", "failures": []}
+    try:
+        from config_contract_compat import classify_file, migrate_file  # noqa: PLC0415
+        classification = classify_file(install_json, expected_type="project_installation_record")
+    except BaseException as exc:  # noqa: BLE001
+        return {
+            "ok": False,
+            "created": [],
+            "status": "guard_error",
+            "failures": [f"现有 install.json 兼容性检查失败：{exc}"],
+        }
+    if classification.get("status") == "direct_read":
+        return {
+            "ok": True,
+            "created": [],
+            "status": "direct_read",
+            "classification": classification,
+            "failures": [],
+        }
+    if classification.get("status") != "needs_migration":
+        return {
+            "ok": False,
+            "created": [],
+            "status": "rejected",
+            "classification": classification,
+            "failures": classification.get("failures", ["现有 install.json 被拒绝"]),
+        }
+    migration = migrate_file(install_json, apply=True)
+    created = [
+        str(migration.get("backup_path")),
+        str(migration.get("receipt_path")),
+    ]
+    return {
+        "ok": migration.get("ok") is True,
+        "created": [item for item in created if item and item != "None"],
+        "status": "migrated",
+        "classification": classification,
+        "migration": migration,
+        "failures": migration.get("failures", []),
+    }
+
+
 def package_to(output: pathlib.Path) -> dict[str, Any]:
     contract = load_json(CONTRACT)
     failures = validate_contract(contract)
@@ -140,6 +191,7 @@ def package_to(output: pathlib.Path) -> dict[str, Any]:
             })
         install_manifest = {
             "schema_id": "redcap-package-manifest",
+            "schema_version": 1,
             "created_at": iso_now(),
             "package_root": PACKAGE_ROOT,
             "file_count": len(files),
@@ -203,6 +255,8 @@ def audit_package(package_path: pathlib.Path) -> dict[str, Any]:
                     failures.append(f"install-manifest.json 无法读取：{exc}")
                 if manifest_payload.get("schema_id") != "redcap-package-manifest":
                     failures.append("install-manifest.json schema_id 错误")
+                if manifest_payload.get("schema_version") != 1:
+                    failures.append("install-manifest.json schema_version 必须为 1")
                 if not isinstance(manifest_payload.get("files"), list) or not manifest_payload.get("files"):
                     failures.append("install-manifest.json 必须包含 files 清单")
             current_root = str(REPO_ROOT)
@@ -316,7 +370,20 @@ def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str,
         failures.append("包内缺少 runtime/bin/redcap")
     if failures:
         return {"ok": False, "failures": failures}
-    created: list[str] = []
+    install_json = package_root / "install.json"
+    compatibility = existing_install_compatibility_guard(install_json)
+    if compatibility.get("ok") is not True:
+        return {
+            "schema_id": "redcap-project-installation",
+            "schema_version": 1,
+            "ok": False,
+            "project": str(project),
+            "package_root": str(package_root),
+            "created": [],
+            "compatibility": compatibility,
+            "failures": compatibility.get("failures", ["install.json 兼容性检查失败"]),
+        }
+    created: list[str] = list(compatibility.get("created", []))
     for path in [package_root / "state", package_root / "evidence", package_root / "logs", package_root / "tmp", project / ".codex"]:
         existed = path.exists()
         path.mkdir(parents=True, exist_ok=True)
@@ -335,9 +402,9 @@ def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str,
     if not codex_config.exists() or codex_config.read_text(encoding="utf-8", errors="replace") != config_text:
         codex_config.write_text(config_text, encoding="utf-8")
         created.append(str(codex_config))
-    install_json = package_root / "install.json"
     install_json.write_text(json.dumps({
         "schema_id": "redcap-project-installation",
+        "schema_version": 1,
         "installed_at": iso_now(),
         "project": str(project),
         "package_root": str(package_root),
@@ -349,10 +416,12 @@ def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str,
     created.extend(restore_executable_bits(package_root))
     return {
         "schema_id": "redcap-project-installation",
+        "schema_version": 1,
         "ok": True,
         "project": str(project),
         "package_root": str(package_root),
         "created": created,
+        "compatibility": compatibility,
         "failures": [],
     }
 
@@ -420,6 +489,171 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 1
 
 
+def git_status_short() -> dict[str, Any]:
+    completed = subprocess.run(
+        ["git", "status", "--short", "--untracked-files=all"],
+        cwd=str(REPO_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return {
+        "exit_code": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "sha256": hashlib.sha256(completed.stdout.encode("utf-8")).hexdigest(),
+    }
+
+
+def source_workspace_unchanged(before: dict[str, Any], after: dict[str, Any]) -> bool:
+    return before.get("exit_code") == 0 and after.get("exit_code") == 0 and before.get("stdout") == after.get("stdout")
+
+
+def project_install_matrix_check(out: pathlib.Path | None = None) -> dict[str, Any]:
+    failures: list[str] = []
+    checks: list[dict[str, Any]] = []
+    before_status = git_status_short()
+    with tempfile.TemporaryDirectory(prefix="redcap-project-install-matrix-") as raw_tmp:
+        tmp = pathlib.Path(raw_tmp)
+        package_path = tmp / "redcap-package.zip"
+        package_result = package_to(package_path)
+        audit_result = audit_package(package_path) if package_result.get("ok") is True else {"ok": False, "failures": ["package failed"]}
+        checks.append({"id": "package", "ok": package_result.get("ok") is True, "result": package_result})
+        checks.append({"id": "audit-package", "ok": audit_result.get("ok") is True, "result": audit_result})
+        if package_result.get("ok") is not True:
+            failures.append(f"打包失败：{package_result.get('failures')}")
+        if audit_result.get("ok") is not True:
+            failures.append(f"包审计失败：{audit_result.get('failures')}")
+
+        projects = [
+            tmp / "external-project-a",
+            tmp / "外部 项目 b",
+        ]
+        for index, project in enumerate(projects, start=1):
+            project.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(package_path) as archive:
+                archive.extractall(project)
+            package_root = project / PACKAGE_ROOT
+            init_result = init_project(project, package_root)
+            required_paths = [
+                package_root / "runtime" / "bin" / "redcap",
+                package_root / "install.json",
+                package_root / "evidence",
+                package_root / "logs",
+                package_root / "tmp",
+                project / ".codex" / "hooks.json",
+                project / ".codex" / "config.toml",
+            ]
+            hooks_text = (project / ".codex" / "hooks.json").read_text(encoding="utf-8", errors="replace") if (project / ".codex" / "hooks.json").exists() else ""
+            ok = (
+                init_result.get("ok") is True
+                and all(path.exists() for path in required_paths)
+                and str(package_root) in hooks_text
+                and not (package_root / "assets" / "evidence").exists()
+            )
+            checks.append({
+                "id": f"init-project-{index}",
+                "ok": ok,
+                "project": str(project),
+                "required_paths_present": all(path.exists() for path in required_paths),
+                "hooks_point_to_project_redcap": str(package_root) in hooks_text,
+                "package_excludes_source_evidence": not (package_root / "assets" / "evidence").exists(),
+                "result": init_result,
+            })
+            if not ok:
+                failures.append(f"外部项目 {index} 初始化矩阵失败")
+
+        reinit_result = init_project(projects[0], projects[0] / PACKAGE_ROOT)
+        checks.append({"id": "reinit-idempotent", "ok": reinit_result.get("ok") is True, "result": reinit_result})
+        if reinit_result.get("ok") is not True:
+            failures.append(f"重复初始化失败：{reinit_result.get('failures')}")
+
+        shutil.rmtree(projects[1] / PACKAGE_ROOT)
+        uninstall_removed = not (projects[1] / PACKAGE_ROOT).exists()
+        with zipfile.ZipFile(package_path) as archive:
+            archive.extractall(projects[1])
+        reinstall_result = init_project(projects[1], projects[1] / PACKAGE_ROOT)
+        checks.append({
+            "id": "uninstall-reinstall",
+            "ok": uninstall_removed and reinstall_result.get("ok") is True,
+            "uninstall_removed_package_root": uninstall_removed,
+            "result": reinstall_result,
+        })
+        if not uninstall_removed or reinstall_result.get("ok") is not True:
+            failures.append("卸载后重装验证失败")
+
+    after_status = git_status_short()
+    source_clean = source_workspace_unchanged(before_status, after_status)
+    pollution_negative_before = dict(before_status)
+    pollution_negative_after = dict(after_status)
+    pollution_negative_after["stdout"] = str(after_status.get("stdout") or "") + "?? assets/evidence/rsp/pollution-probe.tmp\n"
+    negative_probe_detected = not source_workspace_unchanged(pollution_negative_before, pollution_negative_after)
+    checks.append({
+        "id": "source-workspace-unchanged",
+        "ok": source_clean,
+        "before_sha256": before_status.get("sha256"),
+        "after_sha256": after_status.get("sha256"),
+    })
+    checks.append({
+        "id": "negative-source-pollution-detected",
+        "ok": negative_probe_detected,
+        "simulated_pollution": "?? assets/evidence/rsp/pollution-probe.tmp",
+    })
+    if not source_clean:
+        failures.append("项目级安装矩阵改变了 RedCap 源工作区 git 状态")
+    if not negative_probe_detected:
+        failures.append("源工作区污染负向探针没有失败")
+
+    evidence = {
+        "rsp": "RSP-09",
+        "schema_id": "redcap-rsp-09-project-install-matrix",
+        "ok": not failures,
+        "acceptance": {
+            "positive": {
+                "status": "pass" if not failures else "fail",
+                "checks": [
+                    "外部项目安装通过",
+                    "重复初始化通过",
+                    "卸载后重装通过",
+                    "源仓库 git 状态未被安装流程改变"
+                ],
+            },
+            "negative": {
+                "status": "pass" if negative_probe_detected else "fail",
+                "checks": ["模拟源仓库污染必须被矩阵检查识别为失败"],
+            },
+        },
+        "changed_reality": [
+            "runtime/core/project_install.py 新增 project-install matrix-check 命令，真实执行 package、audit-package、init、reinit、uninstall/reinstall 和源工作区隔离检查。"
+        ],
+        "artifacts": [
+            "runtime/bin/redcap project-install matrix-check",
+            "runtime/core/project_install.py",
+            "assets/contracts/project-install-matrix.json"
+        ],
+        "checks": checks,
+        "source_status": {
+            "before_sha256": before_status.get("sha256"),
+            "after_sha256": after_status.get("sha256"),
+            "unchanged": source_clean,
+        },
+        "failures": failures,
+    }
+    if out is not None:
+        write_json(out, evidence)
+    return evidence
+
+
+def cmd_matrix_check(args: argparse.Namespace) -> int:
+    out = pathlib.Path(args.out).resolve() if args.out else REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-09-project-install-matrix.json"
+    result = project_install_matrix_check(out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_PROJECT_INSTALL_MATRIX_OK")
+        return 0
+    return 1
+
+
 def cmd_self_check(_: argparse.Namespace) -> int:
     failures: list[str] = []
     release_result = release_check()
@@ -462,12 +696,53 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             archive.writestr(f"{PACKAGE_ROOT}/assets/contracts/codex-hooks.template.json", "{}\n")
             archive.writestr(f"{PACKAGE_ROOT}/install-manifest.json", json.dumps({
                 "schema_id": "redcap-package-manifest",
+                "schema_version": 1,
                 "files": [{"path": f"{PACKAGE_ROOT}/assets/evidence/forbidden.json"}],
             }))
             archive.writestr(f"{PACKAGE_ROOT}/README.md", "fixture\n")
         bad_audit = audit_package(bad_package)
         if bad_audit.get("ok") is True or not any("assets/evidence" in item for item in bad_audit.get("failures", [])):
             failures.append("包含 assets/evidence 的坏发布包没有被 audit-package 拒绝")
+        legacy_project = tmp / "legacy-project"
+        legacy_project.mkdir()
+        legacy_root = legacy_project / PACKAGE_ROOT
+        shutil.copytree(package_root, legacy_root)
+        legacy_install = legacy_root / "install.json"
+        legacy_install.write_text(json.dumps({
+            "schema_id": "redcap-project-installation",
+            "installed_at": "2026-06-20T00:00:00+00:00",
+            "project": str(legacy_project),
+            "package_root": str(legacy_root),
+            "hook_config": str(legacy_project / ".codex" / "hooks.json"),
+            "codex_config": str(legacy_project / ".codex" / "config.toml"),
+            "runtime_bin": str(legacy_root / "runtime" / "bin" / "redcap"),
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        legacy_init = init_project(legacy_project, legacy_root)
+        if legacy_init.get("ok") is not True:
+            failures.append(f"旧 install.json 自动迁移初始化失败：{legacy_init.get('failures')}")
+        compatibility = legacy_init.get("compatibility") if isinstance(legacy_init.get("compatibility"), dict) else {}
+        if compatibility.get("status") != "migrated":
+            failures.append("旧 install.json 初始化前没有触发迁移")
+        if not any(str(item).endswith(".migration-receipt.json") for item in legacy_init.get("created", [])):
+            failures.append("旧 install.json 迁移没有生成回执")
+        rejected_project = tmp / "rejected-project"
+        rejected_project.mkdir()
+        rejected_root = rejected_project / PACKAGE_ROOT
+        shutil.copytree(package_root, rejected_root)
+        rejected_install = rejected_root / "install.json"
+        rejected_install.write_text(json.dumps({
+            "schema_id": "redcap-project-installation",
+            "schema_version": 999,
+            "installed_at": "2026-06-20T00:00:00+00:00",
+            "project": str(rejected_project),
+            "package_root": str(rejected_root),
+            "hook_config": str(rejected_project / ".codex" / "hooks.json"),
+            "codex_config": str(rejected_project / ".codex" / "config.toml"),
+            "runtime_bin": str(rejected_root / "runtime" / "bin" / "redcap"),
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        rejected_init = init_project(rejected_project, rejected_root)
+        if rejected_init.get("ok") is True:
+            failures.append("未知 schema_version 的 install.json 没有阻断 init")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1
@@ -490,6 +765,9 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--project", required=True)
     init.add_argument("--package-root")
     init.set_defaults(func=cmd_init)
+    matrix = sub.add_parser("matrix-check")
+    matrix.add_argument("--out")
+    matrix.set_defaults(func=cmd_matrix_check)
     sub.add_parser("self-check").set_defaults(func=cmd_self_check)
     return parser
 

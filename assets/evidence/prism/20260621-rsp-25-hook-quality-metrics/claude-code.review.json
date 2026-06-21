@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "用户意图是将 Hook 质量从个案修复提升为持续趋势度量，但当前设计方案仍存在降级为\"修样本换通过\"的路径。样本集由实现方自建且无独立验证机制，误伤/漏检阈值虽名义上需 Prism 评审才能变更，但合同文件中的 prism_review_required 字段本身可被绕过——只要有人直接编辑 JSON 而不走评审流程。此外，四类样本（FP/FN/true_block/true_pass）的覆盖边界、最小样本量和维护规则均未定义，存在样本退化风险。设计方向正确，但缺少反退化护栏。",
+  "main_concern": "样本集自建无独立验证：hook-quality 的度量可信度完全依赖样本标签的准确性。如果样本由 Hook 运行方自行标注，度量回路就变成了自证预言——Hook 说什么是误伤就是误伤，说什么不是就不是。设计方案未要求样本标注方独立于 Hook 实现方，也未定义标注争议仲裁机制，这使持续度量退化为持续自我背书的风险很高。",
+  "top_risks": [
+    "样本标注循环自证：同一主体既运行 Hook 又标注误伤/漏检，度量沦为自我确认而非独立审计",
+    "阈值绕过路径未封死：prism_review_required 字段是声明性约束而非代码级强制，未来维护者可能在压力下直接修改 JSON 绕过评审",
+    "样本退化未被检测：缺少样本新鲜度、覆盖率下降和标签漂移的自动检测，随着时间推移样本集可能不再代表真实流量分布"
+  ],
+  "missing_evidence": [
+    "无法读取 runtime/core/advisory_stop.py — 无法验证 Stop 自检入口是否可被 hook-quality 复用或冲突",
+    "无法读取 runtime/core/check_runner.py — 无法验证聚合检查的失败传播机制是否适合质量度量接入",
+    "无法读取 runtime/host-adapters/codex/codex-hook.py — 无法确认事件记录的字段是否足够支撑四类样本回放"
+  ],
+  "minimum_fix": "在 hook-quality-metrics.json 合同中增加样本治理条款：(1) 样本标注必须由独立于 Hook 日常运行的 Prism 评审确认，至少对新增和变更样本执行抽查标记；(2) 定义最小样本量下限（建议每类 ≥10）和样本新鲜度检查（最近 N 天内必须有新样本），跌破下限时报告 degraded 而非 healthy；(3) 阈值变更必须通过独立的合同变更流程而非仅标记字段，建议在 redcap 自检中增加合同签名校验，检测未签审的阈值改动。此外，在实现 hook_quality_metrics.py 时必须包含至少 2 个负向测试：一个确认 FP 样本回放失败会导致 overall=fail，一个确认 FN 高风险样本回放失败会导致 overall=fail。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "RSP-25 明确限制只关闭当前机器化度量范围，不声明 Stop 永久零误伤或 RedCap 完整复活。quality_requirements 中明确区分了度量范围与父目标，known_non_goals 列出了不声明的内容。这是有效的反循环信号——防止度量成功被偷换为全局零缺陷声明。"
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,123 @@
+{
+  "task": "Round 3 review RSP-27 after adding readable project-install integration probe and rerunning checks.",
+  "user_intent": "Norven requires RedCap project-level configuration contracts to prevent silent version drift. Old known versions must migrate with backup and receipt; unknown versions and unknown fields must be rejected before project mutation.",
+  "main_claim": "RSP-27 is scoped-complete only: config compatibility is enforced in the real project-install init path, package manifests and install records write schema_version, old install.json migrates with backup and receipt, and unknown schema_version is rejected without overwriting install.json or creating host config.",
+  "not_claiming": [
+    "RedCap 完整复活",
+    "all residual RSP tasks closed",
+    "production release readiness"
+  ],
+  "changes_since_round2": [
+    "runtime/core/config_contract_compat.py now includes project_install_integration_probe in the main compat report.",
+    "The integration probe records readable before/after facts for legacy missing schema_version and unknown schema_version cases.",
+    "The probe confirms legacy migration creates backup and receipt and preserves host config references semantically after path normalization.",
+    "The probe confirms unknown schema_version leaves install.json unchanged and does not create .codex host config.",
+    "Round3 checks were rerun and generated executed-check receipts."
+  ],
+  "changed_reality": [
+    "runtime/core/config_contract_compat.py includes project_install_integration_probe in the main compat report.",
+    "assets/evidence/rsp/rsp-27-config-contract-compat.json includes integration_probe_log with readable before/after facts.",
+    "runtime/core/project_install.py runs existing install.json compatibility guard before writing project state, hooks, config, or install.json.",
+    "Unknown schema_version is rejected without overwriting install.json or creating .codex host config.",
+    "Round3 executed-check receipts were generated for py_compile, compat-check, config self-check, project-install self-check, aggregate check, and RSP contract check."
+  ],
+  "round2_concerns_addressed": {
+    "kimi": [
+      "Actual command stdout is available in command receipts, not only hashes.",
+      "assets/evidence/rsp/rsp-27-config-contract-compat.json now includes integration_probe_log with before_schema_version, after_schema_version, init_ok, backup_created, receipt_created, install_json_unchanged, and codex_config_created.",
+      "The guard is in normal project_install.init_project before writing state directories, hooks, config, or current install.json."
+    ],
+    "claude_code": [
+      "The review is bounded to live workspace implementation files and executed receipts. A commit/push SHA is useful for release review but is not part of the RSP-27 runtime acceptance criterion unless Norven explicitly asks to commit this batch.",
+      "Please focus on whether the bounded code and evidence prove the scoped runtime behavior. If you still require commit history, identify the specific runtime behavior that cannot be verified from the allowed files and receipts."
+    ]
+  },
+  "verification_commands": [
+    "python3 -m py_compile runtime/core/config_contract_compat.py runtime/core/project_install.py runtime/core/check_runner.py",
+    "runtime/bin/redcap config compat-check --out assets/evidence/rsp/rsp-27-config-contract-compat.json",
+    "runtime/bin/redcap config self-check",
+    "runtime/bin/redcap project-install self-check",
+    "runtime/bin/redcap check --only config-contract-compat-check",
+    "runtime/bin/redcap rsp-contract check --plan assets/docs/residual-todo-final-solution-plan.md --rsp RSP-27 --claim-file assets/evidence/rsp/rsp-27-claim.json --evidence-file assets/evidence/rsp/rsp-27-config-contract-compat.json"
+  ],
+  "evidence": [
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/config-contract-compat.json"
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/config_contract_compat.py"
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/project_install.py"
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap"
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/check_runner.py"
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-27-config-contract-compat.json",
+      "summary": "Contains positive_checks, negative_probes, and integration_probe_log."
+    },
+    {
+      "kind": "claim",
+      "reference": "assets/evidence/rsp/rsp-27-claim.json"
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-compat-check-round3.receipt.json",
+      "summary": "Full stdout tail includes the generated report and integration_probe_log."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-compat-check-round3.executed.receipt.json"
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/project-install-self-check-round3.receipt.json"
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-round3.executed.receipt.json"
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "A concern must name a concrete runtime gap, not only ask for more documents.",
+    "Commit/push is outside this RSP-27 acceptance unless a specific runtime verification gap requires it.",
+    "If verdict is concern or block, provide one concrete minimum fix."
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review RSP-27 implementation and round3 evidence only.",
+    "allowed_paths": [
+      "assets/contracts/config-contract-compat.json",
+      "runtime/core/config_contract_compat.py",
+      "runtime/core/project_install.py",
+      "runtime/bin/redcap",
+      "runtime/core/check_runner.py",
+      "assets/evidence/rsp/rsp-27-config-contract-compat.json",
+      "assets/evidence/rsp/rsp-27-claim.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-compat-check-round3.receipt.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-compat-check-round3.executed.receipt.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/project-install-self-check-round3.receipt.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-round3.executed.receipt.json"
+    ],
+    "max_files": 12,
+    "max_bytes_per_file": 80000,
+    "max_total_bytes": 260000
+  }
+}

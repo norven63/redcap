@@ -1,0 +1,63 @@
+{
+  "conclusion": {
+    "reason": "Both round-3 provider concerns were accepted and mapped to broader public-surface leak scanning plus direct source-anchor verification. This resolves RSP-16 only; it does not close the residual queue, private identity migration, second E2E, production release, or RedCap 完整复活.",
+    "state": "resolved"
+  },
+  "created_at": "2026-06-20T21:28:47+00:00",
+  "merge_path": "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/merge-round3.json",
+  "resolutions": [
+    {
+      "concern_ref": "main_concern",
+      "decision": "accept",
+      "implementation_evidence": [
+        "runtime/core/cap_revival_portability.py",
+        "runtime/bin/redcap",
+        "assets/contracts/cap-revival-portability.json"
+      ],
+      "minimum_fix_ref": "minimum_fix",
+      "provider": "kimi",
+      "rationale": "Kimi 的 concern 正确：原先公共泄漏扫描覆盖面不足且证据不够可读。Cap 已新增 soul-load public-leak-scan，并把扫描范围扩展到 assets/docs、assets/contracts、runtime、assets/evidence；扫描对象覆盖私有身份路径、夹具标题、夹具正文和疑似密钥标记，最终 hit_count=0。",
+      "supporting_evidence": [
+        "assets/evidence/rsp/rsp-16-public-leak-scan.json",
+        "assets/evidence/rsp/rsp-16-cap-revival-portability.json"
+      ],
+      "verdict": "concern",
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/public-leak-scan.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/public-leak-scan-final.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/public-leak-scan-after-prism-resolution.executed.receipt.json"
+      ]
+    },
+    {
+      "concern_ref": "main_concern",
+      "decision": "accept",
+      "implementation_evidence": [
+        "runtime/core/soul_loader.py",
+        "runtime/core/cap_revival_portability.py",
+        "runtime/core/redcap_forge.py",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py"
+      ],
+      "minimum_fix_ref": "minimum_fix",
+      "provider": "claude-code",
+      "rationale": "Claude Code 的 concern 正确：仅靠重新生成 evidence 容易形成互证闭环。Cap 已新增 source redaction anchor，直接读取当前源码并检查 soul_loader、cap_revival_portability、runtime/bin/redcap、check_runner、redcap_forge 的脱敏锚点、命令接线和禁止片段；同时保留 portability-check 的原始命令 stdout/stderr 回执作为真实运行输出。",
+      "supporting_evidence": [
+        "assets/evidence/rsp/rsp-16-source-redaction-anchor.json",
+        "assets/evidence/rsp/rsp-16-cap-revival-portability.json"
+      ],
+      "verdict": "concern",
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/soul-load-portability-check.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/public-leak-scan-final.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/py-compile.executed.receipt.json"
+      ]
+    }
+  ],
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/kimi.round3.review.json",
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/claude-code.round3.review.json"
+  ],
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-16-cap-revival-portability",
+  "updated_at": "2026-06-20T21:29:49+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap runtime-health divergence-probe --mode hide --out assets/evidence/rsp/rsp-24-divergence-test.json --main-report assets/evidence/rsp/rsp-24-divergence-main.json --probe-report assets/evidence/rsp/rsp-24-divergence-independent.json",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T20:31:09+00:00",
+  "executor": "redcap-rsp-24-receipt-wrapper",
+  "stdout_sha256": "49aa080b7fc3ad319ecd01683d26f38f08f55f7433d024b0ee7c31dc5d03fac9",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-test.receipt.json"
+}

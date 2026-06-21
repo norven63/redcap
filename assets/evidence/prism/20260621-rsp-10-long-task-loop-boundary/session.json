@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-rsp-10-long-task-loop-boundary",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-10-long-task-loop-boundary",
+  "status": "closed",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-21T03:49:51+00:00",
+  "task_started_at": "2026-06-21T03:49:51+00:00",
+  "updated_at": "2026-06-21T04:12:26+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "05c25def-32cd-459d-86d9-0a712cbb6afd",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "assets/evidence/prism/20260621-rsp-10-long-task-loop-boundary/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_f87756e9-6348-4848-befa-36dba3ea3435",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "assets/evidence/prism/20260621-rsp-10-long-task-loop-boundary/kimi.normalized.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "RSP-10 concern accepted, implemented, and lifecycle-verified"
+  }
+}

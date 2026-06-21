@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-resolution-self-check",
+  "command": "runtime/bin/redcap prism-resolution --self-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-resolution",
+    "--self-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.096,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-resolution-self-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-resolution-self-check.stderr.txt",
+  "stdout_sha256": "8bad42de056cf630ec1b47d62e84f0d4400bd1d428d991cd3451a4d810121294",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 74,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:59:13Z",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

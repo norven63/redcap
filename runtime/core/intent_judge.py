@@ -82,6 +82,114 @@ REVIEW_HINTS = {
     "复盘",
     "看看",
 }
+COMPLETION_CLAIM_HINTS = {
+    "completion claim",
+    "claim completion",
+    "final claim",
+    "final completion",
+    "最终完成声明",
+    "完成声明",
+    "终局完成",
+    "收口声明",
+    "声明完成",
+    "汇报完成",
+}
+COMPLETION_CLAIM_AUTH_HINTS = {
+    "请",
+    "允许",
+    "授权",
+    "可以",
+    "go ahead",
+    "approved",
+    "approve",
+    "claim",
+    "声明",
+    "汇报",
+}
+
+
+def is_execution_scope(intent: dict[str, Any]) -> bool:
+    return intent.get("authorized_scope") in {"implementation", "completion"}
+
+
+def requires_tool_action(intent: dict[str, Any]) -> bool:
+    return intent.get("action_evidence") in {"diagnostic", "substantive"}
+
+
+def completion_claim_present(prompt: str, intent: dict[str, Any]) -> bool:
+    normalized = prompt.casefold()
+    if intent.get("authorized_scope") == "completion":
+        return True
+    if not any(hint in normalized for hint in COMPLETION_CLAIM_HINTS):
+        return False
+    return any(hint in normalized for hint in COMPLETION_CLAIM_AUTH_HINTS)
+
+
+def conservative_non_mutating_intent(deterministic: dict[str, Any], *, reason: str) -> dict[str, Any]:
+    return {
+        "prompt_kind": deterministic.get("prompt_kind") if deterministic.get("prompt_kind") in ALLOWED_KINDS else "mixed",
+        "authorized_scope": "review_only",
+        "action_evidence": "diagnostic",
+        "confidence": "medium",
+        "reason": reason,
+        "source": "semantic-degraded-conservative",
+    }
+
+
+def build_intent_matrix(
+    prompt: str,
+    *,
+    deterministic: dict[str, Any],
+    final_intent: dict[str, Any],
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    deterministic_execution = is_execution_scope(deterministic)
+    final_execution = is_execution_scope(final_intent)
+    semantic_degraded = result.get("semantic_degraded") is True
+    suspected_false_positive = bool(
+        semantic_degraded
+        or (deterministic_execution and not final_execution)
+        or (
+            deterministic_execution
+            and result.get("llm_appeal_reason") is not None
+            and result.get("llm_judgment_applied") is not True
+        )
+    )
+    return {
+        "task_type": final_intent.get("prompt_kind") or "mixed",
+        "authorized_execution": final_execution,
+        "requires_tool_action": requires_tool_action(final_intent),
+        "completion_claim_present": completion_claim_present(prompt, final_intent),
+        "suspected_false_positive": suspected_false_positive,
+        "deterministic_authorized_execution": deterministic_execution,
+        "semantic_review_attempted": result.get("llm_attempted") is True,
+        "semantic_judgment_applied": result.get("llm_judgment_applied") is True,
+        "semantic_degraded": semantic_degraded,
+        "final_authorized_scope": final_intent.get("authorized_scope"),
+        "final_action_evidence": final_intent.get("action_evidence"),
+        "final_decision_source": result.get("source"),
+        "degraded_action": result.get("degraded_action"),
+        "degraded_reason": result.get("degraded_reason"),
+    }
+
+
+def attach_intent_matrix(prompt: str, result: dict[str, Any]) -> dict[str, Any]:
+    deterministic = result.get("deterministic_intent")
+    final_intent = result.get("prompt_intent")
+    if not isinstance(deterministic, dict):
+        deterministic = {}
+    if not isinstance(final_intent, dict):
+        final_intent = {}
+    matrix = build_intent_matrix(
+        prompt,
+        deterministic=deterministic,
+        final_intent=final_intent,
+        result=result,
+    )
+    result["intent_matrix"] = matrix
+    # decision_protocol is the stable public name used by hooks and evidence.
+    result["decision_protocol"] = matrix
+    return result
 
 
 def normalize_intent(raw: dict[str, Any], *, source: str) -> dict[str, Any] | None:
@@ -329,9 +437,12 @@ def classify_with_policy(
         "llm_attempted": False,
         "llm_results": [],
         "llm_judgment_applied": False,
+        "semantic_degraded": False,
+        "degraded_action": None,
+        "degraded_reason": None,
     }
     if not attempt_llm:
-        return result
+        return attach_intent_matrix(prompt, result)
     if fake_response is not None:
         if fake_delay_seconds > 0:
             time.sleep(fake_delay_seconds)
@@ -344,7 +455,9 @@ def classify_with_policy(
             result["source"] = "llm:fixture" if applied else "deterministic"
             result["llm_judgment_applied"] = applied
             result["llm_application_reason"] = reason
-        return result
+        else:
+            apply_semantic_failure_policy(result, deterministic, llm_policy=llm_policy)
+        return attach_intent_matrix(prompt, result)
     judge_prompt = build_judge_prompt(prompt, deterministic)
     providers = [provider]
     if fallback_provider and fallback_provider != provider:
@@ -360,10 +473,39 @@ def classify_with_policy(
             result["source"] = f"llm:{candidate}" if applied else "deterministic"
             result["llm_judgment_applied"] = applied
             result["llm_application_reason"] = reason
-            return result
-    result["ok"] = False if llm_policy == "force" else True
+            return attach_intent_matrix(prompt, result)
     result["reason"] = "LLM intent judge did not return a usable judgment; deterministic fallback retained."
-    return result
+    apply_semantic_failure_policy(result, deterministic, llm_policy=llm_policy)
+    return attach_intent_matrix(prompt, result)
+
+
+def apply_semantic_failure_policy(
+    result: dict[str, Any],
+    deterministic: dict[str, Any],
+    *,
+    llm_policy: str,
+) -> None:
+    high_risk = is_execution_scope(deterministic)
+    if high_risk:
+        result["semantic_degraded"] = True
+        result["degraded_reason"] = "semantic review failed for high-risk prompt; conservative non-mutating intent applied"
+        result["degraded_action"] = "conservative_block"
+        result["prompt_intent"] = conservative_non_mutating_intent(
+            deterministic,
+            reason="semantic review failed; mutation requires fresh explicit authorization or human decision",
+        )
+        result["source"] = "semantic-degraded-conservative"
+        result["ok"] = False if llm_policy == "force" else True
+        result["reason"] = "LLM intent judge did not return a usable judgment; high-risk prompt was conservatively blocked."
+        return
+    result["semantic_degraded"] = llm_policy == "force"
+    result["degraded_reason"] = (
+        "semantic review failed under force policy; deterministic non-mutating intent retained"
+        if llm_policy == "force"
+        else None
+    )
+    result["degraded_action"] = "retain_non_mutating" if llm_policy == "force" else None
+    result["ok"] = False if llm_policy == "force" else True
 
 
 def cmd_classify(args: argparse.Namespace) -> int:
@@ -543,9 +685,177 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     invalid = extract_judgment("not json", source="fixture")
     if invalid is not None:
         failures.append("invalid provider output should not produce a judgment")
+    degraded = classify_with_policy(
+        "这次是不是应该直接修复 Hook 误伤问题？",
+        llm_policy="auto-on-ambiguous",
+        provider=DEFAULT_PROVIDER,
+        fallback_provider=None,
+        timeout_seconds=1,
+        fake_response="not json",
+    )
+    if degraded.get("source") != "semantic-degraded-conservative":
+        failures.append("ambiguous high-risk semantic failure should use conservative degraded source")
+    if degraded.get("prompt_intent", {}).get("authorized_scope") in {"implementation", "completion"}:
+        failures.append("ambiguous high-risk semantic failure must not retain mutating intent")
+    if degraded.get("intent_matrix", {}).get("semantic_degraded") is not True:
+        failures.append("semantic failure should be visible in intent_matrix.semantic_degraded")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1
+    return 0
+
+
+MATRIX_CASES: list[dict[str, Any]] = [
+    {
+        "id": "chinese-question",
+        "prompt": "这个钩子为什么会误伤我的回答？",
+        "llm_policy": "off",
+        "expected": {
+            "task_type": "question",
+            "authorized_execution": False,
+            "requires_tool_action": False,
+            "completion_claim_present": False,
+        },
+    },
+    {
+        "id": "mixed-authorization-question",
+        "prompt": "Can you fix this now？可以的话直接执行。",
+        "llm_policy": "off",
+        "expected": {
+            "authorized_execution": True,
+            "requires_tool_action": True,
+            "completion_claim_present": False,
+        },
+    },
+    {
+        "id": "rhetorical-authorization",
+        "prompt": "难道现在不应该直接修复这个误伤问题吗？",
+        "llm_policy": "off",
+        "expected": {
+            "authorized_execution": True,
+            "requires_tool_action": True,
+            "completion_claim_present": False,
+        },
+    },
+    {
+        "id": "pure-question",
+        "prompt": "这个 Hook 判断链路现在是怎么工作的？",
+        "llm_policy": "off",
+        "expected": {
+            "authorized_execution": False,
+            "requires_tool_action": False,
+            "completion_claim_present": False,
+        },
+    },
+    {
+        "id": "command-execution",
+        "prompt": "请立即修复 Hook 误伤问题并运行测试。",
+        "llm_policy": "off",
+        "expected": {
+            "authorized_execution": True,
+            "requires_tool_action": True,
+            "completion_claim_present": False,
+        },
+    },
+    {
+        "id": "completion-claim-request",
+        "prompt": "请在验证通过后给出最终完成声明。",
+        "llm_policy": "off",
+        "expected": {
+            "authorized_execution": True,
+            "requires_tool_action": True,
+            "completion_claim_present": True,
+        },
+    },
+    {
+        "id": "semantic-failure-conservative-block",
+        "prompt": "这次是不是应该直接修复 Hook 误伤问题？",
+        "llm_policy": "auto-on-ambiguous",
+        "fake_response": "not json",
+        "expected": {
+            "authorized_execution": False,
+            "requires_tool_action": True,
+            "completion_claim_present": False,
+            "semantic_degraded": True,
+            "degraded_action": "conservative_block",
+        },
+    },
+]
+
+
+def matrix_field_mismatches(matrix: dict[str, Any], expected: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    for key, expected_value in expected.items():
+        if matrix.get(key) != expected_value:
+            failures.append(f"{key}: expected {expected_value!r}, got {matrix.get(key)!r}")
+    required = [
+        "task_type",
+        "authorized_execution",
+        "requires_tool_action",
+        "completion_claim_present",
+        "suspected_false_positive",
+        "deterministic_authorized_execution",
+        "semantic_review_attempted",
+        "semantic_judgment_applied",
+        "semantic_degraded",
+        "final_authorized_scope",
+        "final_action_evidence",
+        "final_decision_source",
+    ]
+    for key in required:
+        if key not in matrix:
+            failures.append(f"missing matrix field: {key}")
+    return failures
+
+
+def run_matrix_check() -> dict[str, Any]:
+    cases: list[dict[str, Any]] = []
+    failures: list[str] = []
+    for case in MATRIX_CASES:
+        result = classify_with_policy(
+            case["prompt"],
+            llm_policy=case.get("llm_policy", "off"),
+            provider=DEFAULT_PROVIDER,
+            fallback_provider=None,
+            timeout_seconds=1,
+            fake_response=case.get("fake_response"),
+        )
+        matrix = result.get("intent_matrix")
+        case_failures = []
+        if not isinstance(matrix, dict):
+            case_failures.append("intent_matrix missing")
+            matrix = {}
+        case_failures.extend(matrix_field_mismatches(matrix, case["expected"]))
+        if case_failures:
+            failures.append(f"{case['id']}: {'; '.join(case_failures)}")
+        cases.append({
+            "id": case["id"],
+            "prompt_sha256": __import__("hashlib").sha256(case["prompt"].encode("utf-8")).hexdigest(),
+            "llm_policy": case.get("llm_policy", "off"),
+            "matrix": matrix,
+            "prompt_intent": result.get("prompt_intent"),
+            "source": result.get("source"),
+            "ok": result.get("ok"),
+            "failures": case_failures,
+        })
+    return {
+        "schema_id": "redcap-intent-judge-matrix-check",
+        "ok": not failures,
+        "cases": cases,
+        "failures": failures,
+    }
+
+
+def cmd_matrix_check(args: argparse.Namespace) -> int:
+    result = run_matrix_check()
+    if args.out:
+        path = pathlib.Path(args.out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ok"]:
+        return 1
+    print("REDCAP_INTENT_JUDGE_MATRIX_OK")
     return 0
 
 
@@ -567,6 +877,10 @@ def build_parser() -> argparse.ArgumentParser:
     classify.add_argument("--fake-response", help="Test-only provider response JSON.")
     classify.add_argument("--fake-delay-seconds", type=float, default=0.0, help="Test-only delay before fake response.")
     classify.set_defaults(func=cmd_classify)
+
+    matrix_check = sub.add_parser("matrix-check", help="Run fixed intent matrix regression samples.")
+    matrix_check.add_argument("--out", help="Optional path for matrix evidence JSON.")
+    matrix_check.set_defaults(func=cmd_matrix_check)
 
     self_check = sub.add_parser("self-check", help="Run local intent judge self-checks.")
     self_check.set_defaults(func=cmd_self_check)

@@ -1,0 +1,40 @@
+{
+  "schema_id": "redcap-knowledge-impact-trace-contract",
+  "version": 1,
+  "rsp": "RSP-08",
+  "purpose": "证明知识召回不是摆设：命中知识必须显式改变计划、实现或验收，且质量元数据必须参与 direct-driver 判定。",
+  "required_trace_fields": [
+    "query",
+    "matches",
+    "adopted_entries",
+    "result_handling",
+    "decision_impacts",
+    "counterfactual_analysis"
+  ],
+  "required_decision_impacts": [
+    "planning",
+    "implementation",
+    "verification"
+  ],
+  "quality_gate": {
+    "direct_driver_requires_quality_decision": true,
+    "missing_quality_policy": "review_required",
+    "irrelevant_match_must_not_pass": true
+  },
+  "required_lifecycle_usage_samples": 2,
+  "historical_sample_independence": {
+    "required": true,
+    "current_task_id_must_be_excluded": true,
+    "sample_lifecycle_mtime_must_precede_task_start": true,
+    "sample_knowledge_evidence_mtime_must_precede_task_start": true
+  },
+  "counterfactual_analysis_required": true,
+  "counterfactual_must_not_claim_independent_runtime_execution": true,
+  "negative_probes": [
+    "missing_decision_impacts",
+    "missing_adopted_entries",
+    "irrelevant_query_without_reasoned_impact",
+    "missing_counterfactual_difference"
+  ],
+  "completion_boundary": "本合同只覆盖 RSP-08 当前知识影响决策验收，不声明知识库永久正确，也不声明 RedCap 完整复活。"
+}

@@ -1,0 +1,237 @@
+{
+  "schema_id": "redcap-provider-health-contract",
+  "version": 1,
+  "stdout_policy": {
+    "summary_only": true,
+    "max_summary_chars": 1200,
+    "details_must_be_file": true
+  },
+  "file_access_budget": {
+    "max_files": 5,
+    "max_bytes_per_file": 12000,
+    "max_total_bytes": 30000,
+    "allowed_extensions": [
+      ".md",
+      ".txt",
+      ".json"
+    ],
+    "denied_path_parts": [
+      ".git",
+      ".venv",
+      "node_modules",
+      "__pycache__"
+    ],
+    "denied_filenames": [
+      ".env",
+      ".env.local",
+      ".env.production",
+      ".npmrc"
+    ]
+  },
+  "live_check_policy": {
+    "included_in_aggregate": false,
+    "max_retries": 1,
+    "timeout_seconds": 30,
+    "file_read_timeout_seconds": 45,
+    "retry_backoff_seconds": 3
+  },
+  "required_probes": [
+    {
+      "id": "path",
+      "description": "确认 provider 命令存在且可执行。"
+    },
+    {
+      "id": "version",
+      "description": "确认 provider 可以报告版本，或给出明确的版本不可用分类。"
+    },
+    {
+      "id": "basic_call",
+      "description": "确认 provider 可以完成一次非交互问答。"
+    },
+    {
+      "id": "session_resume",
+      "description": "确认 provider 可以用同一会话继续上下文。"
+    },
+    {
+      "id": "bounded_file_read",
+      "description": "确认 provider 可以在限定预算内读取必要本地文件。"
+    },
+    {
+      "id": "timeout_classification",
+      "description": "确认本地超时不会被归并成永久失败。"
+    },
+    {
+      "id": "path_error",
+      "description": "确认路径错误被单独分类。"
+    },
+    {
+      "id": "permission_block",
+      "description": "确认权限阻塞被单独分类。"
+    }
+  ],
+  "failure_categories": [
+    {
+      "id": "path_error",
+      "transience": "permanent",
+      "retryable": false,
+      "failure_layer": "local_process",
+      "backoff_seconds": 0,
+      "match_signals": [
+        "probe=path",
+        "stderr contains command not found",
+        "stderr contains no such file"
+      ]
+    },
+    {
+      "id": "permission_block",
+      "transience": "permanent",
+      "retryable": false,
+      "failure_layer": "filesystem_policy",
+      "backoff_seconds": 0,
+      "match_signals": [
+        "exit_code=126",
+        "stderr contains permission denied"
+      ]
+    },
+    {
+      "id": "timeout",
+      "transience": "transient",
+      "retryable": true,
+      "failure_layer": "local_process",
+      "backoff_seconds": 5,
+      "match_signals": [
+        "timed_out=true"
+      ]
+    },
+    {
+      "id": "connection_refused",
+      "transience": "transient",
+      "retryable": true,
+      "failure_layer": "provider_remote",
+      "backoff_seconds": 5,
+      "match_signals": [
+        "stderr contains econnrefused",
+        "stderr contains connection refused"
+      ]
+    },
+    {
+      "id": "quota_exhausted",
+      "transience": "transient",
+      "retryable": true,
+      "failure_layer": "provider_remote",
+      "backoff_seconds": 60,
+      "match_signals": [
+        "stderr contains quota",
+        "stderr contains rate limit"
+      ]
+    },
+    {
+      "id": "auth_failure",
+      "transience": "permanent",
+      "retryable": false,
+      "failure_layer": "auth",
+      "backoff_seconds": 0,
+      "match_signals": [
+        "stderr contains auth",
+        "stderr contains login",
+        "stderr contains unauthorized"
+      ]
+    },
+    {
+      "id": "session_resume_failure",
+      "transience": "unknown",
+      "retryable": true,
+      "failure_layer": "session",
+      "backoff_seconds": 5,
+      "match_signals": [
+        "probe=session_resume",
+        "stderr contains session resume",
+        "stderr contains session not found"
+      ]
+    },
+    {
+      "id": "file_budget_exceeded",
+      "transience": "permanent",
+      "retryable": false,
+      "failure_layer": "budget",
+      "backoff_seconds": 0,
+      "match_signals": [
+        "file_budget_exceeded=true",
+        "stderr contains file read budget exceeded"
+      ]
+    },
+    {
+      "id": "version_unavailable",
+      "transience": "unknown",
+      "retryable": false,
+      "failure_layer": "local_process",
+      "backoff_seconds": 0,
+      "match_signals": [
+        "probe=version",
+        "version command exit_code nonzero"
+      ]
+    },
+    {
+      "id": "unknown",
+      "transience": "unknown",
+      "retryable": true,
+      "failure_layer": "unknown",
+      "backoff_seconds": 5,
+      "match_signals": [
+        "no other category matched"
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "healthy",
+      "expected_ok": true,
+      "expected_category": null
+    },
+    {
+      "id": "path-error",
+      "expected_ok": false,
+      "expected_category": "path_error"
+    },
+    {
+      "id": "permission-block",
+      "expected_ok": false,
+      "expected_category": "permission_block"
+    },
+    {
+      "id": "timeout",
+      "expected_ok": false,
+      "expected_category": "timeout"
+    },
+    {
+      "id": "session-resume-failure",
+      "expected_ok": false,
+      "expected_category": "session_resume_failure"
+    },
+    {
+      "id": "file-budget-exceeded",
+      "expected_ok": false,
+      "expected_category": "file_budget_exceeded"
+    },
+    {
+      "id": "quota-exhausted",
+      "expected_ok": false,
+      "expected_category": "quota_exhausted"
+    },
+    {
+      "id": "auth-failure",
+      "expected_ok": false,
+      "expected_category": "auth_failure"
+    },
+    {
+      "id": "connection-refused",
+      "expected_ok": false,
+      "expected_category": "connection_refused"
+    },
+    {
+      "id": "unknown-failure",
+      "expected_ok": false,
+      "expected_category": "unknown"
+    }
+  ]
+}

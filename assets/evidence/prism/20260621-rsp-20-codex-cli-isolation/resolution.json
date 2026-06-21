@@ -1,0 +1,53 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-20-codex-cli-isolation",
+  "merge_path": "assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/kimi.review.json",
+    "assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 有效：RSP-20 不能停留在代码摘录和计划说明。现已补充合同、完成边界声明、静态正向检查、四类负向探针、真实 carrier-probe 和专门 check receipt。",
+      "implementation_evidence": [
+        "assets/contracts/codex-cli-isolation.json",
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/check_runner.py",
+        "runtime/bin/redcap",
+        "assets/evidence/rsp/rsp-20-claim.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-20-codex-cli-isolation/codex-isolation-static.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-20-codex-cli-isolation/codex-isolation-live.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 有效：只跑 skip-carrier-probe 不足以闭环。现已运行真实 carrier-probe，并补充能失败坏样本的负向探针与专门检查入口。",
+      "implementation_evidence": [
+        "assets/contracts/codex-cli-isolation.json",
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/check_runner.py",
+        "runtime/bin/redcap",
+        "assets/evidence/rsp/rsp-20-claim.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-20-codex-cli-isolation/codex-isolation-static.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-20-codex-cli-isolation/codex-isolation-live.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两个 concern 均被接受并映射到真实实现、当前机器检查、负向探针和 carrier-probe 证据；结论仅覆盖 RSP-20 当前证据范围。"
+  }
+}

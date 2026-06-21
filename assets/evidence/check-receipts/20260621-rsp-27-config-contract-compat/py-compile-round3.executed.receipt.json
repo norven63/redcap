@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m py_compile runtime/core/config_contract_compat.py runtime/core/project_install.py runtime/core/check_runner.py",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T20:52:42+00:00",
+  "executor": "redcap-rsp-27-round3-check",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/py-compile-round3.receipt.json"
+}

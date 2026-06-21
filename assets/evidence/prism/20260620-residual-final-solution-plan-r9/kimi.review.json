@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "主 AI 声称已在本地执行原文级交叉验证且全部通过（ok=true），并据此建议冻结方案、进入实施阶段。但 Prism 收到的 bounded-read bundle 中，方案书正文（assets/docs/residual-todo-final-solution-plan.md）在 line 20 被截断，无法独立复现该验证；实际变化更像生成了一份结构化的验证报告/对照表，而不是创造了一个可被独立审计的原文级复核事实。",
+  "main_concern": "验证结果停留在主 AI 自述的 local_cross_verification 检查表，缺少可审计的原文摘录、段落引用或独立 evidence file；同时 bundle 内方案书正文被截断，导致 Prism 无法执行原文级复核，存在明显的\"以报告替代验证\"风险。",
+  "top_risks": [
+    "验证报告成为新的完成替代品：local_cross_verification 的 ok=true 只是结构化自述，没有原文摘录或 diff，无法防止\"标题匹配但内容不符\"。",
+    "无法确认方案冻结基线：因方案书正文截断，不能独立确认附录 A 引用段落名称与实际正文一致，冻结后可能出现范围漂移争议。",
+    "循环终止是信任型终止而非证据型终止：本轮基于自述验证建议冻结，若实施阶段发现 gap，仍会退回方案阶段，anti-loop 信号未被真正消除。"
+  ],
+  "missing_evidence": [
+    "未截断的方案书全文或关键章节原文（用于核对 local_cross_verification 的 section 名称是否真实存在）。",
+    "每个 check 对应的方案书正文摘录（段落标题 + 关键句子），证明内容实质性覆盖而非仅标题匹配。",
+    "round 6 minimum_fix 原文与方案书对应段落的原文级 diff 或逐条引用。"
+  ],
+  "minimum_fix": "在不修改方案范围、不新增 RSP、不执行开发的前提下，提供可审计的验证证据：将 local_cross_verification 中每个 check 对应的方案书原文摘录和段落引用整理为独立 evidence file 附加到评审包；或提供未截断的方案书内容使 Prism 能直接验证。若无法提供，则应将 verdict 降级为无法验证，并诚实说明验证结果基于主 AI 自述而非 Prism 独立复核。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "第八轮 Claude Code 已明确要求\"冻结建议应在原文级验证完成后再提出\"，本轮以一份自述验证表建议冻结；但若该验证表本身不可审计，则循环只是从\"方案书持续扩写\"转为\"验证报告持续追加\"，仍未证据型闭合。下一轮若再以'补充验证证据'为由继续，则构成新的循环。"
+  },
+  "user_intent_alignment": "名义上 aligned（主 AI 只提交验证结果、不扩写方案），但实质上偏离了用户\"确认\"的本意——确认需要可让 Prism 独立复核的证据，而当前证据不足以支撑原文级交叉验证已真正完成。"
+}

@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-advisory-intent-health-batch",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-advisory-intent-health-batch",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T17:08:06+00:00",
+  "task_started_at": "2026-06-20T17:08:06+00:00",
+  "updated_at": "2026-06-20T17:12:06+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "3f07344e-4f38-4937-8903-2792b1b336c1",
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    },
+    "kimi": {
+      "session_handle": "session_581d1324-42b4-4df5-b50a-1c1078488b9f",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-advisory-intent-health-batch/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "dispatcher total timeout exhausted"
+  }
+}

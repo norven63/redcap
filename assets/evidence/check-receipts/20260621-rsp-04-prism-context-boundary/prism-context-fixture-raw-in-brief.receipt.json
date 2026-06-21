@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-context-fixture-raw-in-brief",
+  "command": "runtime/bin/redcap prism-context check --fixture raw-in-brief",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-context",
+    "check",
+    "--fixture",
+    "raw-in-brief"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.133,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-fixture-raw-in-brief.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-fixture-raw-in-brief.stderr.txt",
+  "stdout_sha256": "ccf6093a71c75d31d1c302905d424dc3cad23cb4adb98040e025a172632b64d9",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1635,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:10:17+00:00",
+  "executor": "cap"
+}

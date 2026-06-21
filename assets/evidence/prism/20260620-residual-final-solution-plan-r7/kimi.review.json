@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "无实际证据。review request 仅提供摘要与 plan excerpt，evidence_count=0，且未授权读取方案书原文；无法验证 claim_file schema、evidence_file schema、检查语义、loosen 例外流程及 plan-change-control 示例是否真实写入文档。",
+  "main_concern": "当前评审只能看到对文档内容的主张（changed_reality），看不到方案书原文、diff、页码或版本快照，存在'声称已写入'替代'实际已写入'的核心风险。",
+  "top_risks": [
+    "基于未经验证的摘要批准冻结，可能导致 premature freeze，实施阶段发现方案缺项。",
+    "无法逐项对应第六轮 Claude Code minimum_fix，可能遗漏具体约束。",
+    "若 RSP-00/RSP-11/RSP-12 按不完整方案进入实施，将产生返工与范围蔓延。"
+  ],
+  "missing_evidence": [
+    "方案书原文或关键章节的只读访问权限（AUTHORIZED FILE ACCESS）。",
+    "第六轮 Claude Code minimum_fix 原始条目与本轮 claimed changes 的逐项对应表。",
+    "plan-change-control 标注示例的实际文本片段或 schema 示例。"
+  ],
+  "minimum_fix": "在评审包中提供最终方案书文件路径的只读授权，或附加 evidence bundle（含关键章节文本/diff/页码），使 Prism 能逐项验证 changed_reality 是否真实存在于文档中。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "本轮已是'第七轮最终复审'并要求冻结，需警惕'每轮都称最后一轮'的循环；在提供可验证证据前不应批准冻结。"
+  },
+  "user_intent_alignment": "名义上符合用户'只确认已写入、不实现、不扩写'的意图，但若无证据支撑，则实质是在要求 Prism 以信任代替确认，偏离了用户'确认'的本意。"
+}

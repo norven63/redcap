@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-residual-solution-plan-refresh",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-residual-solution-plan-refresh",
+  "status": "escalated",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T19:27:27+00:00",
+  "task_started_at": "2026-06-20T19:27:27+00:00",
+  "updated_at": "2026-06-20T19:35:26+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "045d3c10-d35f-438b-9a96-1bd9bdf6082a",
+      "round_count": 3,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-residual-solution-plan-refresh/claude-code.r3.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_29565254-7c1f-4dd8-9a51-5fc063d9600c",
+      "round_count": 3,
+      "status": "escalated",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-residual-solution-plan-refresh/kimi.r3.review.json"
+    }
+  },
+  "convergence": {
+    "state": "escalated",
+    "reason": "第三轮后 Kimi concern 未完全消解；Claude Code 建议停止方案循环并进入实际 contract/check/runtime 实施。"
+  }
+}

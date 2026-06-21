@@ -1,0 +1,66 @@
+{
+  "schema_id": "redcap-forge-private-boundary-contract",
+  "schema_version": 1,
+  "purpose": "为 RedCap Forge 与 redcap-arsenal 建立公共/私有边界，防止私人人格、凭据、未脱敏路径、原始供应方输出或 raw 评审输出进入公共能力库。",
+  "boundary_check_command": "runtime/bin/redcap forge boundary-check",
+  "ledger": "assets/knowledge/arsenal/promotion-ledger.jsonl",
+  "public_assets": [
+    "assets/knowledge/arsenal/index.json",
+    "assets/knowledge/arsenal/*.md",
+    "assets/knowledge/arsenal/promotion-ledger.jsonl"
+  ],
+  "promotion_requires": [
+    "content_sha256",
+    "index_entry_sha256",
+    "hash_chain",
+    "privacy_scan_passed",
+    "dedupe_key",
+    "review_artifact"
+  ],
+  "private_patterns": [
+    {
+      "id": "private-cap-identity-path",
+      "regex": "(/Users|/home)/[^\\s]+/\\.cap/identity\\.md"
+    },
+    {
+      "id": "cap-private-root-path",
+      "regex": "(/Users|/home)/[^\\s]+/\\.cap(/|\\s|$)"
+    },
+    {
+      "id": "raw-provider-output-path",
+      "regex": "assets/evidence/prism/[^\\s]+\\.(raw|brief)\\.(json|md)"
+    },
+    {
+      "id": "raw-provider-output-label",
+      "regex": "\\braw provider\\b|原始供应方长输出"
+    },
+    {
+      "id": "credential-assignment",
+      "regex": "\\b(api[_-]?key|access[_-]?token|secret|password|passwd|credential)\\b\\s*[:=]"
+    },
+    {
+      "id": "openai-like-secret",
+      "regex": "\\b(sk-[A-Za-z0-9_-]{16,}|sk-proj-[A-Za-z0-9_-]{16,})\\b"
+    },
+    {
+      "id": "aws-like-secret",
+      "regex": "\\bAKIA[0-9A-Z]{16}\\b"
+    },
+    {
+      "id": "email-pii",
+      "regex": "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b"
+    }
+  ],
+  "boundary": {
+    "advisory_only": false,
+    "enforcement_points": [
+      "runtime/bin/redcap forge boundary-check",
+      "runtime/bin/redcap forge check",
+      "runtime/bin/redcap check --only forge-check"
+    ],
+    "known_limits": [
+      "本地检查可以扫描当前工作区文件和最近相关提交信息，不能单独保证远端历史已经被清洗。",
+      "真实公开发布前仍必须通过发布流程的 secret scan 和人工边界复核。"
+    ]
+  }
+}

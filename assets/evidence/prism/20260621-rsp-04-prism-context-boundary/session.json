@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-rsp-04-prism-context-boundary",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-04-prism-context-boundary",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T18:50:27+00:00",
+  "task_started_at": "2026-06-20T18:50:27+00:00",
+  "updated_at": "2026-06-20T19:12:14+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "f6881902-ebc1-4460-8a20-3f83a0b7ae79",
+      "round_count": 3,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-04-prism-context-boundary/claude-code.evidence-refresh.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_2bd42d16-4f3c-4579-8104-e3da3bdf1a78",
+      "round_count": 3,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-04-prism-context-boundary/kimi.evidence-refresh.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "RSP-04 concerns accepted and resolved by Cap after max Prism rounds; scope limited to RedCap-owned Prism result consumption boundary."
+  }
+}

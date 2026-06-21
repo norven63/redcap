@@ -1,0 +1,22 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "prism-resolution-rsp-24-final",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-resolution",
+    "--merge",
+    "assets/evidence/prism/20260621-rsp-24-cap-runtime-health/final-merge.json",
+    "--resolution",
+    "assets/evidence/prism/20260621-rsp-24-cap-runtime-health/resolution.json",
+    "--manifest",
+    "assets/evidence/prism/20260621-rsp-24-cap-runtime-health/session.json"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:35:07+00:00",
+  "ended_at": "2026-06-20T20:35:07+00:00",
+  "elapsed_seconds": 0.05,
+  "stdout_tail": "{\n  \"ok\": true,\n  \"merge_path\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-24-cap-runtime-health/final-merge.json\",\n  \"resolution_path\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-24-cap-runtime-health/resolution.json\",\n  \"must_respond\": true,\n  \"expected_resolutions\": [\n    {\n      \"provider\": \"kimi\",\n      \"verdict\": \"concern\"\n    },\n    {\n      \"provider\": \"claude-code\",\n      \"verdict\": \"concern\"\n    }\n  ],\n  \"conclusion_state\": \"resolved\",\n  \"failures\": []\n}\nPRISM_CONCERN_RESOLUTION_OK\n",
+  "stderr_tail": ""
+}

@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "bash",
+    "-lc",
+    "if rg -n \"$CAP_HOME/identity.md|<RSP16_PRIVATE_BODY_REDACTED>|<RSP16_SECRET_REDACTED>\" assets/evidence/soul assets/evidence/rsp/rsp-16-cap-revival-portability.json assets/evidence/rsp/rsp-16-claim.json; then exit 1; else exit 0; fi"
+  ],
+  "command": "bash -lc if rg -n \"$CAP_HOME/identity.md|<RSP16_PRIVATE_BODY_REDACTED>|<RSP16_SECRET_REDACTED>\" assets/evidence/soul assets/evidence/rsp/rsp-16-cap-revival-portability.json assets/evidence/rsp/rsp-16-claim.json; then exit 1; else exit 0; fi",
+  "created_at": "2026-06-20T21:17:20+00:00",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.011,
+  "executed_at": "2026-06-20T21:17:20+00:00",
+  "executor": "redcap-rsp-16-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "private-leak-scan",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/private-leak-scan.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/private-leak-scan.stdout.txt",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

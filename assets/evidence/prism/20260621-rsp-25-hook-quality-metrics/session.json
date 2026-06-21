@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-rsp-25-hook-quality-metrics",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-25-hook-quality-metrics",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T18:01:56+00:00",
+  "task_started_at": "2026-06-20T18:01:56+00:00",
+  "updated_at": "2026-06-20T18:18:57+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "2bdf408e-6c56-486d-809f-099287a742bc",
+      "round_count": 3,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/claude-code.evidence-refresh.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_bcd061e8-3c19-4f7a-9e25-2375f6e3370a",
+      "round_count": 3,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/kimi.evidence-refresh.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "RSP-25 reached max Prism rounds; Cap accepted remaining concerns and added direct negative-probe receipts plus inline/source-event hash evidence."
+  }
+}

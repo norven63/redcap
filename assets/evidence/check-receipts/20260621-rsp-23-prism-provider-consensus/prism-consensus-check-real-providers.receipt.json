@@ -1,0 +1,32 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-consensus-check-real-providers",
+  "command": "runtime/bin/redcap prism-consensus check --provider-run-dir assets/evidence/prism/20260621-rsp-23-prism-provider-consensus --trace-out assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json --out assets/evidence/rsp/rsp-23-prism-provider-consensus.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-consensus",
+    "check",
+    "--provider-run-dir",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus",
+    "--trace-out",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json",
+    "--out",
+    "assets/evidence/rsp/rsp-23-prism-provider-consensus.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.387,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-check-real-providers.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-check-real-providers.stderr.txt",
+  "stdout_sha256": "1b7179c46816f858b6d2a2964057ce452858ea06d1f1affe7675d1be7ed9abd1",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 8775,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T20:06:53Z",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

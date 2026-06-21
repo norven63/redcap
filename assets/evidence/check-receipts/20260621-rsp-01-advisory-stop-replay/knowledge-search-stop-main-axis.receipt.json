@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap knowledge-gateway search --require-match Stop 建议 主轴 元指导",
+  "executed_at": "2026-06-20T17:26:38+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-01-advisory-stop-replay/knowledge-search-stop-main-axis.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-01-advisory-stop-replay/knowledge-search-stop-main-axis.stdout.txt",
+  "stdout_sha256": "ca2ddb3263857614d3357d9c09b6a649ebb9ba203251eb4298baafd015d268b4"
+}

@@ -1,0 +1,78 @@
+{
+  "schema_id": "redcap-cap-revival-portability-contract",
+  "rsp": "RSP-16",
+  "version": 1,
+  "purpose": "验证 Cap 复活手册和身份加载入口在路径迁移、多用户、CAP_HOME 变化场景下可运行，同时守住私有人格边界。",
+  "scope": {
+    "fixture_only_portability_probe": true,
+    "normal_loader_may_check_current_source_status": true,
+    "normal_loader_public_evidence_must_redact_private_path": true,
+    "normal_loader_public_evidence_must_redact_private_title": true
+  },
+  "allowed_public_evidence": [
+    "configured_path 占位符",
+    "exists",
+    "readable",
+    "sha256",
+    "line_count",
+    "char_count",
+    "title_present",
+    "redacted_line_count",
+    "failures"
+  ],
+  "forbidden_public_evidence": [
+    "identity.md 正文",
+    "真实私有身份绝对路径",
+    "真实私有标题正文",
+    "密钥、令牌、账号、会话凭据",
+    "私有人格迁移或复制结果"
+  ],
+  "commands": {
+    "portable_probe": [
+      "runtime/bin/redcap",
+      "soul-load",
+      "portability-check"
+    ],
+    "normal_loader_check": [
+      "runtime/bin/redcap",
+      "soul-load",
+      "check"
+    ],
+    "normal_loader_load": [
+      "runtime/bin/redcap",
+      "soul-load",
+      "load",
+      "--json"
+    ],
+    "public_leak_scan": [
+      "runtime/bin/redcap",
+      "soul-load",
+      "public-leak-scan"
+    ]
+  },
+  "acceptance": {
+    "positive_cases": [
+      "CAP_HOME 指向临时身份源时可加载",
+      "CAP_HOME 缺失且 HOME 下存在 .cap/identity.md 时可回退"
+    ],
+    "negative_cases": [
+      "CAP_HOME 指向缺失目录时必须阻断",
+      "CAP_HOME 缺少 identity.md 时必须阻断",
+      "identity.md 为空时必须阻断",
+      "CAP_HOME 是普通文件时必须阻断",
+      "identity.md 不可读时必须阻断"
+    ],
+    "leak_checks": [
+      "夹具私有正文不得进入临时证据",
+      "夹具私有标题不得进入公共证据",
+      "公共 soul evidence 不得暴露真实私有身份绝对路径",
+      "公共 soul evidence 不得暴露真实私有标题正文",
+      "公共泄漏扫描必须覆盖 assets/docs、assets/contracts、runtime、assets/evidence"
+    ]
+  },
+  "human_boundary": {
+    "private_identity_migration_requires_norven_decision": true,
+    "private_identity_copy_requires_norven_decision": true,
+    "private_identity_git_push_requires_norven_decision": true
+  }
+}

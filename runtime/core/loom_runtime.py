@@ -25,6 +25,7 @@ DEFAULT_REQUIRED_ROLES = [
     "tester",
     "reviewer",
 ]
+ROLE_CHAIN_ORDER = DEFAULT_REQUIRED_ROLES
 ALLOWED_PROVIDERS = {"codex-cli"}
 ALLOWED_CONTEXT_STATES = {"active", "complete", "degraded"}
 SESSION_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
@@ -66,6 +67,10 @@ def manifest_path(project_root: pathlib.Path) -> pathlib.Path:
 
 def evidence_dir(project_root: pathlib.Path) -> pathlib.Path:
     return project_root / ".redcap" / "evidence" / "loom"
+
+
+def role_artifact_dir(project_root: pathlib.Path) -> pathlib.Path:
+    return evidence_dir(project_root) / "role-artifacts"
 
 
 def failure_routes_path(project_root: pathlib.Path) -> pathlib.Path:
@@ -122,6 +127,49 @@ def project_root_arg(value: str) -> pathlib.Path:
 def sha256_json(payload: Any) -> str:
     text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def list_value(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if isinstance(item, str) and item.strip()]
+
+
+def resolve_project_reference(project_root: pathlib.Path, reference: str) -> pathlib.Path:
+    raw = pathlib.Path(reference)
+    if raw.is_absolute():
+        return raw
+    candidates = [
+        project_root / raw,
+        evidence_dir(project_root) / raw,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[-1]
+
+
+def role_attestation_signature(record: dict[str, Any]) -> str:
+    return sha256_json({
+        "provider": record.get("provider"),
+        "role": record.get("role"),
+        "session_id": record.get("session_id"),
+        "agent_instance_id": record.get("agent_instance_id"),
+        "upstream_nonce": record.get("upstream_nonce"),
+        "role_nonce": record.get("role_nonce"),
+        "downstream_nonce": record.get("downstream_nonce"),
+    })
+
+
+def build_role_attestation(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_id": "redcap-loom-role-attestation",
+        "provider": record.get("provider"),
+        "role": record.get("role"),
+        "session_id": record.get("session_id"),
+        "agent_instance_id": record.get("agent_instance_id"),
+        "signature": role_attestation_signature(record),
+    }
 
 
 def canonical_root_cause(value: str | None) -> str:
@@ -220,6 +268,12 @@ def record_session(
     handoff_inputs: list[str],
     handoff_outputs: list[str],
     evidence_files: list[str],
+    consumed_artifacts: list[str] | None = None,
+    produced_artifacts: list[str] | None = None,
+    upstream_nonce: str = "",
+    role_nonce: str = "",
+    downstream_nonce: str = "",
+    agent_instance_id: str = "",
     source: str,
 ) -> dict[str, Any]:
     manifest = load_or_create_manifest(project_root, project_id, task_id)
@@ -243,7 +297,7 @@ def record_session(
 
     existing = next((item for item in roles if isinstance(item, dict) and item.get("role") == role), None)
     if existing is None:
-        roles.append({
+        record = {
             "project_id": project_id,
             "task_id": task_id,
             "role": role,
@@ -255,7 +309,17 @@ def record_session(
             "handoff_inputs": handoff_inputs,
             "handoff_outputs": handoff_outputs,
             "evidence_files": evidence_files,
+            "consumed_artifacts": consumed_artifacts or [],
+            "produced_artifacts": produced_artifacts or evidence_files,
+            "upstream_nonce": upstream_nonce,
+            "role_nonce": role_nonce,
+            "downstream_nonce": downstream_nonce,
+            "agent_instance_id": agent_instance_id or session_id,
             "source": source,
+        }
+        record["attestation"] = build_role_attestation(record)
+        roles.append({
+            **record,
         })
     else:
         old_session = str(existing.get("session_id") or "")
@@ -273,6 +337,13 @@ def record_session(
             existing["handoff_inputs"] = handoff_inputs
             existing["handoff_outputs"] = handoff_outputs
             existing["evidence_files"] = evidence_files
+            existing["consumed_artifacts"] = consumed_artifacts or []
+            existing["produced_artifacts"] = produced_artifacts or evidence_files
+            existing["upstream_nonce"] = upstream_nonce
+            existing["role_nonce"] = role_nonce
+            existing["downstream_nonce"] = downstream_nonce
+            existing["agent_instance_id"] = agent_instance_id or session_id
+            existing["attestation"] = build_role_attestation(existing)
             existing["source"] = source
     manifest["roles"] = roles
     manifest["updated_at"] = now
@@ -341,6 +412,120 @@ def validate_manifest(
         failures.append(f"Loom 会话清单存在未关闭报警：{len(alarms)}")
     elif not isinstance(alarms, list):
         failures.append("Loom 会话清单 alarms 必须是列表")
+    return failures
+
+
+def role_by_name(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    for item in role_records(manifest):
+        if isinstance(item, dict) and isinstance(item.get("role"), str):
+            result[item["role"]] = item
+    return result
+
+
+def validate_session_continuity(
+    manifest: dict[str, Any],
+    *,
+    project_root: pathlib.Path,
+    task_id: str,
+    required_roles: list[str] | None = None,
+) -> list[str]:
+    required = required_roles or ROLE_CHAIN_ORDER
+    failures = validate_manifest(
+        manifest,
+        project_root=project_root,
+        task_id=task_id,
+        required_roles=required,
+        allow_pending=False,
+    )
+    for role, record in role_by_name(manifest).items():
+        observed = list_value(record.get("observed_session_ids"))
+        if observed:
+            failures.append(f"Loom 角色 session_id 发生漂移：{role} observed_session_ids={observed}")
+        if not str(record.get("agent_instance_id") or "").strip():
+            failures.append(f"Loom 角色缺少 agent_instance_id：{role}")
+        attestation = record.get("attestation")
+        if not isinstance(attestation, dict):
+            failures.append(f"Loom 角色缺少 attestation：{role}")
+        elif attestation.get("signature") != role_attestation_signature(record):
+            failures.append(f"Loom 角色 attestation 签名不匹配：{role}")
+    return failures
+
+
+def validate_role_chain(
+    manifest: dict[str, Any],
+    *,
+    project_root: pathlib.Path,
+    task_id: str,
+) -> list[str]:
+    failures = validate_session_continuity(
+        manifest,
+        project_root=project_root,
+        task_id=task_id,
+        required_roles=ROLE_CHAIN_ORDER,
+    )
+    records = role_by_name(manifest)
+    agent_to_role: dict[str, str] = {}
+    role_nonces: dict[str, str] = {}
+    downstream_nonces: dict[str, str] = {}
+    previous_downstream = f"root:{task_id}"
+    previous_outputs: list[str] = []
+    previous_evidence: list[str] = []
+
+    for role in ROLE_CHAIN_ORDER:
+        record = records.get(role)
+        if record is None:
+            continue
+        agent_id = str(record.get("agent_instance_id") or "").strip()
+        if agent_id:
+            other_role = agent_to_role.get(agent_id)
+            if other_role and other_role != role:
+                failures.append(f"Loom 角色疑似由同一 AI 实例伪装：{other_role} 与 {role} agent_instance_id={agent_id}")
+            agent_to_role[agent_id] = role
+
+        upstream_nonce = str(record.get("upstream_nonce") or "").strip()
+        role_nonce = str(record.get("role_nonce") or "").strip()
+        downstream_nonce = str(record.get("downstream_nonce") or "").strip()
+        if upstream_nonce != previous_downstream:
+            failures.append(f"Loom 角色 nonce 链断裂：{role} upstream_nonce={upstream_nonce} expected={previous_downstream}")
+        if not role_nonce:
+            failures.append(f"Loom 角色缺少 role_nonce：{role}")
+        if not downstream_nonce:
+            failures.append(f"Loom 角色缺少 downstream_nonce：{role}")
+        if role_nonce in role_nonces:
+            failures.append(f"Loom 角色 role_nonce 复用：{role_nonces[role_nonce]} 与 {role}")
+        if downstream_nonce in downstream_nonces:
+            failures.append(f"Loom 角色 downstream_nonce 复用：{downstream_nonces[downstream_nonce]} 与 {role}")
+        if role_nonce:
+            role_nonces[role_nonce] = role
+        if downstream_nonce:
+            downstream_nonces[downstream_nonce] = role
+
+        handoff_inputs = list_value(record.get("handoff_inputs"))
+        handoff_outputs = list_value(record.get("handoff_outputs"))
+        consumed = list_value(record.get("consumed_artifacts"))
+        produced = list_value(record.get("produced_artifacts"))
+        evidence_files = list_value(record.get("evidence_files"))
+        if not handoff_outputs:
+            failures.append(f"Loom 角色缺少 handoff_outputs：{role}")
+        if not produced:
+            failures.append(f"Loom 角色缺少 produced_artifacts：{role}")
+        if not evidence_files:
+            failures.append(f"Loom 角色缺少 evidence_files：{role}")
+        if role != ROLE_CHAIN_ORDER[0]:
+            if not handoff_inputs:
+                failures.append(f"Loom 下游角色缺少 handoff_inputs：{role}")
+            if previous_outputs and not (set(previous_outputs) & set(handoff_inputs)):
+                failures.append(f"Loom 下游角色没有消费上一角色输出：{role}")
+            if previous_evidence and not (set(previous_evidence) & set(consumed)):
+                failures.append(f"Loom 下游角色没有记录上一角色产物消费证据：{role}")
+        for reference in produced + evidence_files:
+            resolved = resolve_project_reference(project_root, reference)
+            if not resolved.exists():
+                failures.append(f"Loom 角色产物不存在：{role} {reference}")
+        previous_downstream = downstream_nonce
+        previous_outputs = handoff_outputs
+        previous_evidence = evidence_files
     return failures
 
 
@@ -602,6 +787,225 @@ def validate_failure_route_events(
     return failures
 
 
+def write_role_artifact(project_root: pathlib.Path, role: str, payload: dict[str, Any]) -> str:
+    relative = pathlib.Path("role-artifacts") / f"{role}.json"
+    path = evidence_dir(project_root) / relative
+    write_json(path, payload)
+    return relative.as_posix()
+
+
+def populate_fixture_project(project_root: pathlib.Path, *, mode: str = "positive") -> tuple[str, str]:
+    project_id = "fixture-project"
+    task_id = "fixture-task"
+    write_json(manifest_path(project_root), new_manifest(project_root, project_id, task_id))
+    previous_output = "user-idea"
+    previous_evidence = ""
+    upstream_nonce = f"root:{task_id}"
+    shared_agent_id = "agent-shared" if mode == "single_ai_multi_role" else ""
+    role_nonce_by_role: dict[str, str] = {}
+    for index, role in enumerate(ROLE_CHAIN_ORDER, start=1):
+        session_id = f"{index:08d}-{index:04d}-4{index:03d}-8{index:03d}-{index:012d}"
+        if mode == "cross_role_session_reuse" and role == "tester":
+            session_id = "00000003-0003-4003-8003-000000000003"
+        role_nonce = f"nonce:{role}:role"
+        downstream_nonce = f"nonce:{role}:downstream"
+        if mode == "missing_nonce" and role == "developer":
+            role_nonce = ""
+        if mode == "shared_nonce" and role == "developer":
+            role_nonce = role_nonce_by_role.get("architect", role_nonce)
+        output = f"handoff:{role}:output"
+        artifact = write_role_artifact(project_root, role, {
+            "schema_id": "redcap-loom-role-artifact",
+            "role": role,
+            "status": "completed",
+            "handoff_output": output,
+            "consumed_artifact": previous_evidence,
+        })
+        handoff_inputs = [previous_output] if role != ROLE_CHAIN_ORDER[0] else ["user-idea"]
+        consumed = [previous_evidence] if previous_evidence else []
+        if mode == "missing_handoff_consumption" and role == "developer":
+            handoff_inputs = []
+            consumed = []
+        record_session(
+            project_root=project_root,
+            project_id=project_id,
+            task_id=task_id,
+            role=role,
+            session_id=session_id,
+            provider="codex-cli",
+            context_state="complete",
+            handoff_inputs=handoff_inputs,
+            handoff_outputs=[output],
+            evidence_files=[artifact],
+            consumed_artifacts=consumed,
+            produced_artifacts=[artifact],
+            upstream_nonce=upstream_nonce,
+            role_nonce=role_nonce,
+            downstream_nonce=downstream_nonce,
+            agent_instance_id=shared_agent_id or f"agent:{role}",
+            source=f"fixture:{mode}",
+        )
+        role_nonce_by_role[role] = role_nonce
+        previous_output = output
+        previous_evidence = artifact
+        upstream_nonce = downstream_nonce
+    if mode == "same_role_session_drift":
+        record_session(
+            project_root=project_root,
+            project_id=project_id,
+            task_id=task_id,
+            role="developer",
+            session_id="99999999-9999-4999-8999-999999999999",
+            provider="codex-cli",
+            context_state="active",
+            handoff_inputs=["handoff:architect:output"],
+            handoff_outputs=["handoff:developer:output"],
+            evidence_files=["role-artifacts/developer.json"],
+            consumed_artifacts=["role-artifacts/architect.json"],
+            produced_artifacts=["role-artifacts/developer.json"],
+            upstream_nonce="nonce:architect:downstream",
+            role_nonce="nonce:developer:role",
+            downstream_nonce="nonce:developer:downstream",
+            agent_instance_id="agent:developer",
+            source="fixture:drift",
+        )
+    if mode == "missing_session_id":
+        manifest = read_json(manifest_path(project_root))
+        for item in role_records(manifest):
+            if item.get("role") == "developer":
+                item["session_id"] = ""
+        write_json(manifest_path(project_root), manifest)
+    return project_id, task_id
+
+
+def run_fixture_check(kind: str) -> dict[str, Any]:
+    negative_modes = {
+        "role-chain": [
+            "single_ai_multi_role",
+            "cross_role_session_reuse",
+            "missing_nonce",
+            "shared_nonce",
+            "missing_handoff_consumption",
+        ],
+        "session": [
+            "cross_role_session_reuse",
+            "same_role_session_drift",
+            "missing_session_id",
+        ],
+    }[kind]
+    failures: list[str] = []
+    checks: list[dict[str, Any]] = []
+    with tempfile.TemporaryDirectory(prefix=f"redcap-loom-{kind}-") as raw:
+        root = pathlib.Path(raw)
+        positive = root / "positive"
+        positive.mkdir()
+        _, task_id = populate_fixture_project(positive, mode="positive")
+        manifest = read_json(manifest_path(positive))
+        positive_failures = (
+            validate_role_chain(manifest, project_root=positive, task_id=task_id)
+            if kind == "role-chain"
+            else validate_session_continuity(manifest, project_root=positive, task_id=task_id)
+        )
+        checks.append({"id": "positive-fixture", "ok": not positive_failures, "failures": positive_failures})
+        if positive_failures:
+            failures.append(f"正向 fixture 不应失败：{positive_failures}")
+        for mode in negative_modes:
+            project = root / mode
+            project.mkdir()
+            _, task_id = populate_fixture_project(project, mode=mode)
+            manifest = read_json(manifest_path(project))
+            negative_failures = (
+                validate_role_chain(manifest, project_root=project, task_id=task_id)
+                if kind == "role-chain"
+                else validate_session_continuity(manifest, project_root=project, task_id=task_id)
+            )
+            probe_ok = bool(negative_failures)
+            checks.append({"id": f"negative-{mode}", "ok": probe_ok, "expected_failure": True, "failures": negative_failures})
+            if not probe_ok:
+                failures.append(f"负向 fixture 没有失败：{mode}")
+    return {
+        "ok": not failures,
+        "checks": checks,
+        "failures": failures,
+    }
+
+
+def role_chain_check_payload(project_root: pathlib.Path | None, task_id: str | None, *, fixture: bool) -> dict[str, Any]:
+    failures: list[str] = []
+    checks: list[dict[str, Any]] = []
+    if fixture:
+        suite = run_fixture_check("role-chain")
+        failures.extend(suite["failures"])
+        checks.extend(suite["checks"])
+    else:
+        if project_root is None or not task_id:
+            failures.append("role-chain-check 需要 --project-root 与 --task-id，或使用 --fixture")
+        else:
+            manifest = read_json(manifest_path(project_root))
+            direct_failures = validate_role_chain(manifest, project_root=project_root, task_id=task_id)
+            checks.append({"id": "project-role-chain", "ok": not direct_failures, "failures": direct_failures})
+            failures.extend(direct_failures)
+    return {
+        "schema_id": "redcap-rsp-05-loom-role-chain-e2e",
+        "rsp": "RSP-05",
+        "ok": not failures,
+        "contract": "assets/contracts/loom-role-chain-e2e.json",
+        "checks": checks,
+        "acceptance": {
+            "positive": {"status": "pass" if not failures else "fail", "checks": ["positive-fixture"]},
+            "negative": {"status": "pass" if not failures else "fail", "checks": [item["id"] for item in checks if item["id"].startswith("negative-")]},
+        },
+        "scope": "当前 fixture/runtime evidence loop；不声明真实外部长期生产成熟。",
+        "changed_reality": [
+            "Loom role-chain-check now validates role order, unique agent_instance_id, nonce chain, handoff outputs, downstream consumption evidence, and artifact existence.",
+            "Single-AI self-reported violation, cross-role session reuse, missing nonce, shared nonce, and missing handoff consumption fixtures fail.",
+        ],
+        "artifacts": [
+            "runtime/core/loom_runtime.py",
+            "assets/contracts/loom-role-chain-e2e.json",
+        ],
+        "failures": failures,
+    }
+
+
+def session_check_payload(project_root: pathlib.Path | None, task_id: str | None, *, fixture: bool) -> dict[str, Any]:
+    failures: list[str] = []
+    checks: list[dict[str, Any]] = []
+    if fixture:
+        suite = run_fixture_check("session")
+        failures.extend(suite["failures"])
+        checks.extend(suite["checks"])
+    else:
+        if project_root is None or not task_id:
+            failures.append("session-check 需要 --project-root 与 --task-id，或使用 --fixture")
+        else:
+            manifest = read_json(manifest_path(project_root))
+            direct_failures = validate_session_continuity(manifest, project_root=project_root, task_id=task_id)
+            checks.append({"id": "project-session-continuity", "ok": not direct_failures, "failures": direct_failures})
+            failures.extend(direct_failures)
+    return {
+        "schema_id": "redcap-rsp-06-loom-session-continuity",
+        "rsp": "RSP-06",
+        "ok": not failures,
+        "contract": "assets/contracts/loom-session-continuity.json",
+        "checks": checks,
+        "acceptance": {
+            "positive": {"status": "pass" if not failures else "fail", "checks": ["positive-fixture"]},
+            "negative": {"status": "pass" if not failures else "fail", "checks": [item["id"] for item in checks if item["id"].startswith("negative-")]},
+        },
+        "scope": "当前 fixture/runtime evidence loop；不声明真实外部长期生产成熟。",
+        "changed_reality": [
+            "Loom session-check now rejects missing session_id, cross-role session reuse, same-role session drift, degraded context, and attestation mismatch.",
+            "Role session records retain agent_instance_id, nonce fields, produced/consumed artifacts, and attestation summary.",
+        ],
+        "artifacts": [
+            "runtime/core/loom_runtime.py",
+            "assets/contracts/loom-session-continuity.json",
+        ],
+        "failures": failures,
+    }
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     project_root = project_root_arg(args.project_root)
     manifest = new_manifest(project_root, args.project_id, args.task_id)
@@ -624,6 +1028,12 @@ def cmd_record_session(args: argparse.Namespace) -> int:
         handoff_inputs=split_csv(args.handoff_inputs),
         handoff_outputs=split_csv(args.handoff_outputs),
         evidence_files=split_csv(args.evidence_files),
+        consumed_artifacts=split_csv(args.consumed_artifacts),
+        produced_artifacts=split_csv(args.produced_artifacts),
+        upstream_nonce=args.upstream_nonce,
+        role_nonce=args.role_nonce,
+        downstream_nonce=args.downstream_nonce,
+        agent_instance_id=args.agent_instance_id,
         source=args.source,
     )
     failures = validate_manifest(
@@ -729,6 +1139,30 @@ def cmd_failure_route(args: argparse.Namespace) -> int:
     if failures:
         return 1
     print("REDCAP_LOOM_FAILURE_ROUTE_CHECK_OK")
+    return 0
+
+
+def cmd_role_chain_check(args: argparse.Namespace) -> int:
+    project_root = project_root_arg(args.project_root) if args.project_root else None
+    payload = role_chain_check_payload(project_root, args.task_id, fixture=args.fixture)
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), payload)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    if not payload["ok"]:
+        return 1
+    print("REDCAP_LOOM_ROLE_CHAIN_E2E_OK")
+    return 0
+
+
+def cmd_session_check(args: argparse.Namespace) -> int:
+    project_root = project_root_arg(args.project_root) if args.project_root else None
+    payload = session_check_payload(project_root, args.task_id, fixture=args.fixture)
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), payload)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    if not payload["ok"]:
+        return 1
+    print("REDCAP_LOOM_SESSION_CONTINUITY_OK")
     return 0
 
 
@@ -889,6 +1323,12 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             loop_events.append(item)
         if loop_events[-1].get("status") != "escalated":
             failures.append("同一根因第三次失败没有自动升级")
+        role_chain = role_chain_check_payload(None, None, fixture=True)
+        if not role_chain.get("ok"):
+            failures.append(f"role-chain fixture 检查不应失败：{role_chain.get('failures')}")
+        session_chain = session_check_payload(None, None, fixture=True)
+        if not session_chain.get("ok"):
+            failures.append(f"session fixture 检查不应失败：{session_chain.get('failures')}")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1
@@ -917,6 +1357,12 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--handoff-inputs")
     record.add_argument("--handoff-outputs")
     record.add_argument("--evidence-files")
+    record.add_argument("--consumed-artifacts")
+    record.add_argument("--produced-artifacts")
+    record.add_argument("--upstream-nonce", default="")
+    record.add_argument("--role-nonce", default="")
+    record.add_argument("--downstream-nonce", default="")
+    record.add_argument("--agent-instance-id", default="")
     record.add_argument("--source", default="manual")
     record.set_defaults(func=cmd_record_session)
 
@@ -954,6 +1400,20 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--reason")
     route.add_argument("--require-no-open", action="store_true")
     route.set_defaults(func=cmd_failure_route)
+
+    role_chain = sub.add_parser("role-chain-check")
+    role_chain.add_argument("--project-root")
+    role_chain.add_argument("--task-id")
+    role_chain.add_argument("--fixture", action="store_true")
+    role_chain.add_argument("--out")
+    role_chain.set_defaults(func=cmd_role_chain_check)
+
+    session_check = sub.add_parser("session-check")
+    session_check.add_argument("--project-root")
+    session_check.add_argument("--task-id")
+    session_check.add_argument("--fixture", action="store_true")
+    session_check.add_argument("--out")
+    session_check.set_defaults(func=cmd_session_check)
 
     sub.add_parser("self-check").set_defaults(func=cmd_self_check)
     return parser

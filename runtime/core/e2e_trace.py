@@ -205,6 +205,7 @@ def trace(tmp: pathlib.Path) -> dict[str, Any]:
         "query": "e2e trace fixture completion",
         "matches": [],
         "result_handling": "record_no_relevant_entry",
+        "no_relevant_entry_reason": "fixture deliberately has no reusable knowledge match; e2e trace only verifies lifecycle completion marker generation.",
     })
     write_json(candidates_path, {
         "schema_id": "redcap-self-purification-candidates",

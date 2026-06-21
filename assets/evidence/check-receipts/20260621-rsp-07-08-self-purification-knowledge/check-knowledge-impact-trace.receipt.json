@@ -1,0 +1,24 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "check-knowledge-impact-trace",
+  "command": "runtime/bin/redcap check --only knowledge-impact-trace-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "knowledge-impact-trace-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 54.904,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/check-knowledge-impact-trace.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/check-knowledge-impact-trace.stderr.txt",
+  "stdout_sha256": "67e415afb0fe192832b5f707235a0da0623784b7cfb5e4442508907c12196808",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 272,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T05:21:46+00:00",
+  "executor": "Cap"
+}

@@ -1,0 +1,31 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "rsp-contract-rsp-07",
+  "command": "runtime/bin/redcap rsp-contract check --plan assets/docs/residual-todo-final-solution-plan.md --rsp RSP-07 --claim-file assets/evidence/rsp/rsp-07-claim.json --evidence-file assets/evidence/rsp/rsp-07-self-purification-loop.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "rsp-contract",
+    "check",
+    "--plan",
+    "assets/docs/residual-todo-final-solution-plan.md",
+    "--rsp",
+    "RSP-07",
+    "--claim-file",
+    "assets/evidence/rsp/rsp-07-claim.json",
+    "--evidence-file",
+    "assets/evidence/rsp/rsp-07-self-purification-loop.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.351,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/rsp-contract-rsp-07.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/rsp-contract-rsp-07.stderr.txt",
+  "stdout_sha256": "1098dc49d1acca294206d2f6c91375cd9760ad000b8ba4c16e541d74d2925a7b",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 752,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T05:21:46+00:00",
+  "executor": "Cap"
+}

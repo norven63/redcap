@@ -418,14 +418,14 @@ REDCAP_PROCESS_ARTIFACT_PLACEMENT_SELF_CHECK_OK
     "task_file_exists": false,
     "task_id": "",
     "task_hash": null,
-    "user_private_root": "/Users/norven/.cap",
-    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "user_private_root": "$CAP_HOME",
+    "state_root": "$CAP_HOME/redcap-runtime",
     "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
     "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
     "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
     "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
     "project_runtime_gitignore_ok": true,
-    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "legacy_external_evidence_root": "$CAP_HOME/redcap-runtime/evidence/8c8cdb010e8e4721",
     "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
   },
   "soul": {
@@ -605,14 +605,14 @@ REDCAP_STATUS_OK
     "task_file_exists": false,
     "task_id": "",
     "task_hash": null,
-    "user_private_root": "/Users/norven/.cap",
-    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "user_private_root": "$CAP_HOME",
+    "state_root": "$CAP_HOME/redcap-runtime",
     "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
     "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
     "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
     "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
     "project_runtime_gitignore_ok": true,
-    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "legacy_external_evidence_root": "$CAP_HOME/redcap-runtime/evidence/8c8cdb010e8e4721",
     "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
   },
   "soul": {
@@ -890,7 +890,7 @@ REDCAP_REVIVAL_QUEUE_SELF_CHECK_OK
             "check"
           ],
           "exit_code": 0,
-          "stdout_tail": "  \"resolved_at\": \"2026-06-11T16:43:05+00:00\",\n    \"boundary_mode\": \"self-development\",\n    \"cwd\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"runtime_root\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"project_workspace\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"project_runtime_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence\",\n    \"task_file\": \"/Users/norven/workspace/AI Era/redcap/.dev-task.md\",\n    \"task_file_exists\": false,\n    \"task_id\": \"\",\n    \"task_hash\": null,\n    \"user_private_root\": \"/Users/norven/.cap\",\n    \"state_root\": \"/Users/norven/.cap/redcap-runtime\",\n    \"evidence_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence\",\n    \"logs_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/logs\",\n    \"tmp_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp\",\n    \"project_runtime_gitignore\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore\",\n    \"project_runtime_gitignore_ok\": true,\n    \"legacy_external_evidence_root\": \"/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721\",\n    \"source_policy\": \"old-redcap-runtime-workspace-boundary-extraction-v1\"\n  },\n  \"failures\": []\n}\nREDCAP_RUNTIME_BOUNDARY_OK\n",
+          "stdout_tail": "  \"resolved_at\": \"2026-06-11T16:43:05+00:00\",\n    \"boundary_mode\": \"self-development\",\n    \"cwd\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"runtime_root\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"project_workspace\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"project_runtime_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence\",\n    \"task_file\": \"/Users/norven/workspace/AI Era/redcap/.dev-task.md\",\n    \"task_file_exists\": false,\n    \"task_id\": \"\",\n    \"task_hash\": null,\n    \"user_private_root\": \"$CAP_HOME\",\n    \"state_root\": \"$CAP_HOME/redcap-runtime\",\n    \"evidence_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence\",\n    \"logs_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/logs\",\n    \"tmp_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp\",\n    \"project_runtime_gitignore\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore\",\n    \"project_runtime_gitignore_ok\": true,\n    \"legacy_external_evidence_root\": \"$CAP_HOME/redcap-runtime/evidence/8c8cdb010e8e4721\",\n    \"source_policy\": \"old-redcap-runtime-workspace-boundary-extraction-v1\"\n  },\n  \"failures\": []\n}\nREDCAP_RUNTIME_BOUNDARY_OK\n",
           "stderr_tail": "",
           "ok": true,
           "timed_out": false
@@ -1326,14 +1326,14 @@ PRISM_DISPATCH_TIMEOUT_E2E_OK
     "task_file_exists": false,
     "task_id": "",
     "task_hash": null,
-    "user_private_root": "/Users/norven/.cap",
-    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "user_private_root": "$CAP_HOME",
+    "state_root": "$CAP_HOME/redcap-runtime",
     "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
     "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
     "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
     "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
     "project_runtime_gitignore_ok": true,
-    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "legacy_external_evidence_root": "$CAP_HOME/redcap-runtime/evidence/8c8cdb010e8e4721",
     "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
   },
   "failures": []

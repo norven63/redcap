@@ -1,0 +1,56 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-24-cap-runtime-health",
+  "merge_path": "assets/evidence/prism/20260621-rsp-24-cap-runtime-health/final-merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-24-cap-runtime-health/kimi.round3.review.json",
+    "assets/evidence/prism/20260621-rsp-24-cap-runtime-health/claude-code.round3.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 正确：只用 command_missing 发散不足以覆盖分类泛化。Cap 已补 permission_error 真实发散：临时移除 runtime/core/loom_runtime.py 读取权限，主检查器分类 permission_error 且整体 blocked，独立探针也独立分类 permission_error，随后恢复文件并通过 Loom 自检。",
+      "implementation_evidence": [
+        "runtime/core/cap_runtime_health_external_probe.py",
+        "runtime/core/cap_runtime_health_divergence_probe.py",
+        "runtime/core/cap_runtime_health.py",
+        "runtime/bin/redcap",
+        "assets/contracts/cap-runtime-health.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-independent-probe.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-test.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-permission-test.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/rsp-contract-rsp-24.executed.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 正确：发散测试需要覆盖非文件缺失类型，并确认发散编排器只通过公开命令接口观察系统。Cap 已补 permission-deny 模式，且 divergence probe 不导入主检查器或独立探针模块，只通过 subprocess 调用公开入口；直接 python3 执行回执也已记录。",
+      "implementation_evidence": [
+        "runtime/core/cap_runtime_health_external_probe.py",
+        "runtime/core/cap_runtime_health_divergence_probe.py",
+        "runtime/core/cap_runtime_health.py",
+        "runtime/bin/redcap",
+        "assets/contracts/cap-runtime-health.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-permission-test.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-divergence-direct-python.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/rsp-contract-rsp-24.executed.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both round-3 provider concerns were accepted. RSP-24 now has live seven-entrypoint health, raw 35-cell matrix, command_missing divergence, permission_error divergence, independent classification, restoration checks, scoped claim, and RSP contract evidence. This resolves RSP-24 only; it does not close RedCap 完整复活."
+  }
+}

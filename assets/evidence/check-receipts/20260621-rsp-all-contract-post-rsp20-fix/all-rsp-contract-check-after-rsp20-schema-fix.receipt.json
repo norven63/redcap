@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "zsh",
+    "-f",
+    "-c",
+    "set -e; for n in $(seq -f \"%02g\" 0 27); do rsp=\"RSP-$n\"; claim=\"assets/evidence/rsp/rsp-$n-claim.json\"; evidence=$(jq -r ' .evidence_file // empty ' \"$claim\"); runtime/bin/redcap rsp-contract check --plan assets/docs/residual-todo-final-solution-plan.md --rsp \"$rsp\" --claim-file \"$claim\" --evidence-file \"$evidence\" >/tmp/redcap-rsp-contract-$n.out; echo \"$rsp OK $evidence\"; done"
+  ],
+  "command": "zsh -f -c set -e; for n in $(seq -f \"%02g\" 0 27); do rsp=\"RSP-$n\"; claim=\"assets/evidence/rsp/rsp-$n-claim.json\"; evidence=$(jq -r ' .evidence_file // empty ' \"$claim\"); runtime/bin/redcap rsp-contract check --plan assets/docs/residual-todo-final-solution-plan.md --rsp \"$rsp\" --claim-file \"$claim\" --evidence-file \"$evidence\" >/tmp/redcap-rsp-contract-$n.out; echo \"$rsp OK $evidence\"; done",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 1.044,
+  "executed_at": "2026-06-21T06:48:26Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "all-rsp-contract-check-after-rsp20-schema-fix",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-all-contract-post-rsp20-fix/all-rsp-contract-check-after-rsp20-schema-fix.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1777,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-all-contract-post-rsp20-fix/all-rsp-contract-check-after-rsp20-schema-fix.stdout.txt",
+  "stdout_sha256": "4ae3a9abf7ffc232b14db0c91900c57ebc81b757a1f435095b4a734bb31678a2"
+}

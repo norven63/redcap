@@ -1,0 +1,76 @@
+{
+  "task": "Follow-up review for RSP-24 after addressing first-round concerns.",
+  "user_intent": "Norven requires RedCap to stop relying on isolated E2E success, isolated command success, or self-referential evidence as proof of runtime stability. RSP-24 must show independent runtime-health validation within its own scope.",
+  "main_claim": "RSP-24 first-round Prism concerns have been accepted and addressed within RSP-24 scope by adding an external-to-checker independent probe, a 7×5 injected failure matrix, provider_unavailable degraded validation, regenerated evidence, and updated receipts.",
+  "changed_reality": [
+    "Added runtime/core/cap_runtime_health_external_probe.py.",
+    "Added runtime/bin/redcap runtime-health independent-probe.",
+    "Updated assets/contracts/cap-runtime-health.json to require independent_cross_validation_required=true.",
+    "Updated runtime/core/cap_runtime_health.py so the main RSP-24 report references independent_cross_validation when present.",
+    "Generated assets/evidence/rsp/rsp-24-independent-runtime-health.json.",
+    "Regenerated assets/evidence/rsp/rsp-24-cap-runtime-health.json with independent_cross_validation ok=true.",
+    "Regenerated RSP-24 check receipts including runtime-health-independent-probe."
+  ],
+  "review_mode": "implementation_followup_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "first_round_verdict": "concern",
+  "accepted_concerns": [
+    {
+      "provider": "kimi",
+      "accepted": true,
+      "minimum_fix": "Provide independent, reproducible evidence that injects representative failures and asserts classification, especially failed entrypoint aggregation and provider_unavailable degradation."
+    },
+    {
+      "provider": "claude-code",
+      "accepted": true,
+      "minimum_fix": "Run an external-to-checker verification process that observes the same seven entrypoints without sharing cap_runtime_health.py code path, and confirm agreement or report discrepancy."
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/cap_runtime_health_external_probe.py",
+      "summary": "Independent observer that does not import cap_runtime_health.py; it runs the seven entrypoint commands and builds a 7×5 injected failure matrix."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap",
+      "summary": "runtime-health independent-probe command entry."
+    },
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/cap-runtime-health.json",
+      "summary": "Contract now requires independent_cross_validation_required=true."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-independent-runtime-health.json",
+      "summary": "Independent probe output: ok=true, entrypoint_count=7, matrix_size=35, matrix_passed=true, provider_unavailable_policy=degraded."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-cap-runtime-health.json",
+      "summary": "Main RSP-24 evidence now includes independent_cross_validation ok=true and path to the independent probe."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/runtime-health-independent-probe.receipt.json",
+      "summary": "Receipt for the independent probe execution."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/rsp-contract-rsp-24.receipt.json",
+      "summary": "RSP-24 scoped contract check still passes after the independent probe addition."
+    }
+  ],
+  "review_question": "Do the new external probe, 7×5 failure matrix, provider_unavailable degraded assertion, and regenerated evidence close your first-round concern within the RSP-24 scope? If not, provide a concrete minimum fix without expanding into full RedCap revival.",
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "Stay within RSP-24 scope.",
+    "If still concern/block, identify the exact missing runtime evidence or code change."
+  ]
+}

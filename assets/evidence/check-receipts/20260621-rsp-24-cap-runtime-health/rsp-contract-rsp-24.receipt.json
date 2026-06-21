@@ -1,0 +1,25 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "rsp-contract-rsp-24",
+  "argv": [
+    "runtime/bin/redcap",
+    "rsp-contract",
+    "check",
+    "--plan",
+    "assets/docs/residual-todo-final-solution-plan.md",
+    "--rsp",
+    "RSP-24",
+    "--claim-file",
+    "assets/evidence/rsp/rsp-24-claim.json",
+    "--evidence-file",
+    "assets/evidence/rsp/rsp-24-cap-runtime-health.json"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:31:13+00:00",
+  "ended_at": "2026-06-20T20:31:13+00:00",
+  "elapsed_seconds": 0.035,
+  "stdout_tail": "{\n  \"schema_id\": \"redcap-rsp-contract-check\",\n  \"ok\": true,\n  \"rsp\": \"RSP-24\",\n  \"plan_path\": \"/Users/norven/workspace/AI Era/redcap/assets/docs/residual-todo-final-solution-plan.md\",\n  \"claim_file\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/rsp/rsp-24-claim.json\",\n  \"evidence_file\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/rsp/rsp-24-cap-runtime-health.json\",\n  \"checks\": {\n    \"plan_has_all_rsp\": true,\n    \"all_rsp_have_positive_acceptance\": true,\n    \"all_rsp_have_negative_probe\": true,\n    \"all_rsp_have_evidence_path\": true,\n    \"has_positive_acceptance\": true,\n    \"has_negative_probe\": true,\n    \"claim_references_evidence\": true,\n    \"new_issue_is_queued\": true\n  },\n  \"failures\": []\n}\nREDCAP_RSP_CONTRACT_OK\n",
+  "stderr_tail": ""
+}

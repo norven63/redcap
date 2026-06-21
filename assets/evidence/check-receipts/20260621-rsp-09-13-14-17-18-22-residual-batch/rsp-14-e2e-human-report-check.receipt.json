@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "e2e-human-report-check"
+  ],
+  "command": "runtime/bin/redcap check --only e2e-human-report-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.241,
+  "executed_at": "2026-06-21T05:57:31Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "rsp-14-e2e-human-report-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-14-e2e-human-report-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 259,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-14-e2e-human-report-check.stdout.txt",
+  "stdout_sha256": "15c7516dde93b155ea17cb646812d73e240b8a40555fe061fcb4744b6d22b66d"
+}

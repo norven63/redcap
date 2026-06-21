@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap advisory-stop self-check",
+  "executed_at": "2026-06-20T17:22:10+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-01-advisory-stop-replay/advisory-stop-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-01-advisory-stop-replay/advisory-stop-self-check.stdout.txt",
+  "stdout_sha256": "f858bc200bbc885d8d21ce820aac87c10811a0d712a07f64dac30f172330176e"
+}

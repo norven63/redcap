@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "拟议变更会增加一份合同、一个 sidecar 元数据文件、一个独立检查命令和几张证据文件，但尚未证明 knowledge_gateway 的搜索/推荐/晋升路径会实际消费这些质量元数据并改变返回结果。因此，用户最担心的“错误知识直接驱动实现决策”这一现实状态，未必被真正改变。",
+  "main_concern": "设计正在把“治理文件 + 静态检查”当作完成口径，却未把质量元数据闭环接入知识被实际召回和使用的运行时路径。结果可能是检查通过、文档齐全，但 gateway 仍然把陈旧、冲突或 old-redcap-reference 知识当作 active/direct_driver 返回。",
+  "top_risks": [
+    "sidecar 覆盖率缺口：index.json 中未被 quality.json 覆盖的条目若默认仍按原 route 处理，可能继续作为 direct_driver 被命中。",
+    "运行时 enforcement 缺口：knowledge_gateway 的搜索与 promote 逻辑若仍只校验索引结构而不读取质量元数据，质量检查只是旁路审计，无法阻止错误知识影响决策。",
+    "负向探针沦为形式：若缺少可执行的失败样本和预期失败输出，检查可能只验证字段存在，无法证明“过期 active、冲突无裁决、no-promote direct_driver”真的会失败。"
+  ],
+  "missing_evidence": [
+    "quality.json 缺失条目时的默认策略：未明确说明是把缺失视为 review_required / hint_only，还是允许保持原 route 的 direct_driver。",
+    "knowledge_gateway 消费质量元数据的证据：需要看到 search / promote / draft 调用中读取 quality 数据并据此降权、阻断或提示复核。",
+    "可运行的 RSP-26 负向探针集合：至少应包含过期 active 失败、冲突无裁决失败、no-promote direct_driver 失败、old-redcap-reference 被当作 direct_driver 失败四个最小样本及预期输出。"
+  ],
+  "minimum_fix": "在实施前补充三点：(1) 把质量元数据读取嵌入 knowledge_gateway 的搜索/推荐路径，缺失元数据一律按 review_required 处理；(2) 将 old-redcap-reference route 硬编码为不可 direct_driver；(3) 为四个最小负向场景提供可执行探针，并规定它们必须先失败、治理后才能通过，才能把 RSP-26 标记为完成。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "如果最终交付物主要是“我们写了 knowledge-quality.json 合同和 sidecar，并生成了 RSP-26 证据文件”，而 gateway 的返回行为没有可验证变化，则视为 RSP-26 未完成，不能仅凭文档关闭问题。"
+  },
+  "user_intent_alignment": "部分对齐。用户要的是“防止错误知识驱动实现”，设计走向了“能检查出错误知识”，但还没确保检查结论会反过来阻止知识被使用。补上运行时 enforcement 和负向探针后，方可对齐用户真实意图。"
+}

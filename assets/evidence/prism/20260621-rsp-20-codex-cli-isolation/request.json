@@ -1,0 +1,64 @@
+{
+  "task": "Review RSP-20 Codex CLI isolation implementation plan and current evidence boundary.",
+  "user_intent": "Norven asked RedCap to stop plan-only looping and implement residual items from the final solution plan. RSP-20 must ensure E2E results are not polluted by the host user's Codex CLI plugins, MCP config, or personal state.",
+  "main_claim": "RSP-20 has partial runtime support already: isolated CODEX_HOME, MCP override suppression in isolated_home mode, user Codex Home state guard, carrier-probe marker and Hook checks, and E2E self-check coverage. However RSP-20 still lacks a dedicated contract file, dedicated evidence file, claim file, and final RSP contract verification.",
+  "changed_reality": [
+    "A lifecycle packet was created for RSP-20 with completion_claim=false.",
+    "Current complete-revival-e2e self-check with --skip-carrier-probe passes.",
+    "Current complete-revival-e2e design-check passes.",
+    "Focused code excerpts were added for Prism review in assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/code-excerpts.md.",
+    "No RSP-20 implementation completion is claimed yet."
+  ],
+  "evidence": [
+    {
+      "kind": "plan",
+      "reference": "assets/docs/residual-todo-final-solution-plan.md#RSP-20",
+      "summary": "RSP-20 requires isolated CODEX_HOME, nonessential plugin control, config summary, Hook availability, and host noise failure."
+    },
+    {
+      "kind": "lifecycle",
+      "reference": "assets/evidence/lifecycle/20260621-rsp-20-codex-cli-isolation.json",
+      "summary": "Lifecycle packet for RSP-20, completion_claim=false."
+    },
+    {
+      "kind": "code-excerpt",
+      "reference": "assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/code-excerpts.md",
+      "summary": "Bounded excerpts for isolated CODEX_HOME, MCP isolation, user Codex Home guard, carrier-probe, and self-check coverage."
+    },
+    {
+      "kind": "historical-prism-resolution",
+      "reference": "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/resolution.json",
+      "summary": "Earlier related Prism concerns were accepted for isolated Codex Home MCP fix, but this does not by itself close RSP-20."
+    },
+    {
+      "kind": "command",
+      "reference": "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "summary": "Current self-check passed before RSP-20 implementation completion."
+    },
+    {
+      "kind": "command",
+      "reference": "runtime/bin/redcap complete-revival-e2e design-check",
+      "summary": "Current E2E design-check passed before RSP-20 implementation completion."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not claim RedCap full revival.",
+    "Do not lower project-level Hook verification.",
+    "Do not disable all capabilities just to make E2E pass.",
+    "Do not treat historical carrier-probe evidence as sufficient for RSP-20 without a dedicated RSP evidence file.",
+    "If real carrier-probe is blocked by external Codex resource limits, classify it as blocked instead of pretending success."
+  ],
+  "questions_for_prism": [
+    "Is the current runtime support enough to build RSP-20 closure without major code changes?",
+    "What dedicated contract/check/evidence still must be added before RSP-20 can close?",
+    "Does the existing self-check cover both isolated_home and non-isolated MCP-noise behavior strongly enough?",
+    "Is a live carrier-probe mandatory for RSP-20 current-machine closure, or can historical carrier evidence plus current static checks only support partial verification?",
+    "What negative probes are required so host plugin/config noise fails instead of silently passing?"
+  ]
+}

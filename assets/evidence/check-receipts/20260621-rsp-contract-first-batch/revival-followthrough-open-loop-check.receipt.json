@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap revival-followthrough open-loop-check",
+  "executed_at": "2026-06-20T16:41:53+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/revival-followthrough-open-loop-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/revival-followthrough-open-loop-check.stdout.txt",
+  "stdout_sha256": "e90a69d28951dbbd4198791e1602625b07e3bcce57b8387a95a11f8d7555e18f"
+}

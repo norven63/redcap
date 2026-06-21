@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m py_compile runtime/core/long_task_contract.py runtime/core/check_runner.py",
+  "exit_code": 0,
+  "executed_at": "2026-06-21T04:03:57+00:00",
+  "executor": "Cap",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

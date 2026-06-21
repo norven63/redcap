@@ -31,6 +31,41 @@
       "host_effect": "use deterministic failure if the failed checker protects hard evidence; otherwise record degraded health and avoid speculative LLM-driven blocking."
     }
   },
+  "health_signals": {
+    "states": [
+      "healthy",
+      "degraded",
+      "blocked"
+    ],
+    "reason_catalog": {
+      "semantic_unavailable": {
+        "meaning": "语义评审不可用、超时或返回非法结构。",
+        "detect_when": "semantic_review_attempted=true and semantic_degraded=true, or checker emits semantic timeout/invalid-output metadata"
+      },
+      "rule_conflict": {
+        "meaning": "确定性规则与语义评审或主轴回放结论冲突。",
+        "detect_when": "deterministic verdict and semantic/replay verdict disagree on mutation or closeout allowance"
+      },
+      "replay_failure": {
+        "meaning": "主轴保持、最大轮次、覆盖标记等回放样本失败。",
+        "detect_when": "advisory-stop replay reports ok=false for any required case"
+      },
+      "evidence_missing": {
+        "meaning": "Stop 事件、修正轮次、覆盖标记、持续时间或检查来源等必需证据缺失。",
+        "detect_when": "required marker fields or receipt files are absent"
+      }
+    },
+    "state_rules": {
+      "healthy": "no degraded or blocked observations",
+      "degraded": "one or more degraded observations and no blocked escalation condition",
+      "blocked": "blocked observation exists, consecutive_degraded_count >= 3, or critical_completion_claim=true with replay_failure/rule_conflict/evidence_missing"
+    },
+    "exit_policy": {
+      "healthy": "exit 0",
+      "degraded": "exit non-zero unless --allow-degraded or --expect-state degraded is explicit",
+      "blocked": "exit non-zero unless --expect-state blocked is explicit for a negative/upgrade probe"
+    }
+  },
   "advisory_payload_schema": {
     "required_fields": [
       "advisory_schema_id",
@@ -40,6 +75,8 @@
       "max_rounds",
       "current_round",
       "recovery_focus_anchor",
+      "primary_response_axis",
+      "advisory_is_meta_guidance",
       "do_not_answer_the_hook"
     ],
     "field_rules": {
@@ -50,6 +87,8 @@
       "max_rounds": "must be a small integer, default 2",
       "current_round": "must be counted per session_id + turn_id",
       "recovery_focus_anchor": "must state that the next answer begins from the original user request",
+      "primary_response_axis": "must state that the next answer starts by satisfying the original user request before applying Stop corrections",
+      "advisory_is_meta_guidance": "must be true so the host advisory cannot become a new user task",
       "do_not_answer_the_hook": "must be true"
     },
     "forbidden_payload_content": [

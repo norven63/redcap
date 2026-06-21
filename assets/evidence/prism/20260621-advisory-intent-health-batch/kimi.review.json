@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "当前没有任何运行态现实变化。bundle 中关键文件（rsp_contract.py、check_runner.py、final_claim_guard.py、codex-hook.py、runtime/bin/redcap）内容为空或截断，只有方案书与部分入口文件片段；RSP-01/RSP-02/RSP-21/RSP-25 仍处于“准备实现”阶段，未见完成声明、正向/负向验收或度量基线。",
+  "main_concern": "主 AI 把四个风险域不同的残留项（Stop 主轴保持、Hook 语义裁决、degraded 健康升级、误伤/漏检度量）作为一个合并批次推进，容易使实现互相污染、失败根因不可追踪，并最终用“整体方案通过”替代“逐项真实解决”。",
+  "top_risks": [
+    "合并批次导致 Stop 与 Hook 的改动耦合，一旦某一项需要回滚或放宽阈值，可能连带削弱另一项的原有收口能力。",
+    "degraded 健康升级若未绑定具体指标和连续采样口径，容易退化为“状态重命名”或把 healthy 阈值悄悄放宽。",
+    "Hook 误伤/漏检度量缺少独立负向样本库支撑时，可通过选择性地挑选样本让指标看起来通过。"
+  ],
+  "missing_evidence": [
+    "rsp_contract.py、codex-hook.py、check_runner.py、final_claim_guard.py 的完整内容（bundle 中为空或截断），无法验证运行时接口是否诚实。",
+    "每个 RSP 对应的负向样本集（必须覆盖历史误伤、漏检、degraded 连续触发场景）。",
+    "误伤率/漏检率的当前基线、目标阈值、采样窗口和不可放宽的书面约定。"
+  ],
+  "minimum_fix": "将本批拆分为四个独立子批次；为每个 RSP 定义最小运行时接口、负向样本套件、健康/度量阈值和 rsp-contract 完成证据；先完成并评审 RSP-01，再依次进入 RSP-02/RSP-21/RSP-25，禁止一次性合并提交。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "如果下一轮交付仍是“统一设计文档”或“合并实现 PR”，而没有单个 RSP 的运行态完成证据，则视为循环停滞，必须停止并回到拆分后的第一项重新验收。"
+  },
+  "user_intent_alignment": "部分一致：主 AI 明确未声明完成，符合“不能只用文档替代实现”的约束；但“合并实现”的倾向与用户“逐项实施和落地、不降级、可验收”的真实意图存在偏离，需要纠正为推进方式。"
+}

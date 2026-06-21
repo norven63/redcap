@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "方案书第六轮补充了 rsp-contract check 的命令接口、输出 JSON 结构和 plan-change-control 标注格式的形式化规格。但这些规格定义了接口形状而未定义校验语义——check 名称（has_positive_acceptance 等）被列出但每个 check 的实际判定标准、证据文件格式要求、失败时的错误信息结构均未明确。实际方案书文件内容无法直接验证（文件访问工具在当前上下文不可用），仅能依据请求中提供的摘录进行评审。",
+  "main_concern": "rsp-contract check 的四个 check 项（has_positive_acceptance、has_negative_probe、claim_references_evidence、new_issue_is_queued）仅被命名而未定义：每个 check 接受什么格式的输入证据、判定通过/失败的精确条件、失败时 failures 数组元素的 schema 均未规定。进入实施阶段时，开发者需要自行填补这些语义空白，存在实现漂移风险——不同开发者对同一 check 名的理解可能产生不互通的校验结果。",
+  "top_risks": [
+    "方案迭代进入无限循环：6 轮修订仍未进入实施，方案书本身成为产出替代品而非实施路线图",
+    "rsp-contract check 语义真空导致实施阶段分歧：check 名称是骨架但无肉体，开发时需要临时定义标准，可能引发新的 RSP",
+    "plan-change-control 审计规则缺乏例外机制：standard_change=loosen 默认失败无申诉路径，正当的范围调整可能被规则本身阻塞"
+  ],
+  "missing_evidence": [
+    "第五轮 Claude Code 和 Kimi 的具体 minimum_fix 要求原文（无法读取 r5 目录下的评审输出文件）",
+    "方案书从第五轮到第六轮的实际 diff（无法验证是否仅新增了声称的内容而无其他意外变更）",
+    "任何 plan-change-control 标注在方案书中的实际应用示例（格式被定义但未见使用实例）"
+  ],
+  "minimum_fix": "在不新增 RSP、不执行开发的前提下，方案书需补充：(1) 为每个 check 定义至少一条具体的通过/失败判定规则——用自然语言描述即可，无需代码；(2) 定义 claim_file 与 evidence_file 的最小 JSON schema（顶层字段及必填项）；(3) 为 plan-change-control 审计规则增加例外机制说明——当 standard_change=loosen 但经人工 Prism 评审通过时应如何处理；(4) 在方案书中至少给出一个完整的 plan-change-control 标注实例。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "用户明确指示'不执行开发实现，不新增 RSP'，review_questions 直接询问'是否可以停止继续扩写方案，进入实施阶段'——方案修订已迭代 6 轮，方案书自身正在成为终点而非手段。若本轮仍产生新的 concern，必须设定硬性终止条件（如最多再修订 1 轮后无论是否有 concern 均进入实施），否则方案书将替代实际工作。"
+  },
+  "user_intent_alignment": "aligned"
+}

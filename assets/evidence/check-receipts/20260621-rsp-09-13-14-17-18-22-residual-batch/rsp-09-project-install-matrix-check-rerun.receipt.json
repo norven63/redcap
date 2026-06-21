@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "project-install-matrix-check"
+  ],
+  "command": "runtime/bin/redcap check --only project-install-matrix-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.346,
+  "executed_at": "2026-06-21T05:57:49Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "rsp-09-project-install-matrix-check-rerun-serialized",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-09-project-install-matrix-check-rerun.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 271,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-09-project-install-matrix-check-rerun.stdout.txt",
+  "stdout_sha256": "10f693fd9ebfe5c5349634a889cb4b3df4cb8e11229fde2b62000e9a871bdcf9"
+}

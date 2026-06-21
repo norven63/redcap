@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "There is real behavior change: a new runtime/core/residual_batch.py orchestrates the six checks, runtime/bin/redcap exposes residual-batch check|self-check, check_runner.py registers the integration step, a source diff of ~75KB exists, and a single integration command ran in ~1 second with a matching receipt. However, the bundle does not include the individual check implementations or the per-RSP evidence files, so the meaningfulness of the claimed negative probes cannot be independently verified.",
+  "main_concern": "The integration command adds orchestration but not independent falsification. Each negative probe is validated by checking that the same command that produced the evidence also reports a probe-detected field or check-id. Without mutation testing or readable individual check implementations, a check author can satisfy the integration command while the probe itself is trivial or self-confirming.",
+  "top_risks": [
+    "Negative probes may be self-fulfilling: residual_batch.py validates that each check's output contains a specific field/check_id, but the check that writes that output is the one being validated, creating a circular guarantee.",
+    "The integration command completes in ~1 second for six checks plus six contract checks, which is plausible for small fixtures but also consistent with shallow, fixture-only assertions that do not exercise real failure modes.",
+    "The allowed file bundle excludes the actual implementations of project_install.py, complete_revival_e2e.py, and full_revival_amendment.py, and excludes five of the six per-RSP evidence files, so the reviewer cannot correlate the integration summary with concrete behavior."
+  ],
+  "missing_evidence": [
+    "Source contents of runtime/core/project_install.py, runtime/core/complete_revival_e2e.py, and runtime/core/full_revival_amendment.py showing how each negative probe is implemented.",
+    "Per-RSP evidence files for RSP-09, RSP-13, RSP-14, RSP-17, and RSP-22 (only the batch integration file and RSP-18 claim/contract are in the bundle).",
+    "Independent mutation-test receipts where each targeted defect is introduced and the corresponding check fails with the expected negative-probe message."
+  ],
+  "minimum_fix": "Add an independent negative-probe mutation mode to residual_batch.py (e.g., residual-batch self-check or a --mutate flag) that deliberately corrupts one fixture per RSP item, runs the corresponding check, and asserts it fails with the expected negative-probe message. Do not add more evidence files or receipts; add a falsification step that the integration command itself exercises.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Round 2 inflated evidence_count and file paths; round 3 replaced that with a single integration wrapper. The wrapper is structural progress, but it still treats 'the wrapper passed' as proof of negative-probe validity, which is the same loop one level up."
+  },
+  "user_intent_alignment": "Partially aligned. The user wants narrow closure based on actual behavior changes and rejects paperwork-only closure. The batch has real code changes and a running integration command, but the negative-probe verification remains self-referential, which is closer to a ledger than to demonstrated runtime failure detection."
+}

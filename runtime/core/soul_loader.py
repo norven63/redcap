@@ -35,6 +35,7 @@ def default_sources() -> list[dict[str, Any]]:
             "path": "~/.codex/skills/redcap/soul.md",
             "required": False,
             "role": "AGENTS.md 引用的旧 RedCap 灵魂锚点",
+            "public_evidence_redact_path": True,
         },
         {
             "id": "cap_identity",
@@ -43,6 +44,9 @@ def default_sources() -> list[dict[str, Any]]:
             "required": True,
             "role": "Cap 私有身份源",
             "cap_home_source": source_kind,
+            "private_identity_source": True,
+            "public_evidence_redact_path": True,
+            "public_evidence_redact_title": True,
         },
     ]
 
@@ -79,19 +83,26 @@ def redact_line(line: str) -> str:
 
 def summarize_source(source: dict[str, Any]) -> dict[str, Any]:
     path = resolve_path(str(source["path"]))
+    configured_path = str(source.get("configured_path", source["path"]))
+    redact_path = bool(source.get("public_evidence_redact_path"))
+    redact_title = bool(source.get("public_evidence_redact_title"))
     result: dict[str, Any] = {
         "id": source["id"],
         "role": source.get("role"),
-        "configured_path": source.get("configured_path", source["path"]),
-        "resolved_path": str(path),
+        "configured_path": configured_path,
+        "resolved_path": configured_path if redact_path else str(path),
+        "resolved_path_redacted": redact_path,
         "required": bool(source.get("required")),
         "cap_home_source": source.get("cap_home_source"),
+        "private_identity_source": bool(source.get("private_identity_source")),
         "exists": path.exists(),
         "readable": False,
         "sha256": None,
         "line_count": 0,
         "char_count": 0,
         "title": None,
+        "title_redacted": redact_title,
+        "title_present": False,
         "redacted_line_count": 0,
         "error": None,
     }
@@ -110,6 +121,7 @@ def summarize_source(source: dict[str, Any]) -> dict[str, Any]:
     if result["required"] and not text.strip():
         result["error"] = "required source is empty"
         return result
+    raw_title = markdown_title(text)
     redacted_lines = [redact_line(line) for line in text.splitlines()]
     result.update(
         {
@@ -117,7 +129,8 @@ def summarize_source(source: dict[str, Any]) -> dict[str, Any]:
             "sha256": sha256_text(text),
             "line_count": len(text.splitlines()),
             "char_count": len(text),
-            "title": markdown_title(text),
+            "title": None if redact_title else raw_title,
+            "title_present": bool(raw_title),
             "redacted_line_count": sum(
                 1 for original, redacted in zip(text.splitlines(), redacted_lines)
                 if original != redacted
@@ -160,7 +173,9 @@ def build_packet(sources: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         "sources": summaries,
         "content_policy": {
             "private_body_written_to_evidence": False,
-            "evidence_contains": ["来源状态", "哈希", "计数", "标题", "脱敏计数"],
+            "evidence_contains": ["来源状态", "哈希", "计数", "标题存在状态", "脱敏计数"],
+            "private_identity_title_written_to_evidence": False,
+            "resolved_private_path_written_to_evidence": False,
         },
         "activation": {
             "identity": "Cap",
@@ -278,6 +293,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             env_identity = next((item for item in env_packet["sources"] if item["id"] == "cap_identity"), {})
             if env_packet.get("ok") is not True or env_identity.get("configured_path") != "$CAP_HOME/identity.md":
                 failures.append("CAP_HOME identity source did not load through portable configured path")
+            if env_identity.get("resolved_path") != "$CAP_HOME/identity.md" or env_identity.get("resolved_path_redacted") is not True:
+                failures.append("CAP_HOME identity source should not expose host-specific resolved path")
+            if env_identity.get("title") is not None or env_identity.get("title_present") is not True:
+                failures.append("CAP_HOME identity source should expose only title presence")
 
             os.environ.pop(CAP_HOME_ENV, None)
             fallback_home = tmp / "fallback-home"
@@ -289,6 +308,8 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             fallback_identity_summary = next((item for item in fallback_packet["sources"] if item["id"] == "cap_identity"), {})
             if fallback_packet.get("ok") is not True or fallback_identity_summary.get("configured_path") != "~/.cap/identity.md":
                 failures.append("default ~/.cap identity source did not load when CAP_HOME is absent")
+            if fallback_identity_summary.get("resolved_path") != "~/.cap/identity.md" or fallback_identity_summary.get("resolved_path_redacted") is not True:
+                failures.append("default identity source should not expose host-specific resolved path")
 
             os.environ[CAP_HOME_ENV] = str(tmp / "missing-cap-home")
             missing_dir_packet = build_packet()

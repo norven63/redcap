@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "low",
+  "reality_delta": "changed_reality 声称已实现合同校验、误伤率、漏检率、趋势阈值、样本新鲜度和覆盖率检查，以及 5 个负向样例均按预期失败。这些声明正面回应了上一轮 Prism 设计评审中提出的风险 #2（阈值绕过）和风险 #3（样本退化），但上一轮评审的风险 #1（样本标注循环自证）在 changed_reality 中完全未被提及——既未说明 40 个样本由谁标注、标注质量如何保证，也未声明样本标注经过了独立 Prism 确认。此外，负向样例 threshold-relaxed-unreviewed 的名称暗示存在某种阈值变更检测机制，但其具体实现方式（合同签名校验 vs. JSON 字段标记 vs. 命名约定）决定了它是真正护栏还是伪装护栏。由于所有 6 个授权文件不可读取，无法将代码实现与声明事实对齐。",
+  "main_concern": "样本标注独立性未声明：changed_reality 用\"40 个样本，每类各 10 个\"回应了数量问题，但完全回避了上一轮 Prism 评审的 #1 风险——谁标注了这些样本？标注者是否独立于 Hook 运行方？如果 40 个样本全部由实现方自行标注，度量回路仍然是自证预言，样本数量无法替代标注独立性。",
+  "top_risks": [
+    "样本标注未独立验证：40 个样本的标签准确性无法确认，如果全部自标则度量仍是自证预言",
+    "threshold-relaxed-unreviewed 检测机制不明：无法从变更声明判断是代码级合同签名校验还是可绕过的字段标记",
+    "无法验证负向样例的测试质量：5 个负向样例的名称匹配预期，但无法确认它们测试的是真实失败路径还是仅验证检查器存在"
+  ],
+  "missing_evidence": [
+    "所有 6 个授权文件均不可读取——合同 JSON、实现代码、check_runner、redcap 入口及 2 个收据文件全部无法验证",
+    "无法验证 hook-quality-self-check.receipt.json 中负向样例的实际输出是否证明 FP 失败→overall=fail（而非 degraded）",
+    "无法验证 check_runner 中 hook-quality-metrics-check 的失败是否正确传播到聚合报告顶层"
+  ],
+  "minimum_fix": "在合同或知识库中明确记录：(1) 40 个样本的标注来源和审核状态——哪些样本经过了独立 Prism 抽查确认，标注者与 Hook 运行方是否分离；(2) 展示 threshold-relaxed-unreviewed 的失败证据，证明其检测的不是 JSON 字段缺失而是真正的未签审变更（如比较合同哈希或签名）；(3) 将 hook-quality-self-check.receipt.json 和 check-hook-quality-metrics-check.receipt.json 的内容内联或摘要到证据包中，使无文件访问权限的 Prism 也能完成实现评审。在解决这些问题之前，不应将 RSP-25 标记为已关闭。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "main_claim 明确将该轮声明范围限定在 RSP-25 当前机器化度量范围，不声明 Stop 永久零误伤或 RedCap 完整复活。约束列表也排除了范围扩大。但需注意：如果样本标注独立性未被解决，RSP-25 的通过可能被未来会话用作'Hook 质量已验证'的证据，构成隐式范围蔓延。建议在关闭 RSP-25 时明确写入'样本标注未独立审核，度量仅反映自标一致性'的限制声明。"
+  },
+  "user_intent_alignment": "unclear"
+}

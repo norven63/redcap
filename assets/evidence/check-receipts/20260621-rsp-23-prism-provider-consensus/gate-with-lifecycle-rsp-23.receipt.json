@@ -1,0 +1,31 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "gate-with-lifecycle-rsp-23",
+  "command": "runtime/bin/redcap gate --task RSP-23 Prism 多评审方一致性与差异处理固化实施和验收 --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-23-prism-provider-consensus.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "gate",
+    "--task",
+    "RSP-23 Prism 多评审方一致性与差异处理固化实施和验收",
+    "--risk-level",
+    "medium",
+    "--lifecycle-packet",
+    "assets/evidence/lifecycle/20260621-rsp-23-prism-provider-consensus.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 1.82,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/gate-with-lifecycle-rsp-23.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/gate-with-lifecycle-rsp-23.stderr.txt",
+  "stdout_sha256": "783e99d196e24a5b30994b533999e7dcf019ef666ddd178c2594bd2c17fa1c7a",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1298,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T20:10:46Z",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

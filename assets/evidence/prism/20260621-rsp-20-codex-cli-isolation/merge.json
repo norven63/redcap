@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The bundle is still a planning/justification artifact. It catalogues existing runtime support and asks Prism to ratify it as 'enough to close,' which repeats the plan-only looping the user told RedCap to stop. The actual user intent—demonstrable isolation from host Codex CLI plugins, MCP config, and personal state—has not yet been verified with the required contract, claim, and negative probes."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Carrier-probe skipped in self-check means the core isolation verification is untested. The carrier-probe is the mechanism that detects host plugin/config leakage — skipping it removes the only negative-test capability. Without a live carrier-probe run or an equivalent negative probe that injects host noise and verifies rejection, \"isolation works\" is an assertion backed by static code inspection alone, not by runtime evidence. The code-excerpts.md may show isolation code exists, but existence ≠ correctness under adversarial host state."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Create the RSP-20 contract and claim artifacts; add and run negative probes that inject host plugin/MCP noise and assert failure/exclusion in both isolated_home and non-isolated paths; run the live carrier-probe or record it as blocked. Do not set completion_claim=true until these artifacts exist."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before any RSP-20 closure claim: (1) Run carrier-probe without --skip on the current machine and attach the results — if blocked by external Codex resource limits, document the block explicitly as a known-gap rather than implied-pass. (2) Implement at least one negative probe: inject known-bad host config (e.g. a user plugin that would alter output) and verify the isolated session rejects or ignores it, producing clean output. (3) Create assets/contracts/codex-cli-isolation.json with objective pass/fail criteria per isolation dimension. (4) Generate a fresh dedicated evidence file in assets/evidence/check-receipts/ from current-machine runs that includes both positive (isolated passes) and negative (host noise rejected) results."
+    }
+  ],
+  "anti_loop_detected": true
+}

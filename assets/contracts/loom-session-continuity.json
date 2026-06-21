@@ -1,0 +1,59 @@
+{
+  "schema_id": "redcap-loom-session-continuity-contract",
+  "rsp": "RSP-06",
+  "schema_version": 1,
+  "purpose": "验证 Loom 中同一角色的多轮工作不会因为新开会话而丢失上下文；session_id 丢失、复用、漂移或上下文降级必须阻断验收。",
+  "scope": {
+    "closed_scope": "当前 fixture/runtime evidence loop",
+    "not_claimed": [
+      "真实外部长期生产成熟",
+      "所有未来 Codex CLI 版本都能暴露同等 session_id 能力",
+      "RedCap 完整复活"
+    ]
+  },
+  "required_roles": [
+    "product_manager",
+    "architect",
+    "developer",
+    "tester",
+    "reviewer"
+  ],
+  "required_record_fields": [
+    "project_id",
+    "task_id",
+    "role",
+    "session_id",
+    "provider",
+    "agent_instance_id",
+    "started_at",
+    "last_seen_at",
+    "context_state",
+    "attestation"
+  ],
+  "positive_acceptance": [
+    "每个角色 session_id 必须存在且是 UUID。",
+    "同一角色多轮必须保持同一 session_id。",
+    "不同角色不能复用同一 session_id。",
+    "context_state 不能是 degraded。",
+    "attestation 签名必须与角色记录一致。"
+  ],
+  "negative_probes": [
+    {
+      "id": "missing-session-id",
+      "must_fail_when": "任一角色 session_id 缺失或不是 UUID"
+    },
+    {
+      "id": "cross-role-session-reuse",
+      "must_fail_when": "不同角色复用同一 session_id"
+    },
+    {
+      "id": "same-role-session-drift",
+      "must_fail_when": "同一角色记录到 observed_session_ids 或 context_state=degraded"
+    },
+    {
+      "id": "attestation-mismatch",
+      "must_fail_when": "attestation.signature 与当前角色记录不一致"
+    }
+  ],
+  "completion_claim_boundary": "完成声明只能说 RSP-06 在当前运行机和 fixture 证据闭环内通过，不能说所有未来外部项目都已经长期验证。"
+}

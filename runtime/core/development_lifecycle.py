@@ -397,6 +397,43 @@ def validate_self_purification_candidates(payload: dict[str, Any], failures: lis
             failures.append(f"self_purification decision[{index}] requires a substantive reason")
 
 
+def knowledge_payload_has_decision_effect(payload: dict[str, Any]) -> bool:
+    effects = payload.get("task_decision_effects")
+    if has_substantive_text(effects):
+        return True
+    used_knowledge = payload.get("used_knowledge")
+    if isinstance(used_knowledge, list):
+        for item in used_knowledge:
+            if isinstance(item, dict) and isinstance(item.get("influence"), str) and substantive_text(item["influence"]):
+                return True
+    decision_impacts = payload.get("decision_impacts")
+    if isinstance(decision_impacts, dict):
+        return all(
+            isinstance(decision_impacts.get(key), str) and substantive_text(decision_impacts[key])
+            for key in ["planning", "implementation", "verification"]
+        )
+    return False
+
+
+def validate_knowledge_retrieval_evidence(payload: dict[str, Any], failures: list[str]) -> None:
+    result_handling = payload.get("result_handling")
+    adopted_entries = payload.get("adopted_entries")
+    used_knowledge = payload.get("used_knowledge")
+    has_relevant_hit = (
+        result_handling == "use_relevant_entry"
+        or (isinstance(adopted_entries, list) and bool(adopted_entries))
+        or (isinstance(used_knowledge, list) and bool(used_knowledge))
+    )
+    if has_relevant_hit and not knowledge_payload_has_decision_effect(payload):
+        failures.append(
+            "self_purification knowledge_retrieval_evidence with relevant knowledge must record decision effects"
+        )
+    if result_handling == "record_no_relevant_entry":
+        reason = payload.get("no_relevant_entry_reason")
+        if not (isinstance(reason, str) and substantive_text(reason)):
+            failures.append("knowledge_retrieval_evidence no relevant entry requires substantive reason")
+
+
 def validate_self_purification_binding(packet: dict[str, Any], failures: list[str]) -> None:
     if not self_purification_completion_required(packet):
         return
@@ -425,6 +462,14 @@ def validate_self_purification_binding(packet: dict[str, Any], failures: list[st
         and substantive_text(binding["knowledge_retrieval_skip_reason"])
     ):
         failures.append("self_purification requires knowledge_retrieval_evidence or knowledge_retrieval_skip_reason")
+    elif isinstance(binding.get("knowledge_retrieval_evidence"), str) and binding["knowledge_retrieval_evidence"].strip():
+        knowledge_payload = optional_json_object(
+            binding["knowledge_retrieval_evidence"],
+            "self_purification knowledge_retrieval_evidence",
+            failures,
+        )
+        if knowledge_payload is not None:
+            validate_knowledge_retrieval_evidence(knowledge_payload, failures)
 
     harvest = binding.get("post_task_harvest")
     if not isinstance(harvest, dict):
@@ -1008,6 +1053,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "schema_id": "redcap-self-purification-knowledge-retrieval",
             "matches": [],
             "result_handling": "record_no_relevant_entry",
+            "no_relevant_entry_reason": "fixture deliberately has no reusable knowledge match; lifecycle self-check only verifies completion evidence binding.",
         })
         write_json(candidates_path, {
             "schema_id": "redcap-self-purification-candidates",

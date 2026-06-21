@@ -1,0 +1,15 @@
+{
+  "schema_id": "redcap-e2e-cache-prune-contract",
+  "rsp": "RSP-13",
+  "command": "runtime/bin/redcap complete-revival-e2e prune-check",
+  "positive_acceptance": [
+    "旧 success、旧 failed、旧 probe、陈旧 active 在显式策略下可清理",
+    "unknown 目录进入告警并保留",
+    "执行清单记录实际删除目录"
+  ],
+  "negative_probe": [
+    "unknown 目录不得静默删除",
+    "RedCap 源工作区不得作为清理 root"
+  ],
+  "evidence_file": "assets/evidence/rsp/rsp-13-e2e-cache-prune.json"
+}

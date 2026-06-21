@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "rsp-contract-plan-check"
+  ],
+  "command": "runtime/bin/redcap check --only rsp-contract-plan-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.111,
+  "executed_at": "2026-06-21T05:58:21Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "rsp-contract-plan-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-contract-plan-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 261,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-09-13-14-17-18-22-residual-batch/rsp-contract-plan-check.stdout.txt",
+  "stdout_sha256": "2d8bfbe5ffb7090d1d2cd8ae096a1e47ac68587a2b5b1559fd8006b177f52fed"
+}

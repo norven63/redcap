@@ -22,6 +22,15 @@ TEMPLATE_HOOKS = REPO_ROOT / "assets" / "contracts" / "codex-hooks.template.json
 CODEX_HOOK = REPO_ROOT / "runtime" / "host-adapters" / "codex" / "codex-hook.py"
 DEFAULT_EVIDENCE_DIR = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex"
 STOP_OVERRIDE_SCHEMA_ID = "redcap-stop-override-v1"
+HEALTH_SCHEMA_ID = "redcap-advisory-stop-health-report"
+HEALTH_STATES = {"healthy", "degraded", "blocked"}
+HEALTH_REASONS = {
+    "semantic_unavailable": "语义评审不可用、超时或返回非法结构",
+    "rule_conflict": "确定性规则与语义评审或主轴回放结论冲突",
+    "replay_failure": "主轴保持、最大轮次、覆盖标记等回放样本失败",
+    "evidence_missing": "Stop 事件、修正轮次、覆盖标记、持续时间或检查来源等必需证据缺失",
+}
+BLOCKED_DEGRADED_THRESHOLD = 3
 
 
 def load_json(path: pathlib.Path) -> Any:
@@ -164,6 +173,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
             "max_rounds",
             "current_round",
             "recovery_focus_anchor",
+            "primary_response_axis",
+            "advisory_is_meta_guidance",
             "do_not_answer_the_hook",
         ]:
             if field not in required:
@@ -183,7 +194,214 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         ]:
             if required_id not in ids:
                 failures.append(f"six_hard_constraints missing {required_id}")
+    health = contract.get("health_signals")
+    if not isinstance(health, dict):
+        failures.append("health_signals missing")
+    else:
+        states = set(health.get("states", [])) if isinstance(health.get("states"), list) else set()
+        if states != HEALTH_STATES:
+            failures.append("health_signals.states must be healthy/degraded/blocked")
+        catalog = health.get("reason_catalog")
+        if not isinstance(catalog, dict):
+            failures.append("health_signals.reason_catalog missing")
+        else:
+            for reason in HEALTH_REASONS:
+                item = catalog.get(reason)
+                if not isinstance(item, dict) or not item.get("detect_when"):
+                    failures.append(f"health_signals.reason_catalog.{reason}.detect_when missing")
+        state_rules = health.get("state_rules")
+        if not isinstance(state_rules, dict):
+            failures.append("health_signals.state_rules missing")
+        else:
+            for state in HEALTH_STATES:
+                if not isinstance(state_rules.get(state), str) or not state_rules[state].strip():
+                    failures.append(f"health_signals.state_rules.{state} missing")
     return failures
+
+
+def fixture_health_observations(fixture: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if fixture == "healthy":
+        return [], {"critical_completion_claim": False, "consecutive_degraded_count": 0}
+    if fixture == "degraded":
+        return [
+            {
+                "reason": "semantic_unavailable",
+                "severity": "degraded",
+                "source": "fixture:semantic-timeout",
+                "detail": "semantic review timed out and produced no valid judgment",
+            },
+            {
+                "reason": "rule_conflict",
+                "severity": "degraded",
+                "source": "fixture:rule-conflict",
+                "detail": "deterministic and semantic verdicts disagree",
+            },
+            {
+                "reason": "replay_failure",
+                "severity": "degraded",
+                "source": "fixture:main-axis-replay",
+                "detail": "main axis replay fixture failed",
+            },
+            {
+                "reason": "evidence_missing",
+                "severity": "degraded",
+                "source": "fixture:marker",
+                "detail": "required Stop marker field is absent",
+            },
+        ], {"critical_completion_claim": False, "consecutive_degraded_count": 1}
+    if fixture == "blocked":
+        return [
+            {
+                "reason": "evidence_missing",
+                "severity": "degraded",
+                "source": "fixture:critical-completion",
+                "detail": "critical completion claim lacks required Stop marker evidence",
+            }
+        ], {"critical_completion_claim": True, "consecutive_degraded_count": BLOCKED_DEGRADED_THRESHOLD}
+    raise ValueError(f"unsupported health fixture: {fixture}")
+
+
+def advisory_health_report(
+    observations: list[dict[str, Any]],
+    *,
+    critical_completion_claim: bool = False,
+    consecutive_degraded_count: int = 0,
+    source: str = "runtime",
+) -> dict[str, Any]:
+    normalized: list[dict[str, Any]] = []
+    for item in observations:
+        reason = item.get("reason")
+        severity = item.get("severity") or "degraded"
+        if reason not in HEALTH_REASONS:
+            reason = "evidence_missing"
+        if severity not in {"degraded", "blocked"}:
+            severity = "degraded"
+        normalized.append({
+            "reason": reason,
+            "reason_text": HEALTH_REASONS[reason],
+            "severity": severity,
+            "source": str(item.get("source") or source),
+            "detail": str(item.get("detail") or HEALTH_REASONS[reason]),
+        })
+    reasons = sorted({item["reason"] for item in normalized})
+    blocked_reasons = {
+        item["reason"]
+        for item in normalized
+        if item["severity"] == "blocked"
+        or (
+            critical_completion_claim
+            and item["reason"] in {"rule_conflict", "replay_failure", "evidence_missing"}
+        )
+    }
+    escalation_reasons: list[str] = []
+    if blocked_reasons:
+        escalation_reasons.append("critical_or_blocked_observation")
+    if consecutive_degraded_count >= BLOCKED_DEGRADED_THRESHOLD:
+        escalation_reasons.append("consecutive_degraded_threshold")
+    if blocked_reasons or consecutive_degraded_count >= BLOCKED_DEGRADED_THRESHOLD:
+        state = "blocked"
+    elif normalized:
+        state = "degraded"
+    else:
+        state = "healthy"
+    return {
+        "schema_id": HEALTH_SCHEMA_ID,
+        "state": state,
+        "ok": state == "healthy",
+        "source": source,
+        "reasons": reasons,
+        "observations": normalized,
+        "critical_completion_claim": critical_completion_claim,
+        "consecutive_degraded_count": consecutive_degraded_count,
+        "blocked_threshold": BLOCKED_DEGRADED_THRESHOLD,
+        "escalation_reasons": escalation_reasons,
+    }
+
+
+def validate_health_report(report: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if report.get("schema_id") != HEALTH_SCHEMA_ID:
+        failures.append("health report schema_id invalid")
+    state = report.get("state")
+    if state not in HEALTH_STATES:
+        failures.append(f"health report state invalid: {state}")
+    observations = report.get("observations")
+    if not isinstance(observations, list):
+        failures.append("health report observations must be a list")
+        observations = []
+    reasons = report.get("reasons")
+    if not isinstance(reasons, list):
+        failures.append("health report reasons must be a list")
+        reasons = []
+    for index, item in enumerate(observations):
+        if not isinstance(item, dict):
+            failures.append(f"health observation[{index}] must be an object")
+            continue
+        if item.get("reason") not in HEALTH_REASONS:
+            failures.append(f"health observation[{index}] reason invalid")
+        if item.get("severity") not in {"degraded", "blocked"}:
+            failures.append(f"health observation[{index}] severity invalid")
+        if not isinstance(item.get("source"), str) or not item["source"].strip():
+            failures.append(f"health observation[{index}] source missing")
+    if state == "healthy" and (observations or reasons):
+        failures.append("healthy report must not contain degraded observations or reasons")
+    if state in {"degraded", "blocked"} and not observations:
+        failures.append(f"{state} report requires observations")
+    if state == "degraded" and report.get("ok") is True:
+        failures.append("degraded report must not set ok=true")
+    if state == "blocked" and not report.get("escalation_reasons"):
+        failures.append("blocked report requires escalation_reasons")
+    if state == "blocked" and report.get("ok") is True:
+        failures.append("blocked report must not set ok=true")
+    return failures
+
+
+def run_health_regression() -> dict[str, Any]:
+    failures: list[str] = []
+    results: list[dict[str, Any]] = []
+    for fixture, expected_state in [
+        ("healthy", "healthy"),
+        ("degraded", "degraded"),
+        ("blocked", "blocked"),
+    ]:
+        observations, options = fixture_health_observations(fixture)
+        report = advisory_health_report(
+            observations,
+            critical_completion_claim=options["critical_completion_claim"],
+            consecutive_degraded_count=options["consecutive_degraded_count"],
+            source=f"fixture:{fixture}",
+        )
+        case_failures = validate_health_report(report)
+        if report.get("state") != expected_state:
+            case_failures.append(f"expected state {expected_state}, got {report.get('state')}")
+        if case_failures:
+            failures.append(f"{fixture}: {'; '.join(case_failures)}")
+        results.append({"fixture": fixture, "report": report, "failures": case_failures})
+    invalid = {
+        "schema_id": HEALTH_SCHEMA_ID,
+        "state": "healthy",
+        "ok": True,
+        "source": "fixture:invalid",
+        "reasons": ["semantic_unavailable"],
+        "observations": [
+            {
+                "reason": "semantic_unavailable",
+                "reason_text": HEALTH_REASONS["semantic_unavailable"],
+                "severity": "degraded",
+                "source": "fixture:invalid",
+                "detail": "degraded signal incorrectly marked healthy",
+            }
+        ],
+        "critical_completion_claim": False,
+        "consecutive_degraded_count": 1,
+        "blocked_threshold": BLOCKED_DEGRADED_THRESHOLD,
+        "escalation_reasons": [],
+    }
+    invalid_failures = validate_health_report(invalid)
+    if not invalid_failures:
+        failures.append("invalid degraded-as-healthy sample should fail validation")
+    results.append({"fixture": "invalid-degraded-as-healthy", "report": invalid, "failures": invalid_failures})
+    return {"ok": not failures, "cases": results, "failures": failures}
 
 
 def validate_hook_deployment() -> list[str]:
@@ -198,6 +416,90 @@ def validate_hook_deployment() -> list[str]:
     if not any("runtime/host-adapters/codex/codex-hook.py" in command and "--event Stop" in command for command in commands):
         failures.append("Stop hook does not call the Codex adapter with --event Stop")
     return failures
+
+
+HOOK_AXIS_TERMS = ("stop", "hook", "钩子", "停止前检查", "拦截", "修正约束")
+STATUS_PROMPT_TERMS = ("状态", "现状", "完成", "未完成", "还有", "哪些", "进度")
+STATUS_ANSWER_TERMS = ("已完成", "未完成", "还有", "状态", "现状", "风险", "待办", "阻塞", "没有")
+
+
+def contains_any(text: str, terms: tuple[str, ...]) -> bool:
+    lowered = text.casefold()
+    return any(term.casefold() in lowered for term in terms)
+
+
+def main_axis_retention_result(prompt: str, answer: str) -> dict[str, Any]:
+    """对历史误伤样本做主轴保持回放，不作为通用自然语言理解器。"""
+    stripped = answer.strip()
+    first_segment = stripped[:140]
+    prompt_asks_hook = contains_any(prompt, ("stop", "hook", "钩子", "停止前检查"))
+    hook_index = min(
+        [first_segment.casefold().find(term.casefold()) for term in HOOK_AXIS_TERMS if term.casefold() in first_segment.casefold()]
+        or [-1]
+    )
+    status_prompt = contains_any(prompt, STATUS_PROMPT_TERMS)
+    status_answer_index = min(
+        [first_segment.find(term) for term in STATUS_ANSWER_TERMS if term in first_segment]
+        or [-1]
+    )
+    failures: list[str] = []
+    if hook_index == 0 and not prompt_asks_hook:
+        failures.append("answer starts from Stop/Hook instead of the original user question")
+    if status_prompt and status_answer_index < 0:
+        failures.append("status/progress question lacks a direct status answer in the opening segment")
+    if status_prompt and hook_index >= 0 and (status_answer_index < 0 or hook_index < status_answer_index):
+        failures.append("Stop/Hook discussion appears before the direct status answer")
+    return {
+        "ok": not failures,
+        "prompt": prompt,
+        "answer_opening": first_segment,
+        "status_prompt": status_prompt,
+        "prompt_asks_hook": prompt_asks_hook,
+        "failures": failures,
+    }
+
+
+def run_main_axis_replay() -> dict[str, Any]:
+    cases = [
+        {
+            "id": "positive-status-direct-answer",
+            "expected_ok": True,
+            "prompt": "现在还有哪些任务没完成？",
+            "answer": "还有三项未完成：RSP-02、RSP-21、RSP-25。Stop 建议只影响措辞，不改变这个状态结论。",
+        },
+        {
+            "id": "positive-cause-direct-answer",
+            "expected_ok": True,
+            "prompt": "为什么刚才会偏航？",
+            "answer": "原因是二次回答把内部检查当成了主轴。Stop 提示只是修正约束，不能替代原问题。",
+        },
+        {
+            "id": "negative-status-stop-first",
+            "expected_ok": False,
+            "prompt": "现在还有哪些任务没完成？",
+            "answer": "Stop 拦截是因为最后回复缺少动作证据，所以我先解释这个钩子的判断逻辑。",
+        },
+        {
+            "id": "negative-status-no-answer",
+            "expected_ok": False,
+            "prompt": "当前进度状态是什么？",
+            "answer": "这个问题触发了停止前检查，它认为需要重新组织语言并补充证据。",
+        },
+    ]
+    failures: list[str] = []
+    results: list[dict[str, Any]] = []
+    for case in cases:
+        result = main_axis_retention_result(case["prompt"], case["answer"])
+        result["id"] = case["id"]
+        result["expected_ok"] = case["expected_ok"]
+        if result["ok"] is not case["expected_ok"]:
+            failures.append(f"{case['id']} expected ok={case['expected_ok']} got {result['ok']}")
+        results.append(result)
+    return {
+        "ok": not failures,
+        "cases": results,
+        "failures": failures,
+    }
 
 
 def validate_self_check() -> list[str]:
@@ -218,6 +520,9 @@ def validate_self_check() -> list[str]:
 
 def run_e2e_regression() -> dict[str, Any]:
     failures: list[str] = []
+    main_axis_replay = run_main_axis_replay()
+    if main_axis_replay.get("ok") is not True:
+        failures.extend(str(item) for item in main_axis_replay.get("failures", []))
     with tempfile.TemporaryDirectory(prefix="redcap-advisory-stop-e2e-") as tmp:
         evidence_dir = pathlib.Path(tmp) / "evidence"
         session_id = "advisory-stop-e2e-session"
@@ -262,6 +567,8 @@ def run_e2e_regression() -> dict[str, Any]:
             failures.append("first Stop should block a closeout without action evidence")
         if prompt_text not in reason:
             failures.append("first Stop reason must preserve the original task excerpt")
+        if not reason.startswith("请先直接回应原始用户问题："):
+            failures.append("first Stop reason must start from the original user question, not the Stop advisory")
         if "不是新的用户任务" not in reason or "不得成为回复主题" not in reason:
             failures.append("first Stop reason must state that hook feedback is not the reply topic")
         if "被拦回复片段" in reason:
@@ -279,6 +586,10 @@ def run_e2e_regression() -> dict[str, Any]:
         first_marker = stop_markers[-1] if stop_markers else {}
         if first_marker.get("advisory_stop_schema_id") != "redcap-stop-advisory-v1":
             failures.append("first Stop marker must record advisory schema")
+        if first_marker.get("advisory_stop_is_meta_guidance") is not True:
+            failures.append("first Stop marker must record advisory_stop_is_meta_guidance=true")
+        if not isinstance(first_marker.get("advisory_stop_primary_response_axis"), str):
+            failures.append("first Stop marker must record advisory_stop_primary_response_axis")
         if first_marker.get("advisory_stop_current_round") != 1:
             failures.append("first Stop marker must consume exactly one correction round")
         if not isinstance(first_marker.get("stop_hook_duration_ms"), (int, float)):
@@ -428,6 +739,7 @@ def run_e2e_regression() -> dict[str, Any]:
             "first_stop_duration_ms": first_marker.get("stop_hook_duration_ms"),
             "override_stop_duration_ms": override_marker.get("stop_hook_duration_ms"),
             "timing_failure_injection_continued": timing_failure_payload.get("continue") is True,
+            "main_axis_replay": main_axis_replay,
             "failures": failures,
         }
 
@@ -440,12 +752,16 @@ def cmd_check(_: argparse.Namespace) -> int:
     regression = run_e2e_regression()
     if regression.get("ok") is not True:
         failures.extend(str(item) for item in regression.get("failures", []))
+    health_regression = run_health_regression()
+    if health_regression.get("ok") is not True:
+        failures.extend(str(item) for item in health_regression.get("failures", []))
     result = {
         "ok": not failures,
         "contract": str(CONTRACT.relative_to(REPO_ROOT)),
         "live_hooks": str(LIVE_HOOKS.relative_to(REPO_ROOT)),
         "template_hooks": str(TEMPLATE_HOOKS.relative_to(REPO_ROOT)),
         "e2e_regression": regression,
+        "health_regression": health_regression,
         "failures": failures,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -453,6 +769,55 @@ def cmd_check(_: argparse.Namespace) -> int:
         return 1
     print("REDCAP_ADVISORY_STOP_OK")
     return 0
+
+
+def cmd_health_check(args: argparse.Namespace) -> int:
+    if args.fixture == "invalid-degraded-as-healthy":
+        report = {
+            "schema_id": HEALTH_SCHEMA_ID,
+            "state": "healthy",
+            "ok": True,
+            "source": "fixture:invalid-degraded-as-healthy",
+            "reasons": ["semantic_unavailable"],
+            "observations": [
+                {
+                    "reason": "semantic_unavailable",
+                    "reason_text": HEALTH_REASONS["semantic_unavailable"],
+                    "severity": "degraded",
+                    "source": "fixture:invalid",
+                    "detail": "degraded signal incorrectly marked healthy",
+                }
+            ],
+            "critical_completion_claim": False,
+            "consecutive_degraded_count": 1,
+            "blocked_threshold": BLOCKED_DEGRADED_THRESHOLD,
+            "escalation_reasons": [],
+        }
+    else:
+        observations, options = fixture_health_observations(args.fixture)
+        report = advisory_health_report(
+            observations,
+            critical_completion_claim=options["critical_completion_claim"],
+            consecutive_degraded_count=options["consecutive_degraded_count"],
+            source=f"fixture:{args.fixture}",
+        )
+    failures = validate_health_report(report)
+    if args.expect_state and report.get("state") != args.expect_state:
+        failures.append(f"expected state {args.expect_state}, got {report.get('state')}")
+    result = {
+        "ok": not failures and (
+            report.get("state") == "healthy"
+            or (args.allow_degraded and report.get("state") == "degraded")
+            or (args.expect_state is not None and report.get("state") == args.expect_state)
+        ),
+        "report": report,
+        "failures": failures,
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["ok"]:
+        print("REDCAP_ADVISORY_STOP_HEALTH_OK")
+        return 0
+    return 1
 
 
 def cmd_self_check(args: argparse.Namespace) -> int:
@@ -484,6 +849,10 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("check")
     subparsers.add_parser("self-check")
+    health = subparsers.add_parser("health-check")
+    health.add_argument("--fixture", choices=["healthy", "degraded", "blocked", "invalid-degraded-as-healthy"], default="healthy")
+    health.add_argument("--allow-degraded", action="store_true")
+    health.add_argument("--expect-state", choices=sorted(HEALTH_STATES))
     override = subparsers.add_parser("override")
     override.add_argument("--session-id", required=True)
     override.add_argument("--turn-id", required=True)
@@ -496,6 +865,8 @@ def main() -> int:
         return cmd_check(args)
     if args.command == "self-check":
         return cmd_self_check(args)
+    if args.command == "health-check":
+        return cmd_health_check(args)
     if args.command == "override":
         return cmd_override(args)
     parser.print_help()

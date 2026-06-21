@@ -1,0 +1,201 @@
+{
+  "schema_id": "redcap-cap-runtime-health-contract",
+  "rsp": "RSP-24",
+  "version": 1,
+  "purpose": "为 Cap 运行时建立独立健康维度，避免单个 E2E 或单个入口通过掩盖其他关键入口损坏。",
+  "aggregate_policy": {
+    "all_entrypoints_required": true,
+    "any_blocked_fails_health": true,
+    "provider_unavailable_is_degraded": true,
+    "e2e_success_cannot_override_entrypoint_failure": true,
+    "forbidden_overall_status_when_any_entry_failed": "healthy",
+    "independent_cross_validation_required": true
+  },
+  "entrypoints": [
+    {
+      "id": "gate",
+      "label": "门禁入口",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "gate",
+        "--task",
+        "RSP-24 runtime health smoke",
+        "--risk-level",
+        "low"
+      ],
+      "timeout_seconds": 30
+    },
+    {
+      "id": "prism_dispatch",
+      "label": "棱镜调度入口",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "prism-dispatch",
+        "--timeout-policy-check"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "loom_runtime",
+      "label": "Loom 角色化工程运行机",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "loom-runtime",
+        "self-check"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "self_purification",
+      "label": "自我净化与经验沉淀入口",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "self-purification",
+        "self-check"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "knowledge_gateway",
+      "label": "知识检索入口",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "knowledge-gateway",
+        "self-check"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "project_install",
+      "label": "项目级安装入口",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "project-install",
+        "self-check"
+      ],
+      "timeout_seconds": 90
+    },
+    {
+      "id": "e2e_report",
+      "label": "端到端报告入口",
+      "required": true,
+      "command": [
+        "runtime/bin/redcap",
+        "complete-revival-e2e",
+        "design-check"
+      ],
+      "timeout_seconds": 120
+    }
+  ],
+  "failure_categories": [
+    {
+      "id": "command_missing",
+      "severity": "blocked",
+      "description": "命令或脚本不存在，属于本地运行入口损坏。",
+      "match_signals": [
+        "command not found",
+        "no such file or directory",
+        "missing command",
+        "entrypoint file missing"
+      ]
+    },
+    {
+      "id": "config_error",
+      "severity": "blocked",
+      "description": "配置、合同、参数或 JSON 结构错误。",
+      "match_signals": [
+        "invalid json",
+        "schema_id",
+        "config",
+        "contract",
+        "missing required"
+      ]
+    },
+    {
+      "id": "permission_error",
+      "severity": "blocked",
+      "description": "权限、可执行位或文件系统策略阻塞。",
+      "match_signals": [
+        "permission denied",
+        "operation not permitted",
+        "exit_code=126"
+      ]
+    },
+    {
+      "id": "provider_unavailable",
+      "severity": "degraded",
+      "description": "外部模型提供方或远端服务临时不可用，不能直接写成 RedCap 核心能力缺失。",
+      "match_signals": [
+        "provider timeout",
+        "provider unavailable",
+        "rate limit",
+        "quota",
+        "connection refused",
+        "econnrefused"
+      ]
+    },
+    {
+      "id": "evidence_missing",
+      "severity": "blocked",
+      "description": "入口声称通过但缺少对应证据、回执或必须产物。",
+      "match_signals": [
+        "evidence missing",
+        "receipt missing",
+        "no evidence",
+        "missing evidence"
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "healthy",
+      "expected_ok": true,
+      "expected_status": "healthy",
+      "expected_category": null
+    },
+    {
+      "id": "command-missing",
+      "expected_ok": false,
+      "expected_status": "blocked",
+      "expected_category": "command_missing"
+    },
+    {
+      "id": "config-error",
+      "expected_ok": false,
+      "expected_status": "blocked",
+      "expected_category": "config_error"
+    },
+    {
+      "id": "permission-error",
+      "expected_ok": false,
+      "expected_status": "blocked",
+      "expected_category": "permission_error"
+    },
+    {
+      "id": "provider-unavailable",
+      "expected_ok": false,
+      "expected_status": "degraded",
+      "expected_category": "provider_unavailable"
+    },
+    {
+      "id": "evidence-missing",
+      "expected_ok": false,
+      "expected_status": "blocked",
+      "expected_category": "evidence_missing"
+    }
+  ],
+  "required_report_fields": [
+    "ok",
+    "status",
+    "entrypoint_count",
+    "entrypoints",
+    "failure_summary",
+    "failures"
+  ]
+}

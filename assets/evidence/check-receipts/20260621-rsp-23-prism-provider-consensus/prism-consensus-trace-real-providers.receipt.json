@@ -1,0 +1,36 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-consensus-trace-real-providers",
+  "command": "runtime/bin/redcap prism-consensus trace --review assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/kimi.review.json --review assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/claude-code.review.json --raw assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/kimi.raw.json --raw assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/claude-code.raw.json --out assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-consensus",
+    "trace",
+    "--review",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/kimi.review.json",
+    "--review",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/claude-code.review.json",
+    "--raw",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/kimi.raw.json",
+    "--raw",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/claude-code.raw.json",
+    "--out",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.037,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-trace-real-providers.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-trace-real-providers.stderr.txt",
+  "stdout_sha256": "a984896c18046693df0264ae2cedb7b5d09326b6e4c38b9e163f358bda635abe",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 5358,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T20:06:53Z",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

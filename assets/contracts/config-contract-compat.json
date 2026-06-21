@@ -1,0 +1,97 @@
+{
+  "schema_id": "redcap-config-contract-compat",
+  "schema_version": 1,
+  "purpose": "约束 RedCap 自有项目级配置、发布清单和合同文件的版本兼容行为，防止未知版本或未知字段被静默接受。",
+  "current_policy_version": 1,
+  "commands": {
+    "check": "runtime/bin/redcap config compat-check",
+    "migrate": "runtime/bin/redcap config migrate --file <path> --dry-run|--apply",
+    "self_check": "runtime/bin/redcap config self-check",
+    "external_probe": "runtime/bin/redcap config external-probe"
+  },
+  "compatibility_matrix": [
+    {
+      "config_type": "project_installation_contract",
+      "schema_id": "redcap-project-installation-contract",
+      "current_schema_version": 1,
+      "supported_versions": [
+        {
+          "schema_version": 1,
+          "action": "direct_read"
+        }
+      ],
+      "unknown_version_action": "reject"
+    },
+    {
+      "config_type": "project_installation_record",
+      "schema_id": "redcap-project-installation",
+      "current_schema_version": 1,
+      "supported_versions": [
+        {
+          "schema_version": 0,
+          "action": "needs_migration",
+          "migration": "add_schema_version_1"
+        },
+        {
+          "schema_version": 1,
+          "action": "direct_read"
+        }
+      ],
+      "unknown_version_action": "reject"
+    },
+    {
+      "config_type": "package_manifest",
+      "schema_id": "redcap-package-manifest",
+      "current_schema_version": 1,
+      "supported_versions": [
+        {
+          "schema_version": 0,
+          "action": "needs_migration",
+          "migration": "add_schema_version_1"
+        },
+        {
+          "schema_version": 1,
+          "action": "direct_read"
+        }
+      ],
+      "unknown_version_action": "reject"
+    }
+  ],
+  "strict_unknown_fields": true,
+  "migration_rules": {
+    "dry_run_required": true,
+    "apply_requires_backup": true,
+    "apply_requires_receipt": true,
+    "manual_internal_edit_required": false
+  },
+  "host_owned_config_exceptions": [
+    {
+      "path": ".codex/hooks.json",
+      "reason": "Codex 宿主配置格式由宿主解析，RedCap 不强行写入私有 schema_version；改由版本化模板和渲染审计约束。",
+      "redcap_control": "assets/contracts/codex-hooks.template.json"
+    },
+    {
+      "path": ".codex/config.toml",
+      "reason": "Codex 宿主配置格式由宿主解析，RedCap 不强行写入私有 schema_version；改由项目安装合同约束只启用 hooks。",
+      "redcap_control": "assets/contracts/project-installation.json"
+    }
+  ],
+  "acceptance": {
+    "positive": [
+      "当前项目安装合同可 direct_read。",
+      "新生成的 .redcap/install.json 带 schema_version 并可 direct_read。",
+      "新生成的 .redcap/install-manifest.json 带 schema_version 并可 direct_read。",
+      "缺少 schema_version 的旧 install.json 必须进入 needs_migration，并可 dry-run 与 apply 迁移。",
+      "project-install init 遇到旧 install.json 必须先迁移并生成备份、回执，再继续写入当前安装记录。",
+      "独立外部探针必须通过真实 project-install init 命令验证旧版本迁移和未知版本拒绝。"
+    ],
+    "negative": [
+      "未知 schema_version 必须 rejected。",
+      "当前版本含未知字段必须 rejected。",
+      "迁移 apply 未生成备份或回执必须失败。",
+      "project-install init 遇到未知 schema_version 必须失败，且不得覆盖原 install.json。",
+      "迁移不得改写 hook_config、codex_config、runtime_bin 等宿主配置引用字段。",
+      "schema_version 异常的 install-manifest 必须被发布包审计拒绝。"
+    ]
+  }
+}

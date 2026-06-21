@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap check --only runtime-health-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T20:35:07+00:00",
+  "executor": "redcap-rsp-24-final-check",
+  "stdout_sha256": "90212e7d0c0c42ab42071175c8fc84c1fb85793635304ab335cc1fab110bb6f4",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/redcap-check-runtime-health-final.receipt.json"
+}

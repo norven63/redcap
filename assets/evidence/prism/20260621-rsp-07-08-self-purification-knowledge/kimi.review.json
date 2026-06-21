@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Files were added and wired (self_purification.py loop-check, knowledge_gateway.py impact-check, contracts, check_runner, redcap CLI), but no executed check output is included. The visible evidence stops at 'implementation draft exists,' not at 'the loop actually ran on a real task and produced a no-promote decision' or 'knowledge hits actually changed a planning decision.'",
+  "main_concern": "RSP-07 的 '自然触发' 被写成显式 loop-check 命令和合同校验，可能把 '可运行的证据生成脚本' 误认为 '自然触发机制'；RSP-08 的 impact-check 依赖自证 trace 字段，尚未证明命中知识会反向改变未来任务的计划/实现。",
+  "top_risks": [
+    "loop-check 和 impact-check 本身可能只是高级 evidence-generator：运行后写出符合合同的 JSON，但不代表宿主工作流会自然调用它们或按它们的结论行动。",
+    "no-promote 决策若由脚本自动产出，可能把 '不晋升' 当作 '完成自我净化'，长期导致沉淀通道事实死亡。",
+    "缺少负向探针的实际运行证据：无法确认 missing_harvest_decision、irrelevant_match 等探针会真实失败而非被代码绕过。"
+  ],
+  "missing_evidence": [
+    "rsp-07-self-purification-loop.json 和 rsp-08-knowledge-impact-trace.json 的实际运行结果（至少一次真实任务后的完整输出）。",
+    "loop-check / impact-check 被 runtime/bin/redcap gate/intake/run-loop 自动调用的调用链证据，而非仅 check_runner 手动接线。",
+    "负向探针的回归失败证据：构造一个无检索、无影响、私人人格泄露的样本，证明检查会失败。"
+  ],
+  "minimum_fix": "在生命周期包里补充一次端到端运行证据：用真实或构造任务触发 redcap run-loop，展示 (1) 任务前 knowledge_gateway 检索、(2) 任务后 candidates 生成、(3) 显式 promote/keep_private/no_promote 决策及理由、(4) 决策被 feed 回 planning/implementation/verification 的字段或注释；同时运行三个负向探针并确认它们失败。只有在此之后才可把 '实现草案' 推进到 'RSP-07/08 验收通过'。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "当前主 AI 没有声明 RSP-07/08 已完成，而是声明 '新增实现草案'，这是健康的未完成信号。但 'changed_reality' 里把 '新增检查' 和 '真实运行' 混为一谈，存在把 '可运行' 滑向 '已生效' 的叙事风险。"
+  },
+  "user_intent_alignment": "部分对齐：用户要的是 '自我净化和知识召回重新进入工作流并真实发挥作用'。新增检查、合同和 CLI 入口是必要条件，但还不够；必须有 '自然触发 + 决策影响实际输出' 的证据才能算满足用户意图。当前更像是在工作流旁边加了监控器，而不是把能力接回工作流本身。"
+}

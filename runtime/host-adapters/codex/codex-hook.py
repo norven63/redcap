@@ -506,6 +506,12 @@ def build_advisory_stop_payload(
             "二次回答必须先直接回答原始用户问题（即用户原始请求）；"
             "Stop（停止前检查钩子）的反馈只是一组修正约束，不是新的用户任务，也不得成为回复主题。"
         ),
+        "primary_response_axis": (
+            "下一次回复的开头必须先满足原始用户问题：用户问状态就先给状态，"
+            "用户要求执行就先给执行动作和结果，用户问原因就先给原因；"
+            "Stop 建议只能修正错误、证据或完成口径，不能成为回复主题。"
+        ),
+        "advisory_is_meta_guidance": True,
         "do_not_answer_the_hook": True,
         "checker_source": checker_source,
         "hot_path_full_prism": False,
@@ -542,6 +548,10 @@ def validate_advisory_stop_payload(advisory: dict[str, Any]) -> list[str]:
         failures.append("current_round invalid")
     if not isinstance(advisory.get("recovery_focus_anchor"), str) or "用户原始请求" not in advisory["recovery_focus_anchor"]:
         failures.append("recovery_focus_anchor must mention the original user request")
+    if not isinstance(advisory.get("primary_response_axis"), str) or "开头" not in advisory["primary_response_axis"]:
+        failures.append("primary_response_axis must tell the next answer to begin from the original user request")
+    if advisory.get("advisory_is_meta_guidance") is not True:
+        failures.append("advisory_is_meta_guidance must be true")
     return failures
 
 
@@ -558,9 +568,10 @@ def advisory_stop_reason(advisory: dict[str, Any]) -> str:
     if not details:
         details.append("unknown：Stop（停止前检查钩子）发现问题，但没有生成可用修正项。")
     return (
-        "RedCap（当前复活工程）Stop（停止前检查钩子）给出建议型收口评审。"
-        "这不是新的用户任务；请只按下列约束修正原回答或继续原任务。"
-        f"原始任务：{advisory.get('original_task_excerpt')}。"
+        f"请先直接回应原始用户问题：{advisory.get('original_task_excerpt')}。"
+        f"应答主轴：{advisory.get('primary_response_axis')}。"
+        "以下是 RedCap（当前复活工程）Stop（停止前检查钩子）的建议型收口评审，"
+        "它只是元指导和修正约束，不是新的用户任务。"
         f"修正约束：{'；'.join(details)}。"
         f"恢复锚点：{advisory.get('recovery_focus_anchor')}。"
         f"修正轮次：{advisory.get('current_round')}/{advisory.get('max_rounds')}。"
@@ -584,6 +595,8 @@ def advisory_marker_updates(advisory: dict[str, Any]) -> dict[str, Any]:
         "advisory_stop_checker_source": advisory.get("checker_source"),
         "advisory_stop_cap_may_override": advisory.get("cap_may_override"),
         "advisory_stop_do_not_answer_the_hook": advisory.get("do_not_answer_the_hook"),
+        "advisory_stop_primary_response_axis": advisory.get("primary_response_axis"),
+        "advisory_stop_is_meta_guidance": advisory.get("advisory_is_meta_guidance"),
         "advisory_stop_original_task_sha256": hashlib.sha256(
             str(advisory.get("original_task_excerpt") or "").encode("utf-8")
         ).hexdigest(),
@@ -2743,6 +2756,8 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 failures.append("anchor Stop fixture should block a required prompt without action evidence")
             if anchor_prompt_text not in reason:
                 failures.append("anchor Stop block reason is missing the original task excerpt")
+            if not reason.startswith("请先直接回应原始用户问题："):
+                failures.append("anchor Stop block reason must begin from the original user question")
             if "二次回答必须先直接回答原始用户问题" not in reason or "不得成为回复主题" not in reason:
                 failures.append("anchor Stop block reason is missing the re-anchor recovery rule")
         anchor_stop_marker = load_self_check_marker(
@@ -2764,6 +2779,10 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("anchor Stop marker must preserve Cap arbitration")
         if anchor_stop_marker.get("advisory_stop_do_not_answer_the_hook") is not True:
             failures.append("anchor Stop marker must forbid answering the hook itself")
+        if anchor_stop_marker.get("advisory_stop_is_meta_guidance") is not True:
+            failures.append("anchor Stop marker must mark the advisory as meta guidance")
+        if not isinstance(anchor_stop_marker.get("advisory_stop_primary_response_axis"), str):
+            failures.append("anchor Stop marker must record the primary response axis")
         if anchor_stop_marker.get("advisory_stop_hot_path_full_prism") is not False:
             failures.append("anchor Stop marker must record that full Prism is not used in the hot path")
         if anchor_stop_marker.get("advisory_stop_validation_failures") != []:

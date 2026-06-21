@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "参数级兼容与合同文件自身的防漂移机制尚未在设计中明确，可能导致 RSP-19 的检查范围不完整或在长期演进中失效。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "合同-检查器自指循环风险：assets/contracts/cli-surface-compat.json 定义别名集合，runtime/core/cli_surface.py 验证该集合，两者在同一轮变更中由同一 agent 创建。除非合同中的别名集合来自对现有 runtime/bin/redcap 的独立提取或外部消费者记录，否则检查器只是验证自己的假设，不构成真正的兼容性守卫。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在编码实现前补充三点：(a) 明确本轮是否覆盖参数级兼容，建议至少覆盖帮助文本中承诺的常用参数别名；(b) 建立合同文件变更与 runtime/bin/redcap 路由变更的强制同步机制（如 PR 检查单、自动化 diff 或预提交钩子）；(c) 在负向 fixture 中新增“未登记的新命令被添加”和“帮助文本语义变化”两类渐进式漂移探针。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在编写合同之前，先从 runtime/bin/redcap 中机械提取当前所有一级命令、子命令路由和别名映射，将该提取结果作为合同的初始基线（不可手工删减）。合同应区分「已观察到的当前状态」和「必须保留的兼容承诺」两层。负向 fixture 应通过临时篡改 runtime/bin/redcap 的 case 分支或 help 文本来实现，而非仅修改合同 JSON 文件。"
+    }
+  ],
+  "anti_loop_detected": true
+}

@@ -1,0 +1,29 @@
+{
+  "schema_id": "redcap-self-purification-loop-contract",
+  "version": 1,
+  "rsp": "RSP-07",
+  "purpose": "证明自我净化不是尘封能力：真实任务后必须触发候选抽取、评审决策、晋升或 no-promote，并保留私人人格边界证据。",
+  "required_run_loop_outputs": [
+    "knowledge-retrieval-evidence.json",
+    "self-purification-candidates.json",
+    "runner-self-purification-resolution.json",
+    "persona-distillation-decision.json"
+  ],
+  "required_candidate_decision": true,
+  "required_natural_history_samples": 2,
+  "historical_sample_independence": {
+    "required": true,
+    "current_task_id_must_be_excluded": true,
+    "sample_lifecycle_mtime_must_precede_task_start": true,
+    "sample_knowledge_evidence_mtime_must_precede_task_start_when_present": true
+  },
+  "no_promote_requires_reason": true,
+  "persona_private_body_forbidden": true,
+  "negative_probes": [
+    "missing_harvest_decision",
+    "missing_retrieval_decision_effects",
+    "persona_private_body_leak",
+    "missing_natural_trigger_history"
+  ],
+  "completion_boundary": "本合同只覆盖 RSP-07 当前自我净化自然触发验收，不声明所有未来任务都会自动沉淀，也不声明 RedCap 完整复活。"
+}

@@ -1,0 +1,30 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "advisory-stop-health-invalid-healthy-fails",
+  "command": "runtime/bin/redcap advisory-stop health-check --fixture invalid-degraded-as-healthy --expect-state healthy",
+  "argv": [
+    "runtime/bin/redcap",
+    "advisory-stop",
+    "health-check",
+    "--fixture",
+    "invalid-degraded-as-healthy",
+    "--expect-state",
+    "healthy"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_codes": [
+    1
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.039,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-health-invalid-healthy-fails.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-health-invalid-healthy-fails.stderr.txt",
+  "stdout_sha256": "d02ac4697c104643b123897883a8071157919e949718017feae819268fd3c264",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 727,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T17:54:54+00:00",
+  "executor": "cap",
+  "expected_exit_code": 1
+}

@@ -1,0 +1,24 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "check-knowledge-quality-self-check",
+  "command": "runtime/bin/redcap check --only knowledge-quality-self-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "knowledge-quality-self-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.155,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-26-knowledge-quality/check-knowledge-quality-self-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-26-knowledge-quality/check-knowledge-quality-self-check.stderr.txt",
+  "stdout_sha256": "2226316ca9cd1a6e5d917b1a9a80f23f2a03d9fe69eacfce71ad655a6a12e29d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 271,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T03:23:22+00:00",
+  "executor": "cap"
+}

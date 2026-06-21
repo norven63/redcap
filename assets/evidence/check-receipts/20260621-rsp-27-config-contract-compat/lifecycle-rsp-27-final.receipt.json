@@ -1,0 +1,19 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "lifecycle-rsp-27-final",
+  "argv": [
+    "runtime/bin/redcap",
+    "lifecycle",
+    "check",
+    "--packet",
+    "assets/evidence/lifecycle/20260621-rsp-27-config-contract-compat.json"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T21:01:46+00:00",
+  "ended_at": "2026-06-20T21:01:48+00:00",
+  "elapsed_seconds": 1.679,
+  "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_DEVELOPMENT_LIFECYCLE_OK\n",
+  "stderr_tail": ""
+}

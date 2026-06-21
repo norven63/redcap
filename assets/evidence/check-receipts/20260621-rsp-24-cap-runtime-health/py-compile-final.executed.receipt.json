@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m py_compile runtime/core/cap_runtime_health.py runtime/core/cap_runtime_health_external_probe.py runtime/core/cap_runtime_health_divergence_probe.py runtime/core/check_runner.py",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T20:35:01+00:00",
+  "executor": "redcap-rsp-24-final-check",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/py-compile-final.receipt.json"
+}

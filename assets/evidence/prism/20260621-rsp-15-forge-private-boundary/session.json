@@ -1,0 +1,29 @@
+{
+  "convergence": {
+    "reason": "Concerns accepted and resolved by implemented boundary checker, ledger hash chain, and negative probes.",
+    "resolution": "assets/evidence/prism/20260621-rsp-15-forge-private-boundary/resolution.json",
+    "state": "main-decided"
+  },
+  "created_at": "2026-06-20T21:34:16+00:00",
+  "max_rounds_per_provider": 3,
+  "providers": {
+    "claude-code": {
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-15-forge-private-boundary/claude-code.review.json",
+      "round_count": 1,
+      "session_handle": "8ba33bf3-166d-40b2-ad99-843e39ed7d07",
+      "status": "closed"
+    },
+    "kimi": {
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-15-forge-private-boundary/kimi.review.json",
+      "round_count": 1,
+      "session_handle": "session_9df03333-e628-4bf1-b9f2-f491e0fdcf9d",
+      "status": "closed"
+    }
+  },
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-15-forge-private-boundary",
+  "schema_id": "prism-session-manifest",
+  "status": "main-decided",
+  "task_id": "20260621-rsp-15-forge-private-boundary",
+  "task_started_at": "2026-06-20T21:34:16+00:00",
+  "updated_at": "2026-06-20T21:43:26+00:00"
+}

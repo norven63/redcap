@@ -1,0 +1,25 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "py-compile",
+  "command": "python3 -m py_compile runtime/core/loom_runtime.py runtime/core/check_runner.py",
+  "argv": [
+    "python3",
+    "-m",
+    "py_compile",
+    "runtime/core/loom_runtime.py",
+    "runtime/core/check_runner.py"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.149,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/py-compile.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/py-compile.stderr.txt",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 0,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T03:41:58+00:00",
+  "executor": "cap"
+}

@@ -1,0 +1,13 @@
+{
+  "schema_id": "redcap-e2e-human-report-contract",
+  "rsp": "RSP-14",
+  "command": "runtime/bin/redcap complete-revival-e2e report-check",
+  "positive_acceptance": [
+    "E2E 报告按能力项输出 passed、failed、not_triggered",
+    "每个能力项带原因和证据引用"
+  ],
+  "negative_probe": [
+    "只报告页面可访问且缺少证据引用不得通过"
+  ],
+  "evidence_file": "assets/evidence/rsp/rsp-14-e2e-human-report.json"
+}

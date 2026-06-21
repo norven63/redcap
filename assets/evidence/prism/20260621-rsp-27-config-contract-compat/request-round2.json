@@ -1,0 +1,109 @@
+{
+  "task": "Round 2 review RSP-27 after accepting Prism concerns.",
+  "user_intent": "Norven requires RedCap to prevent project-level .redcap configs, hook-related config, contracts, and runtime state from silently drifting across versions. Unknown versions and unknown fields must not pass silently; old versions must be migrated with dry-run, backup, and receipt or explicitly rejected.",
+  "main_claim": "RSP-27 round 2 fixes accepted the provider concerns: project-install init now checks existing install.json before mutating project config, auto-migrates legacy missing schema_version with backup and receipt, rejects unknown schema_version without overwriting install.json, and RSP-27 evidence now includes direct project-install integration probes plus executed-check receipts.",
+  "changed_reality": [
+    "Added assets/contracts/config-contract-compat.json.",
+    "Added runtime/core/config_contract_compat.py.",
+    "Added runtime/bin/redcap config compat-check|migrate|self-check.",
+    "Added runtime/core/check_runner.py step config-contract-compat-check.",
+    "Updated runtime/core/project_install.py to write schema_version to install-manifest.json and install.json, and audit install-manifest schema_version.",
+    "Generated assets/evidence/rsp/rsp-27-config-contract-compat.json and assets/evidence/rsp/rsp-27-claim.json.",
+    "Generated executed-check receipts under assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/.",
+    "Updated runtime/core/project_install.py: existing install.json compatibility guard now runs before init writes state, hooks, config, or current install.json.",
+    "Updated runtime/core/config_contract_compat.py: RSP-27 report now includes project-install init legacy migration and unknown-version rejection integration probes.",
+    "Updated runtime/core/config_contract_compat.py: migration-preserves-host-config-fields probe verifies hook_config, codex_config, and runtime_bin remain unchanged.",
+    "Updated assets/contracts/config-contract-compat.json and assets/evidence/rsp/rsp-27-claim.json to include these acceptance items.",
+    "Generated round2 executed-check receipts under assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/."
+  ],
+  "evidence": [
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/config-contract-compat.json",
+      "summary": "RSP-27 config compatibility contract with matrix, migration rules, host-owned exceptions, and acceptance criteria."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/config_contract_compat.py",
+      "summary": "Executable checker and migration command."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/project_install.py",
+      "summary": "Project installation now writes and audits schema_version for RedCap-owned generated configs."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap",
+      "summary": "Command entry for config compat-check, migrate, self-check."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "Aggregate check step config-contract-compat-check."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-27-config-contract-compat.json",
+      "summary": "Current RSP-27 positive and negative acceptance evidence."
+    },
+    {
+      "kind": "claim",
+      "reference": "assets/evidence/rsp/rsp-27-claim.json",
+      "summary": "Scoped RSP-27 completion claim excluding RedCap parent completion."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-final.executed.receipt.json",
+      "summary": "RSP contract check receipt for scoped claim."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-compat-check-round2.executed.receipt.json",
+      "summary": "Round2 RSP-27 compat evidence generation receipt."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/project-install-self-check-round2.executed.receipt.json",
+      "summary": "Round2 project-install self-check with legacy migration and unknown-version rejection probes."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-round2.executed.receipt.json",
+      "summary": "Round2 RSP contract check receipt."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "Re-check whether the previous circularity concern is resolved by direct integration probes and executed-check receipts.",
+    "Re-check whether project-install init rejects unknown schema_version before overwriting install.json.",
+    "Re-check whether legacy missing schema_version is migrated with backup and receipt.",
+    "Re-check whether migration preserves host config reference fields: hook_config, codex_config, runtime_bin.",
+    "If still concern/block, provide a concrete minimum fix."
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review RSP-27 implementation evidence only.",
+    "allowed_paths": [
+      "assets/contracts/config-contract-compat.json",
+      "runtime/core/config_contract_compat.py",
+      "runtime/core/project_install.py",
+      "runtime/bin/redcap",
+      "runtime/core/check_runner.py",
+      "assets/evidence/rsp/rsp-27-config-contract-compat.json",
+      "assets/evidence/rsp/rsp-27-claim.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-compat-check-round2.executed.receipt.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/project-install-self-check-round2.executed.receipt.json",
+      "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-round2.executed.receipt.json"
+    ],
+    "max_files": 10,
+    "max_bytes_per_file": 40000,
+    "max_total_bytes": 160000
+  }
+}

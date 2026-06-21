@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "loom-session-fixture",
+  "command": "runtime/bin/redcap loom session-check --fixture --out assets/evidence/rsp/rsp-06-loom-session-continuity.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "loom",
+    "session-check",
+    "--fixture",
+    "--out",
+    "assets/evidence/rsp/rsp-06-loom-session-continuity.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.996,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/loom-session-fixture.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/loom-session-fixture.stderr.txt",
+  "stdout_sha256": "bb569006f4b6ec01ac65f216713aea665b70d315648f4ea330b1654a1aeaa162",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1916,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T03:42:01+00:00",
+  "executor": "cap"
+}

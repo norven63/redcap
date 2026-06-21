@@ -1,0 +1,30 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "advisory-stop-health-blocked-expect",
+  "command": "runtime/bin/redcap advisory-stop health-check --fixture blocked --expect-state blocked",
+  "argv": [
+    "runtime/bin/redcap",
+    "advisory-stop",
+    "health-check",
+    "--fixture",
+    "blocked",
+    "--expect-state",
+    "blocked"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.038,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-health-blocked-expect.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-health-blocked-expect.stderr.txt",
+  "stdout_sha256": "af251cbf74ac35441616e862875a6045672e2594f6c9d2d33a1966d3cd2671ba",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 788,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T17:54:54+00:00",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

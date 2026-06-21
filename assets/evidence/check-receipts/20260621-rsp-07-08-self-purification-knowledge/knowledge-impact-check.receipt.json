@@ -1,0 +1,23 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "knowledge-impact-check",
+  "command": "runtime/bin/redcap knowledge-gateway impact-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "knowledge-gateway",
+    "impact-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 40.826,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/knowledge-impact-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/knowledge-impact-check.stderr.txt",
+  "stdout_sha256": "dee68e1854c5b174932f25baf5c4d4223133a32969d04fa4845d66a0401422bf",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 15142,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T05:20:49+00:00",
+  "executor": "Cap"
+}

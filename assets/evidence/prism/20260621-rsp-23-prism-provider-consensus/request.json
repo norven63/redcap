@@ -1,0 +1,63 @@
+{
+  "task": "Review RSP-23 Prism provider consensus implementation.",
+  "user_intent": "Norven requires RedCap to stop blindly obeying or silently dismissing Prism（棱镜，异构 AI 评审助手）providers. Provider disagreement must be explicit, bounded, reviewable, and executable.",
+  "main_claim": "RSP-23 is implemented within its own scope because RedCap now has a dedicated contract, command, aggregate check entry, positive consensus checks, negative disagreement probes, RSP completion claim, and executed-check receipts.",
+  "changed_reality": [
+    "Added assets/contracts/prism-provider-consensus.json.",
+    "Added runtime/core/prism_provider_consensus.py.",
+    "Added runtime/bin/redcap prism-consensus check|self-check.",
+    "Added runtime/core/check_runner.py step prism-provider-consensus-check.",
+    "Generated assets/evidence/rsp/rsp-23-prism-provider-consensus.json.",
+    "Generated assets/evidence/rsp/rsp-23-claim.json.",
+    "Generated executed-check receipts under assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/."
+  ],
+  "evidence": [
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/prism-provider-consensus.json",
+      "summary": "RSP-23 provider consensus, disagreement, rebuttal, and forbidden parent-claim contract."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/prism_provider_consensus.py",
+      "summary": "Executable positive and negative probes for provider consensus handling."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap",
+      "summary": "Command entry for prism-consensus."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "Aggregate check step prism-provider-consensus-check."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-23-prism-provider-consensus.json",
+      "summary": "Current RSP-23 acceptance evidence."
+    },
+    {
+      "kind": "claim",
+      "reference": "assets/evidence/rsp/rsp-23-claim.json",
+      "summary": "Scoped RSP-23 completion claim, excluding RedCap parent goal completion."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/rsp-contract-rsp-23.receipt.json",
+      "summary": "RSP contract check receipt for the scoped claim."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "Do not suggest adding providers beyond Kimi and Claude Code without Norven approval.",
+    "Concern or block findings must identify a concrete minimum fix.",
+    "Check whether negative probes truly fail for the intended reasons and whether evidence is sufficient to close RSP-23 only."
+  ]
+}

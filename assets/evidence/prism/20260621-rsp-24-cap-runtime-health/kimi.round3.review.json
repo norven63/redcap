@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Real progress: a second code path exists, the raw 35-cell matrix is exposed, and a reversible filesystem mutation temporarily hid loom_runtime.py while both the main checker and independent probe observed command_missing/blocked. This is no longer pure documentation. However, only one entrypoint and one failure category have been validated by an actual mutation.",
+  "main_concern": "The reversible divergence run validates only loom_runtime.py under the command_missing category. The other four failure categories and six entrypoints are covered only by the injected_failure_matrix, whose failures may be injected at a different layer than the real divergence test. This leaves a generalization gap: the system has not demonstrated that it correctly classifies a real broken path for any other category.",
+  "top_risks": [
+    "provider_unavailable, timeout, malformed_output, or unexpected_error may not behave like command_missing in a real runtime mutation.",
+    "The matrix injection layer may differ from the filesystem mutation layer, so matrix 'probe_passed' may not imply real-runtime detection.",
+    "Automated regression is missing; a future change could silently break classification logic without re-running the divergence test."
+  ],
+  "missing_evidence": [
+    "A real divergence test for at least one non-command_missing failure category.",
+    "Evidence that matrix injections for the remaining failure categories actually cause the entrypoints to fail at the runtime layer.",
+    "CI or scheduled re-run of the divergence probe so the evidence does not become stale."
+  ],
+  "minimum_fix": "Add one reversible divergence test that exercises a non-command_missing category—e.g., provider_unavailable by pointing a provider entrypoint at an unreachable endpoint, or timeout by forcing a slow response—and verify both the main checker and independent probe classify it correctly.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The AI has escalated from documents → independent probe → raw matrix → divergence test. This is genuine progress, but the loop could stall if the next round only adds more matrix cells or receipts instead of another real mutation category."
+  },
+  "user_intent_alignment": "Much stronger. The system now has independent cross-validation and a real failure observation, which aligns with the intent to avoid self-referential proof. It does not yet fully prove 'without hiding broken paths' because most failure categories lack a real mutation test."
+}

@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The design can satisfy itself with contracts and check commands that look like enforcement, while the hardest negative probe—a single AI pretending to be multiple roles—cannot be reliably detected from self-reported manifest fields alone. Without host-level codex-cli process/session isolation evidence, the check may only verify that session_ids are syntactically distinct, not that distinct AI sessions actually carried each role."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The single-AI-posing-as-multiple-roles negative probe is architecturally underspecified. Session_id isolation alone cannot detect whether a single AI created separate sessions for different roles sequentially — the check would pass (different session_ids per role) while the underlying concern (no independent AI review) remains unaddressed. The design needs a cross-session identity binding mechanism (e.g., role-attestation by independent provider, or cryptographic nonce handoff between roles) to make this probe meaningful rather than trivially passable."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before any completion claim: (1) produce the two contract drafts and a positive fixture plus at least one negative fixture per failure mode; (2) run the new check commands and verify each fails on its matching negative fixture and passes on the positive fixture; (3) write the completion claim to explicitly state that RSP-05/RSP-06 is closed only for the fixture/runtime evidence loop, and that real codex-cli multi-project role isolation remains future work. If host-level enforcement is impossible this round, the contract must declare that limitation and the check must still reject manifest-level violations."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before implementing, specify the cross-role identity binding: add a loom_role_nonce field to the session manifest that each role must receive from the upstream role and pass to the downstream role, signed with a provider-specific key. The role-chain-check validates the nonce chain — if two roles share a nonce or a nonce is absent, the single-AI probe fires. Also separate the handoff evidence generation path from the check path (e.g., require the downstream role to validate upstream artifacts, not just the runtime self-checking)."
+    }
+  ],
+  "anti_loop_detected": true
+}

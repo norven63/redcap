@@ -1,0 +1,23 @@
+{
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "如果 provider_health.py 的自检逻辑和 advisory_stop.py 的健康检查使用不同分类体系，则两个模块对同一 provider 可能产生矛盾判定——advisory_stop 说不可用而 provider_health 说健康，RedCap 决策层将面临选信哪一个的循环。"
+  },
+  "confidence": "low",
+  "main_concern": "无法读取任何授权文件，所有 6 项 changed_reality 声明均未经独立验证。按 Prism 协议，无法读取的授权文件视为缺失证据而非证伪。但基于 claim 结构的内部一致性分析，最大风险是'会话续接'声明——在 live-report 中仅做一次 kimi -p 调用不能等同于证明会话续接可用。此外，10 类失败分类可能包含重命名重复项，self-check receipt 可能只证明模块可导入而非行为正确。",
+  "minimum_fix": "在 evidence 目录下提供可直接 diff 的 before/after 快照：(1) 执行 redcap provider-health live-check 的完整 stdout 输出；(2) live-report JSON 中会话续接段必须包含 session_id、断开前后的两次调用结果及状态比对，而非仅记录路径和版本号；(3) 人工抽查 provider-health.json 中 10 类失败分类的去重校验——确认没有两个分类指向同一个底层异常类型。",
+  "missing_evidence": [
+    "授权文件均不可读取（provider-health.json、provider_health.py、live-report、receipt等），无法进行实现级验证",
+    "live-report 中会话续接证据的具体内容：是否包含 session_id、断开前后两次调用的结果比对、状态恢复确认",
+    "provider-health.json 中十类失败分类的枚举定义：是否独立去重，每类是否有 retryable 标志和退避建议"
+  ],
+  "provider": "claude-code",
+  "reality_delta": "主 AI 声称 6 项 changed_reality 均已实现，包括合同、模块、CLI 集成、聚合集成和两份证据文件。然而所有授权文件无法读取，无法确认任何一项声明。从 claim 结构推断：会话续接（最高难度项）在 live-report 中可能仅体现为单次调用而非真实断线重连；十类失败分类可能在合同中被重命名而非真正去重；self-check receipt 可能仅证明模块存在而非行为正确。行为变更是否真实发生，当前不可判定。",
+  "top_risks": [
+    "会话续接证据可能名不副实：若 live-report 仅包含 kimi -p 单次调用结果，则'会话续接已验证'为虚假声明",
+    "十类失败分类可能含重命名重复：若 timeout 被拆为 connect_timeout/read_timeout/write_timeout 但映射到同一异常基类，则实际分类粒度仍为粗粒度",
+    "证据文件数量膨胀掩盖单一事实源：rsp-03-claim.json、rsp-03-provider-health.json 和 receipt 可能循环引用同一结论，形成纸面证据闭环"
+  ],
+  "user_intent_alignment": "unclear",
+  "verdict": "concern"
+}

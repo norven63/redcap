@@ -1,0 +1,56 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-27-config-contract-compat",
+  "merge_path": "assets/evidence/prism/20260621-rsp-27-config-contract-compat/merge-round3.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-27-config-contract-compat/kimi.round3.review.json",
+    "assets/evidence/prism/20260621-rsp-27-config-contract-compat/claude-code.round3.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 正确：RSP-27 不能只依赖 config_contract_compat.py 自报集成探针。Cap 已新增独立外部文件系统探针，通过真实 project-install package、init、audit-package 命令验证旧版本迁移、未知版本拒绝、install.json 不被覆盖、.codex 不被创建，以及坏 install-manifest 被拒绝。",
+      "implementation_evidence": [
+        "runtime/core/config_contract_compat_external_probe.py",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py",
+        "assets/contracts/config-contract-compat.json",
+        "runtime/core/project_install.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-external-probe-round4.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/redcap-check-config-external-probe-round4.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-round4.executed.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 正确：原验证器与被验证逻辑存在结构性自指。Cap 已新增 standalone 外部探针脚本，不在 config_contract_compat.py 内，且探针检查真实文件系统结果：备份存在、备份字节与原 install.json 一致、迁移后 schema_version 为 1、未知版本保持 install.json 字节不变、坏 manifest 被审计拒绝。",
+      "implementation_evidence": [
+        "runtime/core/config_contract_compat_external_probe.py",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py",
+        "assets/contracts/config-contract-compat.json",
+        "runtime/core/project_install.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-external-probe-round4.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/redcap-check-config-external-probe-round4.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/py-compile-round4.executed.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-round4.executed.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both round-3 provider concerns were accepted and mapped to an independent external filesystem CLI probe plus round4 executed-check receipts. This resolves RSP-27 only; it does not close the residual queue, second E2E, production release, or RedCap 完整复活."
+  }
+}

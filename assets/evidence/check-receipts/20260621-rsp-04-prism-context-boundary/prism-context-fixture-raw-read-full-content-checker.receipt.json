@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-context-fixture-raw-read-full-content-checker",
+  "command": "runtime/bin/redcap prism-context check --fixture raw-read-full-content-checker",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-context",
+    "check",
+    "--fixture",
+    "raw-read-full-content-checker"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.164,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-fixture-raw-read-full-content-checker.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-fixture-raw-read-full-content-checker.stderr.txt",
+  "stdout_sha256": "e59ea5ee3ef92efd739974bbc785875ae7f0c1be39163c8b3acd6f4a8ae560bb",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1349,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:10:18+00:00",
+  "executor": "cap"
+}

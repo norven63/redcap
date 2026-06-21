@@ -1,0 +1,44 @@
+{
+  "task": "RSP-03 provider 健康巡检设计评审",
+  "task_id": "20260621-rsp-03-provider-health",
+  "risk_level": "medium",
+  "user_intent": "实施 RSP-03：为 Kimi 调用路径、超时、会话续接和限定文件读取建立可验证健康巡检，同时不禁止必要文件读取，不把真实 provider 波动写成 RedCap 永久失败。",
+  "main_claim": "计划新增 provider-health 离线检查与真实 Kimi live-check：离线检查覆盖合同和负向分类，常规聚合不依赖外部 provider；live-check 在 RSP-03 验收时执行 kimi -p、kimi -r 和限定文件读取，并生成分类报告。",
+  "changed_reality": [
+    "准备新增 assets/contracts/provider-health.json 定义探针、分类和预算。",
+    "准备新增 runtime/core/provider_health.py，提供 check、self-check、live-check。",
+    "准备把 provider-health check 接入 runtime/bin/redcap 和聚合检查。",
+    "准备生成 RSP-03 claim/evidence 和生命周期证据。"
+  ],
+  "review_mode": "design_review",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "paths": [
+      "assets/docs/residual-todo-final-solution-plan.md",
+      "runtime/prism/bin/prism-dispatch",
+      "runtime/core/check_runner.py",
+      "runtime/bin/redcap",
+      "assets/evidence/lifecycle/20260621-rsp-03-provider-health.json"
+    ],
+    "max_files": 8,
+    "max_bytes_per_file": 80000,
+    "max_total_bytes": 240000,
+    "purpose": "评审 RSP-03 provider 健康巡检是否能正面解决路径、超时、会话续接、限定文件读取和失败分类问题。"
+  },
+  "known_constraints": [
+    "不禁止 Kimi 读取必要文件。",
+    "常规 redcap check 不能因为真实 provider 网络波动频繁失败。",
+    "live-check 必须能产生当前机器真实验证证据。",
+    "stdout 只应承载摘要、路径和结论，细节落文件。",
+    "本条只关闭 RSP-03 当前机器当前版本验证范围，不声明 Prism 长期跨机器稳定。"
+  ],
+  "questions_for_prism": [
+    "离线 check + live-check 的双层设计是否符合 RSP-03，不属于降级？",
+    "失败分类至少应该覆盖哪些字段，才能避免把超时都归为 provider 不可用？",
+    "限定文件读取的预算和证据应该如何设计，才能避免 stdout 上下文膨胀？"
+  ]
+}

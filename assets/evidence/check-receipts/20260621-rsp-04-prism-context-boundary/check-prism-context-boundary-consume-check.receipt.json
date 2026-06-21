@@ -1,0 +1,25 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "check-prism-context-boundary-consume-check",
+  "command": "runtime/bin/redcap check --only prism-context-boundary-consume-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "prism-context-boundary-consume-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.197,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/check-prism-context-boundary-consume-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/check-prism-context-boundary-consume-check.stderr.txt",
+  "stdout_sha256": "348742f3c88a5f88cd95ad5a48177b0fb78af12dbc55c346f3a37438beda55d2",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 287,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:10:17+00:00",
+  "executor": "cap"
+}

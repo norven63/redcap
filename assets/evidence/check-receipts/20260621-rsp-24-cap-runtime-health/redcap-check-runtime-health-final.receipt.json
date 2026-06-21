@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "redcap-check-runtime-health-final",
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "runtime-health-check"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:35:06+00:00",
+  "ended_at": "2026-06-20T20:35:07+00:00",
+  "elapsed_seconds": 0.962,
+  "stdout_tail": "REDCAP_CHECK_STEP_START name=runtime-health-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=runtime-health-check elapsed_seconds=0.924\n{\n  \"schema_id\": \"redcap-check-summary\",\n  \"ok\": true,\n  \"completed_steps\": 1,\n  \"total_steps\": 1\n}\nREDCAP_CHECK_OK\n",
+  "stderr_tail": ""
+}

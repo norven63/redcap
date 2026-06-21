@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "确实新增了可读证据摘录和汇总文件，合同也补上了 match_signals，live-report 声称增加了 session_continuity。但这些关键内容在 bundle 里仍以单行 JSON 转义字符串呈现，超过 2000 字符后被截断，Prism 无法实际阅读 session_continuity、完整分类、源码摘录和聚合 receipt。因此“可读证据刷新”尚未真正解决可审阅性问题。",
+  "main_concern": "主 AI 把“生成了可读摘录和汇总”当作 concern 已解决，但 Prism 视野中的 bundle 仍被同一行长字符串截断所遮蔽。这属于典型的“我们生成了证据即完成”式叙事，掩盖了证据仍无法被异构 reviewer 独立审阅的事实。",
+  "top_risks": [
+    "session_continuity、bounded_file_read 和 match_signals 校验逻辑在 bundle 中不可见，无法确认它们是否真实落地或只是元数据声明。",
+    "provider-health-check 与 check-provider-health-check 的 receipt 仍未出现在 bundle 中，常规 redcap check 是否真正与 live-check 解耦仍缺乏直接证明。",
+    "failure_categories 后段（session_resume_failure、file_budget_exceeded、unknown 等）的 match_signals 在 bundle 中被截断，去重校验的实际效果无法验证。"
+  ],
+  "missing_evidence": [
+    "rsp-03-prism-readable-excerpts.md 的完整未截断内容，特别是 session_continuity 前后对比、marker_comparison、聚合检查命令行和核心源码摘录。",
+    "provider_health.py 中 match_signals 去重校验、session_continuity 构造、bounded_file_read 探针的实现片段。",
+    "provider-health-check.receipt.json 与 check-provider-health-check.receipt.json，用于直接证明常规聚合检查不调用真实 Kimi live-check。"
+  ],
+  "minimum_fix": "将 Prism 可读摘录以真正的多行 Markdown/JSON 形式重新打包，使每行不超过 120 字符，或直接把关键片段（session_continuity、完整 failure_categories、match_signals 校验源码、聚合 receipt 命令）写入独立的短文件并纳入 bundle。在 Prism 能完整阅读之前，不应宣布 RSP-03 证据刷新完成。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "当前 live-check 在政策层面已声明不纳入聚合且 max_retries=1，具备反循环设计；但如果常规聚合 receipt 缺失，就无法排除“某次 redcap check 仍触发 live provider”导致的验收循环。需要 receipt 作为反循环的实际约束。"
+  },
+  "user_intent_alignment": "补强方向与用户意图一致：用户要求复核可读性、会话续接证明和分类去重。但这些补强成果目前对 Prism 不可读，导致无法确认是否真正满足用户要求；未发生明显范围漂移。"
+}

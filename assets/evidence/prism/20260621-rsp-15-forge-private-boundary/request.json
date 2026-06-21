@@ -1,0 +1,66 @@
+{
+  "authorized_files": [
+    "assets/docs/residual-todo-final-solution-plan.md",
+    "assets/contracts/redcap-forge.json",
+    "assets/knowledge/arsenal/index.json",
+    "assets/knowledge/arsenal/README.md",
+    "assets/knowledge/arsenal/anti-empty-completion.md",
+    "assets/knowledge/arsenal/loom-role-workflow.md",
+    "assets/knowledge/arsenal/project-runtime-boundary.md",
+    "runtime/core/redcap_forge.py",
+    "runtime/bin/redcap",
+    "runtime/core/check_runner.py",
+    "assets/evidence/lifecycle/20260621-rsp-15-forge-private-boundary.json"
+  ],
+  "changed_reality": [
+    "计划新增 forge-private-boundary 合同。",
+    "计划新增 promotion-ledger 追加式晋升账本。",
+    "计划新增 forge boundary-check 入口，检查正文目录、正文隐私标记、source_refs、ledger 覆盖和负向样本。"
+  ],
+  "created_at": "2026-06-20T21:34:16+00:00",
+  "expected_response_schema": {
+    "confidence": "low|medium|high",
+    "main_concern": "string",
+    "minimum_fix": "string",
+    "missing_evidence": [
+      "string"
+    ],
+    "provider": "string",
+    "top_risks": [
+      "string"
+    ],
+    "user_intent_alignment": "string",
+    "verdict": "pass|concern|block"
+  },
+  "main_claim": "RSP-15 的实现方案将把 Forge 与 redcap-arsenal 公共/私有边界从基础索引检查升级为可运行、可验证的边界检查器。",
+  "non_goals": [
+    "不晋升新的真实经验条目。",
+    "不读取或复制 Cap 私人人格正文。",
+    "不把私有身份材料写入公共仓库。",
+    "不关闭 RSP-26、二轮 E2E 或终局父目标。"
+  ],
+  "proposed_changes": [
+    "新增 assets/contracts/forge-private-boundary.json，定义公共晋升边界。",
+    "新增 assets/knowledge/arsenal/promotion-ledger.jsonl，要求 promoted 条目有追加式晋升记录。",
+    "扩展 runtime/core/redcap_forge.py：检查正文目录、正文隐私标记、source_refs、ledger 覆盖、重复条目和负向样本。",
+    "新增 runtime/bin/redcap forge boundary-check --out <path>，生成 RSP-15 证据。",
+    "更新 check_runner，把 boundary-check 纳入 Forge 检查链。"
+  ],
+  "questions": [
+    "方案是否足以解决 RSP-15，而不是只增加文档或检查名义？",
+    "promotion-ledger 作为追加式账本的设计是否有明显漏洞？",
+    "正文扫描、source_refs 扫描和公共目录约束是否覆盖主要隐私风险？",
+    "是否存在绕过、降级、误杀或自指验证问题？"
+  ],
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "review_mode": "implementation_plan_review",
+  "risk_level": "medium",
+  "schema_id": "prism-review-request",
+  "task": "实施 RSP-15 Forge 与 redcap-arsenal 公共/私有边界。请在实现前评审方案风险，不要求代写代码。",
+  "task_id": "20260621-rsp-15-forge-private-boundary",
+  "updated_at": "2026-06-20T21:35:54+00:00",
+  "user_intent": "公共能力沉淀必须脱敏、去重、索引优先、追加写入；私人人格、凭据、未脱敏路径、原始供应方输出不得进入公共仓库。"
+}

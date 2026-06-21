@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main AI added real code changes (checks in project_install.py, complete_revival_e2e.py, full_revival_amendment.py, registered in check_runner.py, exposed via redcap CLI) and produced evidence/claim JSONs for all six RSP items. However, RSP-13 and RSP-18 explicitly use fixture directories rather than real runtime state, and RSP-17 is a semantic labeling guard rather than a behavioral maturity check. The 12 paperwork files (6 evidence + 6 claims) against 3 code files suggest documentation density may be compensating for implementation depth. The user's intended reality changed partially — checks exist and run — but the gap between \"check passes against fixtures\" and \"behavior is verified in real runtime\" remains unclosed for at least RSP-13 and RSP-18.",
+  "main_concern": "Fixture-dependence in RSP-13 (e2e-cache-prune) and RSP-18 (external-project-long-samples) creates a false equivalence between fixture-based check passage and real behavioral verification. RSP-18 creates three fixture external project workspaces but is explicitly forbidden from claiming production validation — yet the evidence file name \"external-project-long-samples.json\" implies scope beyond fixtures. This naming gap between implementation reality and evidence presentation is the strongest signal of self-deception in the batch.",
+  "top_risks": [
+    "RSP-18 fixture overproduction: three fixture workspaces with .redcap/evidence/e2e files creates the appearance of comprehensive external validation while proving nothing about real external projects — the file name 'external-project-long-samples' overstates what fixtures can demonstrate",
+    "Negative probe triviality: RSP-22's 'real missing-mapping negative probe' may pass by testing an empty or trivially absent mapping rather than a realistic partial-mapping failure — the review request provides no evidence the probe was validated against a deliberately injected realistic fault",
+    "Paperwork-loop pattern: six RSP items follow an identical template (code check + evidence JSON + claim JSON + rsp-contract check) — if the next residual batch repeats this pattern without deeper behavioral verification, this becomes a documentation treadmill, not progressive implementation"
+  ],
+  "missing_evidence": [
+    "Actual code diffs showing the implementation logic — the executed checks include only py_compile (syntax verification) and --only isolated runs, not the implementation code itself",
+    "Negative probe failure output proving probes detect realistic faults — no evidence that any negative probe was tested against a deliberately injected non-trivial problem",
+    "Integration test results showing all six checks running together in pipeline order rather than isolated --only runs, to verify no cross-check interference or ordering dependencies"
+  ],
+  "minimum_fix": "For RSP-18, rename the evidence file from 'external-project-long-samples.json' to 'fixture-external-project-samples.json' so the name matches the implementation scope. For all six items, inject one deliberate realistic fault per check and confirm the negative probe catches it with specific diagnostic output — not just a pass/fail flag. For RSP-13, add a non-fixture safety check that verifies the prune logic correctly handles at least one real edge case (e.g., a symlink cycle in the run directory).",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "All six RSP items follow an identical closeout pattern: add check to Python file, register in check_runner.py, create evidence JSON, create claim JSON, run rsp-contract check. The review request itself lists 'rsp-contract check --plan assets/docs/residual-todo-final-solution-plan.md' as verification, which is a self-referential paperwork loop. If the next residual batch (RSP-23 through RSP-30 or similar) repeats this exact template without introducing new verification patterns, the process has become a documentation treadmill disconnected from runtime reality."
+  },
+  "user_intent_alignment": "unclear"
+}

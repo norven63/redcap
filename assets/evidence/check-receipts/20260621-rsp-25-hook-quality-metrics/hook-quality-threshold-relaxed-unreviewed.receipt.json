@@ -1,0 +1,25 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "hook-quality-threshold-relaxed-unreviewed",
+  "command": "runtime/bin/redcap hook-quality check --fixture threshold-relaxed-unreviewed",
+  "argv": [
+    "runtime/bin/redcap",
+    "hook-quality",
+    "check",
+    "--fixture",
+    "threshold-relaxed-unreviewed"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "ok": true,
+  "elapsed_seconds": 0.196,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-25-hook-quality-metrics/hook-quality-threshold-relaxed-unreviewed.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-25-hook-quality-metrics/hook-quality-threshold-relaxed-unreviewed.stderr.txt",
+  "stdout_sha256": "52f3c9eb607a1250dab8e948b0eaa949282e9f2a47435a8fedff4423b1528681",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1232,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T18:15:56+00:00",
+  "executor": "cap"
+}

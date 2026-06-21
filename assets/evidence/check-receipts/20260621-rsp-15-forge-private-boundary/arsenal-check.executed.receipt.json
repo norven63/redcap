@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "arsenal",
+    "check"
+  ],
+  "command": "runtime/bin/redcap arsenal check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.053,
+  "executed_at": "2026-06-20T21:42:56+00:00",
+  "executor": "redcap-rsp-15-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "arsenal-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/arsenal-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/arsenal-check.stdout.txt",
+  "stdout_sha256": "74890f53c479a8ba6dd955047ffad7095faacb78a56ce95df3252b27bd7b1d61",
+  "stdout_tail": "{\n  \"acceptance\": {\n    \"negative\": {\n      \"checks\": [\n        \"正文位于 arsenal 外必须失败\",\n        \"正文含凭据模式必须失败\",\n        \"ledger 哈希篡改必须失败\"\n      ],\n      \"failures\": [],\n      \"status\": \"pass\"\n    },\n    \"positive\": {\n      \"checks\": [\n        \"Forge 合同、边界合同、arsenal index、正文文件、promotion ledger 和最近相关提交信息均通过检查。\",\n        \"每个 promoted 条目都有 ledger 记录，且 body_sha256、index_entry_sha256、entry_hash 与当前内容一致。\"\n      ],\n      \"status\": \"pass\"\n    }\n  },\n  \"arsenal_entries\": 3,\n  \"arsenal_index\": \"assets/knowledge/arsenal/index.json\",\n  \"artifacts\": [\n    \"assets/contracts/forge-private-boundary.json\",\n    \"assets/knowledge/arsenal/promotion-ledger.jsonl\",\n    \"runtime/core/redcap_forge.py\",\n    \"runtime/bin/redcap forge boundary-check\",\n    \"runtime/core/check_runner.py\"\n  ],\n  \"boundary_contract\": \"assets/contracts/forge-private-boundary.json\",\n  \"changed_reality\": [\n    \"Forge 边界检查从索引元数据检查升级为正文内容、来源引用、晋升账本和提交信息共同检查。\",\n    \"redcap-arsenal promoted 条目必须具备 promotion ledger 记录，且 ledger 绑定正文哈希、索引条目哈希和哈希链。\",\n    \"runtime/bin/redcap forge boundary-check 已成为可执行边界检查入口，并接入聚合检查。\"\n  ],\n  \"failures\": [],\n  \"forge_contract\": \"assets/contracts/redcap-forge.json\",\n  \"git_recent_message_scan\": {\n    \"exit_code\": 0,\n    \"hit_pattern_ids\": [],\n    \"ok\": true,\n    \"scanned_recent_commit_messages\": true,\n    \"scope\": \"last 50 commit messages touching assets/knowledge/arsenal\",\n    \"stderr_tail\": \"\"\n  },\n  \"ok\": true,\n  \"private_pattern_ids\": [\n    \"private-cap-identity-path\",\n    \"cap-private-root-path\",\n    \"raw-provider-output-path\",\n    \"raw-provider-output-label\",\n    \"credential-assignment\",\n    \"openai-like-secret\",\n    \"aws-like-secret\",\n    \"email-pii\"\n  ],\n  \"promotion_ledger\": \"assets/knowledge/arsenal/promotion-ledger.jsonl\",\n  \"rsp\": \"RSP-15\",\n  \"schema_id\": \"redcap-forge-private-boundary-check\"\n}\nREDCAP_FORGE_BOUNDARY_OK\n"
+}

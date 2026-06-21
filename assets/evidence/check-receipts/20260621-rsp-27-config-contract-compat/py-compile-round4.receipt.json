@@ -1,0 +1,21 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "py-compile-round4",
+  "argv": [
+    "python3",
+    "-m",
+    "py_compile",
+    "runtime/core/config_contract_compat.py",
+    "runtime/core/config_contract_compat_external_probe.py",
+    "runtime/core/project_install.py",
+    "runtime/core/check_runner.py"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:57:24+00:00",
+  "ended_at": "2026-06-20T20:57:24+00:00",
+  "elapsed_seconds": 0.028,
+  "stdout_tail": "",
+  "stderr_tail": ""
+}

@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "provider-health-file-budget-exceeded",
+  "command": "runtime/bin/redcap provider-health check --fixture file-budget-exceeded",
+  "argv": [
+    "runtime/bin/redcap",
+    "provider-health",
+    "check",
+    "--fixture",
+    "file-budget-exceeded"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.037,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-03-provider-health/provider-health-file-budget-exceeded.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-03-provider-health/provider-health-file-budget-exceeded.stderr.txt",
+  "stdout_sha256": "a2d613d3e3918a7c994c4b6711930b5bc3fe5998a8f76561b084b6880a9a8530",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 789,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T18:43:03+00:00",
+  "executor": "cap"
+}

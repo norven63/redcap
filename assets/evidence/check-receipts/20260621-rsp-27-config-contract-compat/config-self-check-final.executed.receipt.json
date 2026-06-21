@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap config self-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T20:42:02+00:00",
+  "executor": "redcap-rsp-27-final-check",
+  "stdout_sha256": "d295d76562f17a5aa4339835d4270639f35de5448882125b8115b51428b389c6",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/config-self-check-final.receipt.json"
+}

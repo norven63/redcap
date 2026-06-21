@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "lifecycle-rsp-03",
+  "command": "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260621-rsp-03-provider-health.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "lifecycle",
+    "check",
+    "--packet",
+    "assets/evidence/lifecycle/20260621-rsp-03-provider-health.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.869,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-03-provider-health/lifecycle-rsp-03.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-03-provider-health/lifecycle-rsp-03.stderr.txt",
+  "stdout_sha256": "6d9ce851e9f2c192b5d4908060fd8236630913004af16b0dbf8ff0c8b9766b54",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 67,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T18:48:45+00:00",
+  "executor": "cap"
+}

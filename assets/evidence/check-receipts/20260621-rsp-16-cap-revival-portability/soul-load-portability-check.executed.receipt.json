@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "soul-load",
+    "portability-check",
+    "--out",
+    "assets/evidence/rsp/rsp-16-cap-revival-portability.json"
+  ],
+  "command": "runtime/bin/redcap soul-load portability-check --out assets/evidence/rsp/rsp-16-cap-revival-portability.json",
+  "created_at": "2026-06-20T21:27:24+00:00",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 1.489,
+  "executed_at": "2026-06-20T21:27:24+00:00",
+  "executor": "redcap-rsp-16-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "soul-load-portability-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/soul-load-portability-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/soul-load-portability-check.stdout.txt",
+  "stdout_sha256": "2214fa66ccc9402243f6bbf62286506f7e8df1680673a2dd1c44a1cdc659aa15",
+  "stdout_tail": "P_HOME 缺失时可回退到 HOME 下的 .cap/identity.md，且公共证据只写占位符路径和标题存在状态。\"\n      ],\n      \"status\": \"pass\"\n    },\n    \"public_structured_scan\": {\n      \"checked_files\": [\n        \"assets/evidence/soul/latest-load.json\",\n        \"assets/evidence/soul/load-ledger.jsonl\"\n      ],\n      \"failures\": [],\n      \"ok\": true,\n      \"rules\": [\n        \"cap_identity.resolved_path_redacted 必须为 true\",\n        \"cap_identity.resolved_path 必须是 $CAP_HOME/identity.md 或 ~/.cap/identity.md\",\n        \"cap_identity.title 必须为 null，只允许 title_present\"\n      ]\n    },\n    \"public_text_scan\": {\n      \"forbidden_fragment_sha256s\": [\n        \"37102691bf6d7d04cb2414addf33d724bdf2337cb5f0affb17c8f72ced42ab4b\",\n        \"1ccb4a2a495b747ed22c82768b94b10e5cac8b238147bbccc8049424a697acd1\",\n        \"bd082a1da151dac2e4bb382e3ac95f35a94ef063d0a406122cdf00f0c324f260\",\n        \"8967f0210c601580699d3419702e7033f524c8d7c0aa1a852a06b65c9032cc8b\"\n      ],\n      \"hit_count\": 0,\n      \"hits\": [],\n      \"ok\": true,\n      \"scanned_paths\": [\n        \"assets/docs\",\n        \"assets/contracts\",\n        \"runtime\",\n        \"assets/evidence\"\n      ]\n    }\n  },\n  \"artifacts\": [\n    \"assets/contracts/cap-revival-portability.json\",\n    \"runtime/core/soul_loader.py\",\n    \"runtime/core/cap_revival_portability.py\",\n    \"runtime/bin/redcap soul-load portability-check\",\n    \"runtime/bin/redcap check --only soul-load-portability-check\",\n    \"assets/evidence/rsp/rsp-16-cap-revival-portability.json\"\n  ],\n  \"changed_reality\": [\n    \"Cap 身份加载证据不再写入真实私有身份绝对路径。\",\n    \"Cap 身份加载证据不再写入真实私有标题正文。\",\n    \"迁移验证仅使用临时夹具身份源，并覆盖 CAP_HOME、默认 ~/.cap、缺失、空文件、不可读和路径错误场景。\"\n  ],\n  \"created_at\": \"2026-06-20T21:27:24+00:00\",\n  \"failures\": [],\n  \"ok\": true,\n  \"rsp\": \"RSP-16\",\n  \"schema_id\": \"redcap-cap-revival-portability\",\n  \"scope\": {\n    \"fixture_only\": true,\n    \"public_evidence_body_allowed\": false,\n    \"real_private_identity_copied\": false,\n    \"real_private_identity_migrated\": false,\n    \"real_private_identity_opened\": false\n  }\n}\nREDCAP_CAP_REVIVAL_PORTABILITY_OK\n"
+}

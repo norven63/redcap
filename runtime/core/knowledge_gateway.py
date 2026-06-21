@@ -9,14 +9,29 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
 import unicodedata
 from typing import Any
 
+import knowledge_quality as kq
+
 
 REPO_ROOT = pathlib.Path(os.environ.get("REDCAP_KNOWLEDGE_ROOT", pathlib.Path(__file__).resolve().parents[2])).resolve()
 DEFAULT_INDEX = REPO_ROOT / "assets" / "knowledge" / "index.json"
+DEFAULT_QUALITY = REPO_ROOT / "assets" / "knowledge" / "quality.json"
+DEFAULT_IMPACT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "knowledge-impact-trace.json"
+DEFAULT_IMPACT_EVIDENCE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-08-knowledge-impact-trace.json"
+DEFAULT_IMPACT_ARTIFACTS = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-08-knowledge-impact-artifacts"
+CURRENT_RSP_07_08_TASK_ID = "20260621-rsp-07-08-self-purification-knowledge"
+DEFAULT_RSP_07_08_START_MARKER = (
+    REPO_ROOT / "assets" / "evidence" / "prism" / CURRENT_RSP_07_08_TASK_ID / "request.json"
+)
+DEFAULT_LIFECYCLE_REGRESSION_SAMPLES = [
+    REPO_ROOT / "assets" / "evidence" / "lifecycle" / "20260621-rsp-10-long-task-loop-boundary.json",
+    REPO_ROOT / "assets" / "evidence" / "lifecycle" / "20260621-rsp-19-cli-surface-compat.json",
+]
 DEFAULT_DRAFTS = REPO_ROOT / "assets" / "evidence" / "knowledge" / "drafts"
 DEFAULT_REVIEWS = REPO_ROOT / "assets" / "evidence" / "knowledge" / "reviews"
 DEFAULT_ENTRIES = REPO_ROOT / "assets" / "knowledge" / "entries"
@@ -91,6 +106,20 @@ def resolve_path(path: str | pathlib.Path) -> pathlib.Path:
 
 def rel_path(path: pathlib.Path) -> str:
     return path.resolve().relative_to(REPO_ROOT).as_posix()
+
+
+def utc_from_timestamp(value: float) -> dt.datetime:
+    return dt.datetime.fromtimestamp(value, dt.timezone.utc).replace(microsecond=0)
+
+
+def file_time_summary(path: pathlib.Path) -> dict[str, Any]:
+    stat = path.stat()
+    created_at = getattr(stat, "st_birthtime", stat.st_ctime)
+    return {
+        "created_at_utc": utc_from_timestamp(created_at).isoformat(),
+        "modified_at_utc": utc_from_timestamp(stat.st_mtime).isoformat(),
+        "modified_timestamp": stat.st_mtime,
+    }
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -402,9 +431,41 @@ def cmd_promote(args: argparse.Namespace) -> int:
     }
     index["entries"].append(entry)
     write_json(index_path, index)
+    sync_quality_for_promoted_entry(entry, review)
     print(json.dumps({"ok": True, "entry": entry, "review": rel_path(review_path)}, ensure_ascii=False, indent=2))
     print("REDCAP_KNOWLEDGE_PROMOTE_OK")
     return 0
+
+
+def sync_quality_for_promoted_entry(entry: dict[str, Any], review: dict[str, Any]) -> None:
+    if not DEFAULT_QUALITY.exists():
+        return
+    quality = load_json(DEFAULT_QUALITY)
+    entries = quality.setdefault("entries", {})
+    if not isinstance(entries, dict):
+        raise SystemExit("knowledge quality entries must be an object")
+    entry_id = str(entry.get("id") or "")
+    reviewed_at = str(review.get("reviewed_at") or iso_now())[:10]
+    try:
+        valid_until = (dt.date.fromisoformat(reviewed_at) + dt.timedelta(days=92)).isoformat()
+    except ValueError:
+        valid_until = (dt.datetime.now(dt.timezone.utc).date() + dt.timedelta(days=92)).isoformat()
+    entries[entry_id] = {
+        "applicability": "新晋升的 RedCap 活跃知识；首次使用前仍需结合当前任务事实验证。",
+        "confidence": "medium",
+        "expiry_condition": "来源草稿、评审理由、适用边界或关联运行时行为变化时必须重新复核。",
+        "index_path": entry.get("path"),
+        "index_route": entry.get("route"),
+        "reviewed_at": reviewed_at,
+        "source_refs": [
+            str(entry.get("path")),
+            str(review.get("draft_path")),
+        ],
+        "status": "active",
+        "usage_policy": "review_required",
+        "valid_until": valid_until,
+    }
+    write_json(DEFAULT_QUALITY, quality)
 
 
 def cmd_self_check(args: argparse.Namespace) -> int:
@@ -552,17 +613,452 @@ def cmd_search(args: argparse.Namespace) -> int:
     if failures:
         raise SystemExit("; ".join(failures))
     matches = search_entries(payload, args.query)
+    quality = load_json(pathlib.Path(args.quality).resolve()) if pathlib.Path(args.quality).exists() else None
+    enriched_matches: list[dict[str, Any]] = []
+    for match in matches:
+        enriched = dict(match)
+        enriched["quality"] = kq.quality_decision_for_entry(enriched, quality)
+        enriched_matches.append(enriched)
+    if args.direct_driver_only:
+        enriched_matches = [
+            match for match in enriched_matches
+            if isinstance(match.get("quality"), dict) and match["quality"].get("direct_driver_allowed") is True
+        ]
+    ok = bool(enriched_matches) or not args.require_match
+    if args.direct_driver_only and not enriched_matches:
+        ok = False
     result = {
         "query": args.query,
-        "matches": matches,
-        "ok": bool(matches) or not args.require_match,
+        "matches": enriched_matches,
+        "ok": ok,
         "read_policy": "index-first; read first_read before body; raw archives require explicit task need",
+        "quality_policy": "quality metadata is loaded when present; missing quality defaults to review_required; direct-driver filtering uses quality.direct_driver_allowed",
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.require_match and not matches:
+    if not ok:
         print("REDCAP_KNOWLEDGE_GATEWAY_NO_MATCH")
         return 1
     return 0
+
+
+def impact_trace_for_query(*, query: str, index_path: pathlib.Path, quality_path: pathlib.Path) -> dict[str, Any]:
+    payload = load_json(index_path)
+    failures = validate_index(payload)
+    if failures:
+        raise SystemExit("; ".join(failures))
+    quality = load_json(quality_path) if quality_path.exists() else None
+    matches: list[dict[str, Any]] = []
+    for match in search_entries(payload, query):
+        enriched = dict(match)
+        enriched["quality"] = kq.quality_decision_for_entry(enriched, quality)
+        matches.append(enriched)
+    direct_matches = [
+        match for match in matches
+        if isinstance(match.get("quality"), dict) and match["quality"].get("direct_driver_allowed") is True
+    ]
+    adopted = direct_matches[:1]
+    adopted_ids = [str(item.get("id")) for item in adopted]
+    if adopted:
+        adopted_id = adopted_ids[0]
+        without_knowledge_path = {
+            "mode": "without_adopted_knowledge",
+            "planning_decision": "run generic implementation checks only",
+            "implementation_decision": "do not add knowledge impact trace",
+            "verification_decision": "accept command-level checks without knowledge impact evidence",
+        }
+        with_knowledge_path = {
+            "mode": "with_adopted_knowledge",
+            "planning_decision": "require pre-task knowledge retrieval and visible adopted entry",
+            "implementation_decision": "add knowledge impact trace and self-purification loop checks",
+            "verification_decision": "require RSP-08 evidence and negative probes before claim",
+        }
+        decision_impacts = {
+            "planning": f"采用知识条目 {adopted_id} 作为计划约束：任务前必须先检索并记录命中知识。",
+            "implementation": f"采用知识条目 {adopted_id} 作为实现约束：实现必须产生可运行入口和结构化证据，而不是只写文档。",
+            "verification": f"采用知识条目 {adopted_id} 作为验收约束：验收必须证明知识命中如何影响计划、实现或检查结果。",
+        }
+        counterfactual_analysis = {
+            "mode": "counterfactual_analysis",
+            "independent_runtime_executions": False,
+            "execution_boundary": "同一任务的双路径决策分析，不伪装成两个真实独立运行的任务。",
+            "reason": "RedCap 正常任务流只有一条真实执行路径；这里用于证明知识命中改变决策边界，而不是声称执行了两次项目交付。",
+            "without_adopted_knowledge": "只能执行通用实现检查，无法要求自我净化候选和知识影响证据进入验收。",
+            "with_adopted_knowledge": "必须执行自我净化候选、no-promote 决策、知识影响字段和负向探针验收。",
+            "analysis_paths": [
+                without_knowledge_path,
+                with_knowledge_path,
+            ],
+            "changed_decisions": [
+                f"planning_decision: {without_knowledge_path['planning_decision']} -> {with_knowledge_path['planning_decision']}",
+                f"implementation_decision: {without_knowledge_path['implementation_decision']} -> {with_knowledge_path['implementation_decision']}",
+                f"verification_decision: {without_knowledge_path['verification_decision']} -> {with_knowledge_path['verification_decision']}",
+            ],
+        }
+    else:
+        decision_impacts = {}
+        counterfactual_analysis = {
+            "mode": "counterfactual_analysis",
+            "independent_runtime_executions": False,
+            "without_adopted_knowledge": "没有可采用知识。",
+            "with_adopted_knowledge": "没有可采用知识。",
+            "analysis_paths": [],
+            "changed_decisions": [],
+        }
+    return {
+        "schema_id": "redcap-knowledge-impact-trace",
+        "query": query,
+        "matches": matches,
+        "adopted_entries": adopted_ids,
+        "result_handling": "use_relevant_entry" if adopted else "record_no_relevant_entry",
+        "decision_impacts": decision_impacts,
+        "counterfactual_analysis": counterfactual_analysis,
+        "no_relevant_entry_reason": None if adopted else "没有可作为 direct_driver 的知识命中；不能声称知识已影响决策。",
+        "quality_policy": "direct-driver impact requires quality.direct_driver_allowed=true",
+    }
+
+
+def scan_lifecycle_knowledge_usage(
+    lifecycle_root: pathlib.Path,
+    *,
+    minimum_count: int,
+    task_start_marker: pathlib.Path,
+) -> dict[str, Any]:
+    samples: list[dict[str, Any]] = []
+    skipped_newer_samples: list[dict[str, Any]] = []
+    failures = []
+    if not task_start_marker.exists():
+        failures.append(f"task start marker is missing: {rel_path(task_start_marker)}")
+        task_start_timestamp = None
+        task_start_summary = None
+    else:
+        task_start_summary = file_time_summary(task_start_marker)
+        task_start_timestamp = task_start_summary["modified_timestamp"]
+    for path in sorted(lifecycle_root.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        try:
+            payload = load_json(path)
+        except SystemExit:
+            continue
+        binding = payload.get("self_purification")
+        if payload.get("task_id") == CURRENT_RSP_07_08_TASK_ID:
+            continue
+        if not isinstance(binding, dict):
+            continue
+        evidence_path = binding.get("knowledge_retrieval_evidence")
+        if not isinstance(evidence_path, str) or not evidence_path.strip():
+            continue
+        try:
+            evidence_file = resolve_path(evidence_path)
+            evidence = load_json(evidence_file)
+        except SystemExit:
+            continue
+        effects = evidence.get("task_decision_effects")
+        used = evidence.get("used_knowledge")
+        impacts = evidence.get("decision_impacts")
+        has_effect = (
+            isinstance(effects, list) and bool(effects)
+            or isinstance(used, list) and bool(used)
+            or isinstance(impacts, dict) and bool(impacts)
+        )
+        if has_effect:
+            lifecycle_times = file_time_summary(path)
+            evidence_times = file_time_summary(evidence_file)
+            lifecycle_before_task = (
+                task_start_timestamp is not None
+                and lifecycle_times["modified_timestamp"] < task_start_timestamp
+            )
+            evidence_before_task = (
+                task_start_timestamp is not None
+                and evidence_times["modified_timestamp"] < task_start_timestamp
+            )
+            if not lifecycle_before_task or not evidence_before_task:
+                skipped_newer_samples.append({
+                    "lifecycle": rel_path(path),
+                    "task_id": payload.get("task_id"),
+                    "modified_at_utc": lifecycle_times["modified_at_utc"],
+                    "knowledge_retrieval_evidence": evidence_path,
+                    "knowledge_evidence_modified_at_utc": evidence_times["modified_at_utc"],
+                    "reason": "晚于当前 RSP-07/08 任务起点；不作为历史独立性样本。",
+                })
+                continue
+            samples.append({
+                "lifecycle": rel_path(path),
+                "task_id": payload.get("task_id"),
+                "created_at_utc": lifecycle_times["created_at_utc"],
+                "modified_at_utc": lifecycle_times["modified_at_utc"],
+                "knowledge_retrieval_evidence": evidence_path,
+                "knowledge_evidence_created_at_utc": evidence_times["created_at_utc"],
+                "knowledge_evidence_modified_at_utc": evidence_times["modified_at_utc"],
+                "lifecycle_before_current_task": lifecycle_before_task,
+                "knowledge_evidence_before_current_task": evidence_before_task,
+            })
+        if len(samples) >= minimum_count:
+            break
+    if len(samples) < minimum_count:
+        failures.append(f"knowledge impact lifecycle usage requires at least {minimum_count} samples")
+    return {
+        "ok": not failures,
+        "minimum_count": minimum_count,
+        "excludes_current_task_id": CURRENT_RSP_07_08_TASK_ID,
+        "task_start_marker": rel_path(task_start_marker) if task_start_marker.exists() else str(task_start_marker),
+        "task_started_at_utc": task_start_summary["modified_at_utc"] if task_start_summary else None,
+        "sample_count": len(samples),
+        "samples": samples,
+        "skipped_newer_samples": skipped_newer_samples,
+        "failures": failures,
+    }
+
+
+def validate_impact_trace(trace: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    adopted = trace.get("adopted_entries")
+    if not isinstance(adopted, list) or not adopted:
+        failures.append("knowledge impact requires at least one adopted entry")
+    matches = trace.get("matches")
+    if not isinstance(matches, list) or not matches:
+        failures.append("knowledge impact requires at least one match")
+    else:
+        adopted_set = {str(item) for item in adopted if isinstance(item, str)} if isinstance(adopted, list) else set()
+        direct_ids = {
+            str(match.get("id"))
+            for match in matches
+            if isinstance(match, dict)
+            and isinstance(match.get("quality"), dict)
+            and match["quality"].get("direct_driver_allowed") is True
+        }
+        if not (adopted_set & direct_ids):
+            failures.append("adopted entries must be allowed direct drivers by quality metadata")
+    impacts = trace.get("decision_impacts")
+    if not isinstance(impacts, dict):
+        failures.append("knowledge impact requires decision_impacts object")
+        impacts = {}
+    for key in ["planning", "implementation", "verification"]:
+        value = impacts.get(key)
+        if not isinstance(value, str) or len(value.strip()) < 20:
+            failures.append(f"knowledge impact missing substantive {key} effect")
+    counterfactual = trace.get("counterfactual_analysis")
+    if not isinstance(counterfactual, dict):
+        failures.append("knowledge impact requires counterfactual_analysis object")
+    else:
+        if counterfactual.get("mode") != "counterfactual_analysis":
+            failures.append("knowledge impact counterfactual must be explicitly marked as analysis")
+        if counterfactual.get("independent_runtime_executions") is not False:
+            failures.append("knowledge impact counterfactual must not claim independent runtime executions")
+        changed = counterfactual.get("changed_decisions")
+        if not isinstance(changed, list) or not changed:
+            failures.append("knowledge impact counterfactual requires changed_decisions")
+        paths = counterfactual.get("analysis_paths")
+        if not isinstance(paths, list) or len(paths) < 2:
+            failures.append("knowledge impact counterfactual requires two analysis paths")
+    return failures
+
+
+def run_impact_negative_probes(trace: dict[str, Any], *, index_path: pathlib.Path, quality_path: pathlib.Path) -> list[dict[str, Any]]:
+    probes: list[dict[str, Any]] = []
+    no_effect = json.loads(json.dumps(trace, ensure_ascii=False))
+    no_effect["decision_impacts"] = {}
+    failures = validate_impact_trace(no_effect)
+    probes.append({
+        "name": "missing_decision_impacts",
+        "expected_failure": True,
+        "failed_as_expected": bool(failures),
+        "failures": failures,
+    })
+
+    no_adopted = json.loads(json.dumps(trace, ensure_ascii=False))
+    no_adopted["adopted_entries"] = []
+    failures = validate_impact_trace(no_adopted)
+    probes.append({
+        "name": "missing_adopted_entries",
+        "expected_failure": True,
+        "failed_as_expected": bool(failures),
+        "failures": failures,
+    })
+
+    unrelated = impact_trace_for_query(
+        query="banana invoice mineral horoscope unrelated",
+        index_path=index_path,
+        quality_path=quality_path,
+    )
+    failures = validate_impact_trace(unrelated)
+    probes.append({
+        "name": "irrelevant_query_without_reasoned_impact",
+        "expected_failure": True,
+        "failed_as_expected": bool(failures),
+        "failures": failures,
+    })
+    no_counterfactual = json.loads(json.dumps(trace, ensure_ascii=False))
+    no_counterfactual["counterfactual_analysis"] = {"changed_decisions": []}
+    failures = validate_impact_trace(no_counterfactual)
+    probes.append({
+        "name": "missing_counterfactual_difference",
+        "expected_failure": True,
+        "failed_as_expected": bool(failures),
+        "failures": failures,
+    })
+    return probes
+
+
+def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, Any]:
+    probes: list[dict[str, Any]] = []
+    for sample in DEFAULT_LIFECYCLE_REGRESSION_SAMPLES:
+        completed = subprocess.run(
+            ["runtime/bin/redcap", "lifecycle", "check", "--packet", str(sample.relative_to(REPO_ROOT))],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        probes.append({
+            "name": f"positive_{sample.stem}",
+            "packet": str(sample.relative_to(REPO_ROOT)),
+            "expected_exit_code": 0,
+            "exit_code": completed.returncode,
+            "ok": completed.returncode == 0,
+            "stdout_tail": completed.stdout[-1000:],
+            "stderr_tail": completed.stderr[-1000:],
+        })
+
+    base_packet = load_json(DEFAULT_LIFECYCLE_REGRESSION_SAMPLES[-1])
+    bad_knowledge = {
+        "schema_id": "redcap-self-purification-knowledge-retrieval",
+        "result_handling": "use_relevant_entry",
+        "adopted_entries": ["self-purification-runtime-loop"],
+        "matches": [{"id": "self-purification-runtime-loop"}],
+        "task_decision_effects": []
+    }
+    bad_knowledge_path = artifact_root / "negative-lifecycle-bad-knowledge.json"
+    bad_packet_path = artifact_root / "negative-lifecycle-missing-knowledge-impact.json"
+    write_json(bad_knowledge_path, bad_knowledge)
+    base_packet["self_purification"]["knowledge_retrieval_evidence"] = rel_path(bad_knowledge_path)
+    write_json(bad_packet_path, base_packet)
+    completed = subprocess.run(
+        ["runtime/bin/redcap", "lifecycle", "check", "--packet", rel_path(bad_packet_path)],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    probes.append({
+        "name": "negative_lifecycle_missing_knowledge_impact",
+        "packet": rel_path(bad_packet_path),
+        "expected_exit_code": 1,
+        "exit_code": completed.returncode,
+        "ok": completed.returncode != 0 and "decision effects" in completed.stdout,
+        "stdout_tail": completed.stdout[-1000:],
+        "stderr_tail": completed.stderr[-1000:],
+    })
+
+    ordinary_packet = json.loads(json.dumps(base_packet, ensure_ascii=False))
+    ordinary_packet["task_id"] = "ordinary-knowledge-impact-hard-fail-probe"
+    if isinstance(ordinary_packet.get("requirement_review"), dict):
+        ordinary_packet["requirement_review"]["user_intent"] = "普通 RedCap 任务也必须在采用知识时记录决策影响。"
+        ordinary_packet["requirement_review"]["target_reality"] = "生命周期检查必须阻止缺少知识影响证据的普通任务收口。"
+        ordinary_packet["requirement_review"]["non_goals"] = ["不复用 RSP-07/08 专项任务作为证明。"]
+    if isinstance(ordinary_packet.get("task_body"), dict):
+        ordinary_packet["task_body"]["requested_outcome"] = "普通任务知识影响硬失败探针。"
+        ordinary_packet["task_body"]["primary_deliverable"] = "生命周期检查失败输出。"
+        ordinary_packet["task_body"]["acceptance_criteria"] = [
+            "采用知识但没有决策影响记录时必须失败。",
+        ]
+    ordinary_packet["self_purification"]["knowledge_retrieval_evidence"] = rel_path(bad_knowledge_path)
+    ordinary_packet_path = artifact_root / "ordinary-lifecycle-missing-knowledge-impact.json"
+    write_json(ordinary_packet_path, ordinary_packet)
+    completed = subprocess.run(
+        ["runtime/bin/redcap", "lifecycle", "check", "--packet", rel_path(ordinary_packet_path)],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    probes.append({
+        "name": "ordinary_task_negative_lifecycle_missing_knowledge_impact",
+        "packet": rel_path(ordinary_packet_path),
+        "expected_exit_code": 1,
+        "exit_code": completed.returncode,
+        "ok": completed.returncode != 0 and "decision effects" in completed.stdout,
+        "stdout_tail": completed.stdout[-1000:],
+        "stderr_tail": completed.stderr[-1000:],
+    })
+    failures = [probe for probe in probes if not probe["ok"]]
+    return {
+        "ok": not failures,
+        "probes": probes,
+        "failures": failures,
+    }
+
+
+def cmd_impact_check(args: argparse.Namespace) -> int:
+    index_path = pathlib.Path(args.index).resolve()
+    quality_path = pathlib.Path(args.quality).resolve()
+    out_path = pathlib.Path(args.out).resolve()
+    artifact_root = pathlib.Path(args.artifact_root).resolve()
+    artifact_root.mkdir(parents=True, exist_ok=True)
+
+    trace = impact_trace_for_query(query=args.query, index_path=index_path, quality_path=quality_path)
+    positive_failures = validate_impact_trace(trace)
+    lifecycle_usage = scan_lifecycle_knowledge_usage(
+        pathlib.Path(args.lifecycle_root).resolve(),
+        minimum_count=args.minimum_lifecycle_usage_count,
+        task_start_marker=pathlib.Path(args.task_start_marker).resolve(),
+    )
+    positive_failures.extend(lifecycle_usage["failures"])
+    lifecycle_regression = run_lifecycle_regression_probes(artifact_root)
+    if not lifecycle_regression["ok"]:
+        positive_failures.append("lifecycle regression probes failed")
+    negative_probes = run_impact_negative_probes(trace, index_path=index_path, quality_path=quality_path)
+    negative_ok = all(probe["failed_as_expected"] for probe in negative_probes)
+
+    retrieval_path = artifact_root / "knowledge-retrieval-evidence.json"
+    write_json(retrieval_path, trace)
+    evidence = {
+        "schema_id": "redcap-rsp-08-knowledge-impact-evidence",
+        "rsp": "RSP-08",
+        "ok": not positive_failures and negative_ok,
+        "contract_path": rel_path(pathlib.Path(args.contract).resolve()),
+        "acceptance": {
+            "positive": {
+                "status": "pass" if not positive_failures else "fail",
+                "checks": [
+                    "knowledge search produced at least one direct-driver adopted entry",
+                    "planning, implementation, and verification all record how the knowledge changed decisions",
+                    "quality metadata participates in the direct-driver decision",
+                    "lifecycle history shows knowledge retrieval evidence was used in real tasks",
+                    "historical lifecycle samples and their knowledge evidence are older than the current RSP-07/08 task start marker",
+                    "lifecycle regression proves positive samples still pass and missing knowledge impact hard-fails",
+                    "counterfactual analysis records changed decisions without pretending to be independent runtime execution",
+                ],
+                "failures": positive_failures,
+            },
+            "negative": {
+                "status": "pass" if negative_ok else "fail",
+                "checks": negative_probes,
+            },
+        },
+        "changed_reality": [
+            "知识召回现在有 RSP-08 专项验收：命中知识必须显式影响计划、实现和验收。",
+            "impact-check 会扫描真实 lifecycle 历史，确认知识影响证据不是只在本检查器内生成。",
+            "历史样本必须早于当前 RSP-07/08 任务起点，避免本轮自举证据冒充自然触发。",
+            "无关命中、缺少 adopted entry 或缺少 decision_impacts 不能通过验收。",
+            "反事实记录明确为分析路径，不声称执行了两条独立项目交付路径。",
+            "质量元数据必须参与 direct-driver 决策，避免错误知识直接驱动实现。",
+        ],
+        "artifacts": [
+            "runtime/core/knowledge_gateway.py",
+            "assets/contracts/knowledge-impact-trace.json",
+            rel_path(retrieval_path),
+        ],
+        "trace": trace,
+        "counterfactual_analysis": trace.get("counterfactual_analysis"),
+        "historical_samples": lifecycle_usage,
+        "lifecycle_usage": lifecycle_usage,
+        "lifecycle_regression": lifecycle_regression,
+    }
+    write_json(out_path, evidence)
+    print(json.dumps(evidence, ensure_ascii=False, indent=2))
+    if evidence["ok"]:
+        print("REDCAP_KNOWLEDGE_IMPACT_TRACE_OK")
+        return 0
+    return 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -574,7 +1070,19 @@ def build_parser() -> argparse.ArgumentParser:
     search = subparsers.add_parser("search")
     search.add_argument("query")
     search.add_argument("--require-match", "--require-hit", dest="require_match", action="store_true")
+    search.add_argument("--quality", default=str(DEFAULT_QUALITY))
+    search.add_argument("--direct-driver-only", action="store_true")
     search.set_defaults(func=cmd_search)
+    impact = subparsers.add_parser("impact-check")
+    impact.add_argument("--query", default="self purification knowledge retrieval task candidate promotion no promote")
+    impact.add_argument("--quality", default=str(DEFAULT_QUALITY))
+    impact.add_argument("--contract", default=str(DEFAULT_IMPACT_CONTRACT))
+    impact.add_argument("--artifact-root", default=str(DEFAULT_IMPACT_ARTIFACTS))
+    impact.add_argument("--lifecycle-root", default=str(REPO_ROOT / "assets" / "evidence" / "lifecycle"))
+    impact.add_argument("--task-start-marker", default=str(DEFAULT_RSP_07_08_START_MARKER))
+    impact.add_argument("--minimum-lifecycle-usage-count", type=int, default=2)
+    impact.add_argument("--out", default=str(DEFAULT_IMPACT_EVIDENCE))
+    impact.set_defaults(func=cmd_impact_check)
     draft = subparsers.add_parser("draft")
     draft.add_argument("--id", required=True)
     draft.add_argument("--title", required=True)

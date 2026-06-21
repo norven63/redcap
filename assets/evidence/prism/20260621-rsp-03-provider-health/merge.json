@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "设计仍停留在目标与口号层面：bundle 中没有 provider-health.json 的探针定义、失败分类字段、超时与文件读取预算，也没有 provider_health.py 的实现草图。离线 check 可能退化为“文件存在检查”，无法正面区分路径错误、超时、会话续接失败、权限阻塞等 RSP-03 真正要求分类的问题。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "双层设计（离线+live）在概念上合理，但失败分类的粒度是决定设计成败的关键：如果 provider_health.py 只输出 healthy/degraded 二元分类，超时、配额耗尽、会话断开、认证失败将被错误归并，导致 RedCap 把真实 provider 波动误判为永久失败——这正是用户约束明确禁止的。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在定稿前补充 provider-health 合同设计稿，至少包括：1) 路径、版本、基础调用、会话续接、限定文件读取、超时分类、路径错误、权限阻塞八类探针；2) 分类字段必须区分 transient/permanent/unknown 并携带原始错误码/耗时/重试次数；3) live-check 不纳入常规聚合，仅作为 RSP-03 验收命令，并设有限重试与退避；4) stdout 只输出摘要、路径、结论，细节写入文件并限定文件读取预算。补充后再审。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在实现 provider_health.py 之前，先在合约 provider-health.json 中定义具体的失败分类枚举（至少 5 类：timeout/connection_refused/quota_exhausted/auth_failure/unknown），每类附带 retryable 布尔值和建议退避策略；限定文件读取的预算字段（max_bytes_per_file、max_total_bytes、allowed_extensions）必须是 runtime 可解析的 JSON 值而非注释文本；live-check 验收标准必须包含'在当前机器执行并产生真实 stdout 证据'而非仅检查模块能否导入。"
+    }
+  ],
+  "anti_loop_detected": true
+}

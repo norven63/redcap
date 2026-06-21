@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "advisory-stop-health-healthy",
+  "command": "runtime/bin/redcap advisory-stop health-check --fixture healthy",
+  "argv": [
+    "runtime/bin/redcap",
+    "advisory-stop",
+    "health-check",
+    "--fixture",
+    "healthy"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.037,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-health-healthy.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-health-healthy.stderr.txt",
+  "stdout_sha256": "d2a5d0c7d05b65fcc767b5b287e4574d3a99cd098b480f3a626159b6db75dd58",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 390,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T17:54:54+00:00",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

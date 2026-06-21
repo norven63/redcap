@@ -1,0 +1,49 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-rsp-07-08-self-purification-knowledge",
+  "merge_path": "assets/evidence/prism/20260621-rsp-07-08-self-purification-knowledge/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-rsp-07-08-self-purification-knowledge/kimi.after-fix3.review.json",
+    "assets/evidence/prism/20260621-rsp-07-08-self-purification-knowledge/claude-code.after-fix3.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 有效：RSP-07/08 仍需要跨后续真实任务继续观察自然触发率。但 Kimi 同时明确前两轮阻塞项已解决，当前无阻塞级缺口，可按 current-runtime-verified 范围收口。因此本轮接受该 concern 作为后续成熟度约束，而不是把它当作当前实现阻塞。",
+      "implementation_evidence": [
+        "runtime/core/self_purification.py",
+        "runtime/core/knowledge_gateway.py",
+        "runtime/core/development_lifecycle.py",
+        "assets/contracts/self-purification-loop.json",
+        "assets/contracts/knowledge-impact-trace.json",
+        "assets/evidence/rsp/rsp-07-claim.json",
+        "assets/evidence/rsp/rsp-08-claim.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/self-purification-loop-check.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/knowledge-impact-check.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/check-self-purification-loop.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/check-knowledge-impact-trace.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/rsp-contract-rsp-07.receipt.json",
+        "assets/evidence/check-receipts/20260621-rsp-07-08-self-purification-knowledge/rsp-contract-rsp-08.receipt.json"
+      ]
+    }
+  ],
+  "cap_arbitration": {
+    "decision": "current_scope_closeable_after_checks",
+    "reason": "两个评审方都没有提出当前范围的阻塞级 minimum_fix。Kimi 的后续观察要求需要跨未来真实任务获得新样本，当前无法在同一任务内正面完成；因此记录为成熟度约束，不能扩大 RSP-07/08 当前完成声明。",
+    "post_review_local_fix": [
+      "历史扫描改为跳过晚于当前任务起点的新样本，避免未来任务样本出现后使 RSP-07/08 历史独立性检查误失败。",
+      "已在 loop-check 与 impact-check 中复测通过。"
+    ]
+  },
+  "conclusion": {
+    "state": "resolved",
+    "reason": "当前范围可收口；跨后续真实任务自然触发率继续由后续任务样本验证，不纳入本轮完成声明。"
+  }
+}

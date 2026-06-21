@@ -1,0 +1,23 @@
+{
+  "confidence": "medium",
+  "main_concern": "The divergence test covers exactly 1 of 35 cells in the entrypoint×category space (one entrypoint, one failure mode). The synthetic matrix covers all 35 but synthetically. No real divergence has been demonstrated for the other 34 cells, and more critically, no real divergence has been shown where the two systems disagree on classification — the test only proves they agree when the failure is unambiguous (file missing). The orchestrator (cap_runtime_health_divergence_probe.py) may itself be a single point of control that could mask divergence between the two systems by feeding them the same broken state through the same mechanism.",
+  "provider": "claude-code",
+  "reality_delta": "The divergence test is a qualitative improvement over round 2: a real filesystem mutation (renaming a file) replaces synthetic injection, and both systems observe it. This moves the evidence from 'two checkers agree because they share assumptions' toward 'two checkers converge on ground truth.' However, the divergence covers only one failure category (command_missing) on one entrypoint (loom_runtime), the orchestrator that performs the mutation and coordinates both systems is itself a new Python file in the same codebase, and the classification taxonomy's correctness for real-world failures remains untested beyond this single case.",
+  "top_risks": [
+    "The divergence probe (cap_runtime_health_divergence_probe.py) may import from or share code paths with the main checker or independent probe. If it orchestrates both systems through shared utilities, it becomes a single point of control — a bug in the orchestrator could cause both systems to report the same wrong result, creating false agreement that looks like independent convergence.",
+    "The divergence test proves both systems detect 'file missing' but doesn't exercise the classification taxonomy. Is command_missing the correct category for a hidden module file? If loom_runtime.py is hidden, the command still exists but fails — should this be command_broken, dependency_missing, or runtime_error instead? A wrong classification that both systems agree on is still wrong, and mutual agreement would mask the miscategorization.",
+    "The restoration self-check may be performed by the same orchestrator that performed the mutation, creating a self-referential close: mutate → detect → restore → verify restore. If the verification shares the orchestrator's code path, a bug in restoration logic could pass the self-check while leaving the workspace in an inconsistent state."
+  ],
+  "missing_evidence": [
+    "Actual file contents of cap_runtime_health_divergence_probe.py to verify it does not import from cap_runtime_health.py or cap_runtime_health_external_probe.py, and to confirm the orchestrator's independence from both observed systems.",
+    "A divergence test where the two systems produce different classifications for the same failure, proving they can disagree and that disagreement is surfaced rather than silently resolved by the orchestrator.",
+    "A divergence test for a failure category other than command_missing — e.g., a timeout-induced provider_unavailable or a corrupted config file — to prove the taxonomy works across categories with real (not injected) failures."
+  ],
+  "minimum_fix": "Add one divergence test for a non-file-missing failure mode — for example, introduce a config corruption or a permission change that causes a runtime error (not command_missing). Confirm both systems detect it and classify it correctly, and confirm the classification differs from the command_missing/blocked result. Also, if the divergence orchestrator imports from either the main checker or the independent probe, remove those imports and make it invoke both systems only through their public command interfaces (subprocess or equivalent).",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Each round adds a new file to the evidence chain — round 1 added the checker, round 2 added the probe, round 3 adds the divergence orchestrator. The pattern of 'concern → add new Python file → regenerate evidence → claim resolved' is itself a loop, even if each iteration's content is responsive. The evidence tower grows taller without the underlying monitoring reality necessarily changing."
+  },
+  "user_intent_alignment": "drifting",
+  "verdict": "concern"
+}

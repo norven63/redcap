@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap self-purification check",
+  "executed_at": "2026-06-20T17:26:16+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-01-advisory-stop-replay/self-purification-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-01-advisory-stop-replay/self-purification-check.stdout.txt",
+  "stdout_sha256": "e248ad2c647ff6cb78ecac35c4bc77afbd252baa46643726b73e8d6d4a9e3dc9"
+}

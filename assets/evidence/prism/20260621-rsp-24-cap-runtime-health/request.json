@@ -1,0 +1,65 @@
+{
+  "task": "Review RSP-24 Cap runtime health implementation.",
+  "user_intent": "Norven requires RedCap to stop relying on isolated E2E success or isolated command success as proof of runtime stability. Cap runtime health must independently enumerate critical entrypoints and classify failures without hiding broken paths.",
+  "main_claim": "RSP-24 is implemented within its own scope because RedCap now has a dedicated contract, command entry, aggregate check step, live seven-entrypoint health report, five failure-category negative probes, scoped RSP completion claim, and executed-check receipts.",
+  "changed_reality": [
+    "Added assets/contracts/cap-runtime-health.json.",
+    "Added runtime/core/cap_runtime_health.py.",
+    "Added runtime/bin/redcap runtime-health check|self-check.",
+    "Added runtime/core/check_runner.py step runtime-health-check.",
+    "Generated assets/evidence/rsp/rsp-24-cap-runtime-health.json.",
+    "Generated assets/evidence/rsp/rsp-24-claim.json.",
+    "Generated executed-check receipts under assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/.",
+    "Executed self-purification no_promote loop under assets/evidence/self-purification/20260621-rsp-24-cap-runtime-health/."
+  ],
+  "evidence": [
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/cap-runtime-health.json",
+      "summary": "RSP-24 runtime-health contract with seven entrypoints, five failure categories, aggregate policy, and fixtures."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/cap_runtime_health.py",
+      "summary": "Executable runtime-health checker with live entrypoint checks, fixtures, aggregation, and RSP acceptance fields."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap",
+      "summary": "Command entry for runtime-health."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "Aggregate check step runtime-health-check."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-24-cap-runtime-health.json",
+      "summary": "Current live RSP-24 acceptance evidence."
+    },
+    {
+      "kind": "claim",
+      "reference": "assets/evidence/rsp/rsp-24-claim.json",
+      "summary": "Scoped RSP-24 completion claim, excluding RedCap parent goal completion."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/rsp-contract-rsp-24.receipt.json",
+      "summary": "RSP contract check receipt for the scoped claim."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "Check whether the live report actually covers all seven required entrypoints.",
+    "Check whether negative probes prevent a failed entrypoint from becoming healthy.",
+    "Check whether provider_unavailable remains degraded instead of being treated as core RedCap failure.",
+    "Concern or block findings must identify a concrete minimum fix."
+  ]
+}

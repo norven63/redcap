@@ -15,14 +15,14 @@
     "task_file_exists": false,
     "task_id": "",
     "task_hash": null,
-    "user_private_root": "/Users/norven/.cap",
-    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "user_private_root": "$CAP_HOME",
+    "state_root": "$CAP_HOME/redcap-runtime",
     "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
     "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
     "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
     "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
     "project_runtime_gitignore_ok": true,
-    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "legacy_external_evidence_root": "$CAP_HOME/redcap-runtime/evidence/8c8cdb010e8e4721",
     "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
   },
   "soul": {

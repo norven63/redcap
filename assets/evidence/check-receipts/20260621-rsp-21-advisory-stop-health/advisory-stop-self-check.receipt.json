@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "advisory-stop-self-check",
+  "command": "runtime/bin/redcap advisory-stop self-check",
+  "argv": [
+    "runtime/bin/redcap",
+    "advisory-stop",
+    "self-check"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 12.437,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-self-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-21-advisory-stop-health/advisory-stop-self-check.stderr.txt",
+  "stdout_sha256": "e2ea0539371b11c91c4e79f1f1e4a6079a24e69ad89171c7efcd0fc5fb02c3d7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 6759,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T17:55:07+00:00",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

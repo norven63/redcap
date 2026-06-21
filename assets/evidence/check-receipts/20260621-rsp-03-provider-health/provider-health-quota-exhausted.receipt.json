@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "provider-health-quota-exhausted",
+  "command": "runtime/bin/redcap provider-health check --fixture quota-exhausted",
+  "argv": [
+    "runtime/bin/redcap",
+    "provider-health",
+    "check",
+    "--fixture",
+    "quota-exhausted"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.038,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-03-provider-health/provider-health-quota-exhausted.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-03-provider-health/provider-health-quota-exhausted.stderr.txt",
+  "stdout_sha256": "39638fe0e0c1eaf59904b13084e49af9a1716fe8bb28b2b7f0b4b5fa8a92008c",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 781,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T18:43:03+00:00",
+  "executor": "cap"
+}

@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260620-residual-final-solution-plan-r9",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-residual-final-solution-plan-r9",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T15:27:15+00:00",
+  "task_started_at": "2026-06-20T15:27:15+00:00",
+  "updated_at": "2026-06-20T15:29:35+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "b61fc8df-50a1-415c-80d3-37b73d5efd39",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-residual-final-solution-plan-r9/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_27afea0d-9ac5-4ab1-a2a8-a3101f0d04af",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260620-residual-final-solution-plan-r9/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

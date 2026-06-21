@@ -1,0 +1,61 @@
+{
+  "schema_id": "redcap-long-task-loop-boundary-contract",
+  "rsp": "RSP-10",
+  "purpose": "验证长任务循环机制的进入、推进、停止、失败升级和完成声明边界，防止无限循环、过度触发和未完成收口。",
+  "scope": {
+    "covered": [
+      "短任务必须走轻量路径，不创建 active_run",
+      "复杂 RedCap 自开发任务必须能进入 active_run 并通过 record/complete 推进与收口",
+      "同根因、同源码、同证据第三轮仍自动重跑必须失败",
+      "低置信完成证据、缺少 action_evidence、缺少 objective_delta、缺少 failure_backlog 必须失败",
+      "RSP-10 完成声明必须以 boundary-check 通过为前提"
+    ],
+    "not_covered": [
+      "不证明所有真实项目长期自动化循环均已成熟",
+      "不证明 RedCap 完整复活",
+      "不替代 Loom 真实角色链端到端验收"
+    ]
+  },
+  "entrypoints": {
+    "primary_check": "runtime/bin/redcap long-task boundary-check",
+    "aggregate_check": "runtime/bin/redcap check --only long-task-loop-boundary-check",
+    "contract_check": "runtime/bin/redcap long-task check --packet assets/contracts/long-task-contract.json --require-integration"
+  },
+  "required_probes": [
+    {
+      "id": "short_task_misroute",
+      "type": "positive_guard",
+      "input": "低风险解释类任务",
+      "expected": "decide/start 均返回 fast_path，active_run_created=false"
+    },
+    {
+      "id": "complex_task_progress_and_close",
+      "type": "positive_flow",
+      "input": "中风险 RedCap 自开发长任务",
+      "expected": "start 创建 active_run，record 写入行为证据和 failure_backlog，complete 写入 completion_boundary"
+    },
+    {
+      "id": "blind_retry_loop",
+      "type": "negative_guard",
+      "input": "同 blocker/source/evidence 连续三轮 failed 且 auto_rerun_allowed=true",
+      "expected": "validate_iteration_ledger 拒绝继续自动重跑"
+    },
+    {
+      "id": "low_quality_completion",
+      "type": "negative_guard",
+      "input": "随机填充或语义无关的完成证据",
+      "expected": "complete 拒绝关闭 active_run"
+    },
+    {
+      "id": "missing_required_fields",
+      "type": "negative_guard",
+      "input": "缺少 action_evidence、objective_delta 或 failure_backlog",
+      "expected": "record 或 contract validation 失败"
+    }
+  ],
+  "claim_gate": {
+    "claim_file": "assets/evidence/rsp/rsp-10-claim.json",
+    "evidence_file": "assets/evidence/rsp/rsp-10-long-task-loop-boundary.json",
+    "rule": "只有 boundary-check、聚合检查、RSP 合同检查、棱镜 resolution 和 lifecycle check 全部通过，才允许声明 RSP-10 当前证据范围完成。"
+  }
+}

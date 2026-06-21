@@ -1,0 +1,31 @@
+{
+  "providers": ["kimi", "claude-code"],
+  "verdicts": [
+    {"provider": "kimi", "verdict": "concern", "confidence": "medium"},
+    {"provider": "claude-code", "verdict": "pass", "confidence": "medium"}
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "Kimi stated that the bounded-read bundle truncated the plan at line 20 and therefore could not independently verify the local_cross_verification."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Claude Code recommends pass-with-caveat and freezing the plan instead of continuing plan-level review loops."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Provide auditable verification evidence or untruncated plan content; otherwise mark the claim as unverifiable."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Freeze the plan as current version and enter RSP-00/RSP-11/RSP-12 implementation."
+    }
+  ],
+  "anti_loop_detected": true
+}

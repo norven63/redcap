@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-project-install-matrix-contract",
+  "rsp": "RSP-09",
+  "command": "runtime/bin/redcap project-install matrix-check",
+  "positive_acceptance": [
+    "package、audit-package、外部项目 init、重复 init、卸载后重装均通过",
+    "项目 hooks 指向项目级 .redcap",
+    "RedCap 源工作区 git 状态在矩阵执行前后不变化"
+  ],
+  "negative_probe": [
+    "模拟源工作区污染必须被识别为失败"
+  ],
+  "evidence_file": "assets/evidence/rsp/rsp-09-project-install-matrix.json"
+}

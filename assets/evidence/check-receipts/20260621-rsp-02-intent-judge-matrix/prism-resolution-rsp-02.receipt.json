@@ -1,0 +1,29 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-resolution-rsp-02",
+  "command": "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260621-rsp-02-intent-judge-matrix/merge.json --resolution assets/evidence/prism/20260621-rsp-02-intent-judge-matrix/resolution.json --review assets/evidence/prism/20260621-rsp-02-intent-judge-matrix/kimi.normalized.review.json --review assets/evidence/prism/20260621-rsp-02-intent-judge-matrix-claude-retry/claude-code.review.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-resolution",
+    "--merge",
+    "assets/evidence/prism/20260621-rsp-02-intent-judge-matrix/merge.json",
+    "--resolution",
+    "assets/evidence/prism/20260621-rsp-02-intent-judge-matrix/resolution.json",
+    "--review",
+    "assets/evidence/prism/20260621-rsp-02-intent-judge-matrix/kimi.normalized.review.json",
+    "--review",
+    "assets/evidence/prism/20260621-rsp-02-intent-judge-matrix-claude-retry/claude-code.review.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-20T17:45:00+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.05,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-02-intent-judge-matrix/prism-resolution-rsp-02.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-02-intent-judge-matrix/prism-resolution-rsp-02.stderr.txt",
+  "stdout_sha256": "8ffce324c06a317609ebee3f4cbfc3699082563869281d4ac9be27bddeb05da0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 554,
+  "stderr_length": 0
+}

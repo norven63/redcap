@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "方案书声称已冻结，但冻结的强制执行机制（rsp-contract check）本身是\"待验证设计假设\"。在 RSP-00 spike 产出可工作的检查工具之前，冻结处于\"纸面冻结\"状态——过程依靠人工/同行评审兜底，而非机器防线。请求中的 reviewable_plan_excerpt 声称修复已写入方案书，但 Prism 无法直接验证方案书原文（文件读取工具不可用），只能审查请求中自述的摘要。",
+  "main_concern": "无法验证方案书原文是否真正包含所声称的修改。reviewable_plan_excerpt 是请求方自述摘要，不是方案书原文引用。存在\"修复写在请求里但未写入方案书\"或\"方案书写了但措辞不够精确、不够可执行\"的可能。此外，rsp-contract check 作为设计假设与它作为冻结执行机制之间存在循环依赖：冻结的强制执行依赖一个尚不存在的工具。",
+  "top_risks": [
+    "方案书原文与请求摘要不一致：声称的修改可能只存在于请求JSON中，方案书原文未同步更新",
+    "循环依赖：RSP-00 spike 产出 rsp-contract check 前，冻结方案没有机器强制执行；若 spike 延迟或失败，期间方案可能漂移",
+    "plan-change-control 标注机制未在 excerpt 中得到定义——其格式、位置、审计方式均未明确，可能沦为无约束力的自由文本标注"
+  ],
+  "missing_evidence": [
+    "方案书原文 assets/docs/residual-todo-final-solution-plan.md 的实际内容（无法读取验证）",
+    "RSP-00 spike 的接口规格——rsp-contract check 的输入参数、输出格式、失败条件定义",
+    "plan-change-control 标注规范——格式、在提交信息中的位置、与 rsp-contract check 输出格式的对应关系"
+  ],
+  "minimum_fix": "在方案书中直接引用并附上（而非仅在请求JSON中描述）R4 minimum_fix 对应的原文段落；明确 rsp-contract check 的最小可验证接口规格（至少包括：输入参数列表、输出JSON结构、失败/通过的判定字段）；定义 plan-change-control 标注的具体格式和审计方式（如提交信息模板、需要包含的字段）。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "这是第五轮方案书复审（R1→R2→R3→R4→R5），同一文档反复修改5轮，每次都发现新的 meta-concern（如本次的'冻结执行机制本身是设计假设'）。review_questions 第3问'是否可以停止继续扩写方案'表明请求方已意识到循环风险，但本身又引入了新一轮修改要求。若本次又产出新的 minimum_fix 要求，可能触发 R6。"
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "project-install-self-check-round3",
+  "argv": [
+    "runtime/bin/redcap",
+    "project-install",
+    "self-check"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:52:43+00:00",
+  "ended_at": "2026-06-20T20:52:43+00:00",
+  "elapsed_seconds": 0.385,
+  "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_PROJECT_INSTALL_SELF_CHECK_OK\n",
+  "stderr_tail": ""
+}

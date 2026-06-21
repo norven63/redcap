@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "knowledge-search-direct-driver-positive",
+  "command": "runtime/bin/redcap knowledge-gateway search Hook 误伤率 漏检率 --require-match --direct-driver-only",
+  "argv": [
+    "runtime/bin/redcap",
+    "knowledge-gateway",
+    "search",
+    "Hook 误伤率 漏检率",
+    "--require-match",
+    "--direct-driver-only"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.134,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-26-knowledge-quality/knowledge-search-direct-driver-positive.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-26-knowledge-quality/knowledge-search-direct-driver-positive.stderr.txt",
+  "stdout_sha256": "5b01f88905af2798a3d032fe58e6d034b2c0eafd28248e867793aa77df018985",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1032,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T03:23:22+00:00",
+  "executor": "cap"
+}

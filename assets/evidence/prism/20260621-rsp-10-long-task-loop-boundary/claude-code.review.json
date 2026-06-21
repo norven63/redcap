@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "设计声称 boundary-check 能关闭 RSP-10，但提议的 5 项变更（合同文件、boundary-check 扩展、帮助文本、check_runner 入口、证据文件）均为脚手架级别的改动，未描述 boundary-check 相对于现有 self-check 究竟新增了什么负向探针逻辑。现有 self-check 验证的是内部状态一致性（active_run 字段完整性），而 RSP-10 需要的是循环边界违规检测（同根因三轮失败阻断、短任务误入长任务路径、低质量完成证据识别）。如果 boundary-check 只是 self-check 的别名包装，则无法实际关闭 RSP-10。",
+  "main_concern": "boundary-check 方案未定义与 self-check 正交的负向探针集。现有 self-check 验证 active_run 结构完整性，RSP-10 需要的是循环边界违规检测逻辑——这两个验证域不同。提案描述的变更项（合同、帮助文本、check_runner 入口）均不包含新验证逻辑，如果 boundary-check 仅复用现有 decide/start/record/complete 校验链而不新增循环边界专项检查，则无法满足质量要求中\"不能只证明有合同或自检\"的约束。",
+  "top_risks": [
+    "boundary-check 退化为 self-check 别名：复用现有校验链但不新增循环边界专项探针，导致 RSP-10 证据只有形式没有实质",
+    "完成声明缺乏闸门机制：提案未描述 claim 生成是否受检查结果约束，若边界检查失败仍可生成通过声明，则证据闭环为假",
+    "短任务误入长任务路径未设防：现有 long_task_contract.json 声明\"真实入口必须通过 long-task start\"，但 boundary-check 作为新增 check_runner 入口可能绕过此约束，导致每次 check 都触发 long-task 判定"
+  ],
+  "missing_evidence": [
+    "boundary-check 将实现的负向探针清单及与 self-check 的区别矩阵：短任务过度触发检测、同根因三轮失败阻断、低质量完成证据拒绝的具体判定逻辑",
+    "完成声明生成与检查结果的闸门关系：声明是仅记录检查执行事实还是以检查通过为前提",
+    "short-task vs long-task 的进入判定如何在 boundary-check 命令流中实现，而非依赖用户手动选择正确命令"
+  ],
+  "minimum_fix": "在边界合同或实现计划中明确定义至少 4 个与 self-check 正交的负向探针：(1) short_task_misroute——短任务被误路由到 long-task 路径的检测；(2) blind_retry_loop——同根因连续失败 >=3 次且无进展的阻断；(3) low_quality_completion——完成证据缺乏迭代记录或 failure_backlog 的拒绝；(4) claim_gate——完成声明写入前必须验证 boundary-check 全部探针通过。每个探针需给出具体的输入条件、判定逻辑和预期输出，而非仅声明\"复用现有校验链\"。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "RSP-10 本身是治理循环边界的任务，但本轮 Prism 评审发现的模式——通过创建合同文件和证据文件来'关闭'一个需要实现新验证逻辑的问题——本身就是一种循环风险。如果本次评审的 concern 被接受并产生新一轮合同/文件改动而非实质探针实现，则评审自身进入了与 RSP-10 同构的循环。"
+  },
+  "user_intent_alignment": "unclear"
+}

@@ -1,0 +1,32 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "rsp-contract-rsp-04",
+  "command": "runtime/bin/redcap rsp-contract check --rsp RSP-04 --claim-file assets/evidence/rsp/rsp-04-claim.json --evidence-file assets/evidence/rsp/rsp-04-prism-context-boundary.json --plan assets/docs/residual-todo-final-solution-plan.md",
+  "argv": [
+    "runtime/bin/redcap",
+    "rsp-contract",
+    "check",
+    "--rsp",
+    "RSP-04",
+    "--claim-file",
+    "assets/evidence/rsp/rsp-04-claim.json",
+    "--evidence-file",
+    "assets/evidence/rsp/rsp-04-prism-context-boundary.json",
+    "--plan",
+    "assets/docs/residual-todo-final-solution-plan.md"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.123,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/rsp-contract-rsp-04.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/rsp-contract-rsp-04.stderr.txt",
+  "stdout_sha256": "5eeed5dd53c3087fb03d093782d4a03c9b7d17bbb30b85ce78a8d43cdd953f0e",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 752,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:19:05+00:00",
+  "executor": "cap"
+}

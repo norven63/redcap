@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap gate --task RSP-24 Cap 运行时稳定性独立健康维度实施和验收 --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-24-cap-runtime-health.json",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T20:36:20+00:00",
+  "executor": "redcap-rsp-24-final-gate",
+  "stdout_sha256": "32ce2964071f31b0faa5849bd417fdb80620a1c1991baa6bc6fbb8d6dbf441b7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-24-cap-runtime-health/gate-with-lifecycle-rsp-24-final.receipt.json"
+}

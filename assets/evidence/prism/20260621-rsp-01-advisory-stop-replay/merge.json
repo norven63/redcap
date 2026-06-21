@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The design could collapse into 'add more replay tests in advisory_stop.py' without changing the actual Stop advice format produced by codex-hook.py, generating passing paperwork while the real spindle deflection remains possible."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Documentation and verification framework artifacts (rsp_contract.py, solution-plan.md) are being produced ahead of the actual code change in the files that implement Stop behavior (advisory_stop.py, codex-hook.py). This creates a risk of 'closeout artifact first, implementation second' — where the completion ceremony and evidence structure exist before the behavior they are meant to verify. The main AI admits incompleteness, which is honest, but the pattern of building verification scaffolding before the change it verifies is a known self-deception vector."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before coding, the main AI must (1) inspect and include the codex-hook.py function that formats the advisory Stop message, (2) define spindle-retention criteria as a semantic check on whether the second-turn answer first satisfies the user's original question, and (3) commit to changing the hook's output structure or injection contract so the advice is explicitly marked as non-task meta-guidance, not merely add more tests."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before any completion declaration, modify advisory_stop.py to add at least 2 positive replay samples (user asks problem-triggering question, Stop advisory present, user question remains primary axis) and 2 negative replay samples (user asks status/progress question, response is primarily about Stop rather than answering the status question). Only after these samples exist and their assertions are defined should codex-hook.py be evaluated for format changes. Run rsp_contract.py verification gate only after the replay samples are in place, not before."
+    }
+  ],
+  "anti_loop_detected": true
+}

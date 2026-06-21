@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "block",
+  "confidence": "low",
+  "reality_delta": "无法读取方案书正文（Read 工具不可用、GitHub 工具未授权、方案书为 untracked 文件不在远程仓库），因此无法验证方案书是否真正覆盖了残留问题清单，也无法判断每个方案是否正面解决根因而非降级绕过。本次审查只能基于 review request JSON 元信息进行结构性判断，而非对方案书内容本身的实质性审查。",
+  "main_concern": "方案书文件 assets/docs/residual-todo-final-solution-plan.md 是本次审查的核心标的，但审查者无法访问该文件内容。无法验证：①方案书是否真的逐条列出了近30轮讨论中未成熟的残留问题；②每个方案是否正面解决根因而非降级、绕过或放宽标准；③实施顺序是否合理，前置项是否正确排列。没有文件内容审查的 Prism 评审本质上是形式审查而非实质审查，产出结果不可信。",
+  "top_risks": [
+    "方案书可能遗漏近30轮中已讨论但未完全成熟的残留问题，但由于无法读取方案书，不能验证覆盖度",
+    "方案书可能用文档化、放宽验收标准或声明型语言替代真实的实现改变（降级风险），无法通过元信息判断",
+    "本轮 Prism 评审若在无法读取方案书正文的情况下给出 pass/concern 结论，会造成\"已审方案书\"的虚假完成信号，污染完成口径"
+  ],
+  "missing_evidence": [
+    "方案书正文：assets/docs/residual-todo-final-solution-plan.md 为 untracked 文件，审查者无法访问",
+    "合同文件：assets/contracts/known-issues-queue.json 等可能包含已记录残留问题的结构化清单，用于交叉验证方案书覆盖度",
+    "近30轮讨论的残留问题追踪记录：没有索引或汇总文件可供审查者对照方案书条目逐项核对"
+  ],
+  "minimum_fix": "在 Prism 审查者能实际读取方案书正文之前，不得给出审查结论。最低修复：①启用 Read 工具或将方案书提交到 develop 分支并授权 GitHub 工具读取；②补充一份结构化残留问题清单（如 known-issues-queue.json 中未关闭条目索引），作为方案书覆盖度的对照基准；③重新执行本次 Prism 审查，要求审查者逐条对照方案书条目与残留问题清单，验证每个方案的根因正面解决、不降级、不引入新风险。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "审查请求要求 Prism 评审方案书，但审查者无法读取方案书文件——这形成了一个结构性死循环：Cap 编写方案书 → Prism 被要求评审 → Prism 无法读取方案书 → 评审无法完成 → 可能触发 Cap 再次修改方案书 → Prism 再次被要求评审但依然无法读取。如果反复触发 Prism 评审而不解决文件可访问性问题，就是反循环信号。"
+  },
+  "user_intent_alignment": "misaligned"
+}

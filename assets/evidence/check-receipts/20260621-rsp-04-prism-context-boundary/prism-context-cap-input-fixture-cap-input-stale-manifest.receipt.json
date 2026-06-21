@@ -1,0 +1,26 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-context-cap-input-fixture-cap-input-stale-manifest",
+  "command": "runtime/bin/redcap prism-context cap-input-check --fixture cap-input-stale-manifest",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-context",
+    "cap-input-check",
+    "--fixture",
+    "cap-input-stale-manifest"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 0.177,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-cap-input-fixture-cap-input-stale-manifest.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/prism-context-cap-input-fixture-cap-input-stale-manifest.stderr.txt",
+  "stdout_sha256": "3599e7e903bb406fc28835a2a5a1bc840a9b8c2b9b2518711c61b89c4bad1178",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 327,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:10:19+00:00",
+  "executor": "cap"
+}

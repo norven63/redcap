@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "设计文档将自己描述为\"准备新增\"的待实施方案，但实际尚未写入任何一行代码、合同或质量元数据。当前 reality 是 index.json 中的知识条目完全没有质量字段，knowledge_gateway.py 只做结构校验和搜索路由，不做语义老化/冲突/no-promote 判断。设计与现实之间的差距是整个实现工作量，而非微调。",
+  "main_concern": "sidecar 双源漂移没有 reconciliation 机制：quality.json 作为 sidecar 独立于 index.json 存在，但设计未定义两者不一致时的裁决规则、同步触发条件或自动化检测。当 index.json 增删改条目时，quality.json 必然滞后，导致质量元数据要么过严（拒绝已删除条目）、要么过松（新条目无覆盖而默认放行）。这是\\\"检查器存在\\\"与\\\"检查器正确\\\"之间的鸿沟。",
+  "top_risks": [
+    "sidecar 双源漂移：quality.json 与 index.json 不一致时，无裁决规则、无自动检测、无同步钩子，质量检查会逐渐与真实知识库脱节",
+    "gateway 集成缺口：knowledge_quality.py 检查 quality.json 字段语义，但 knowledge_gateway.py 的路由逻辑不读取质量元数据 — 过期/冲突/no-promote 知识仍然会被网关按原路由策略返回给调用方，形成\"检查通过但运行时仍用坏知识\"的分叉",
+    "未评级条目的默认行为未定义：100+ 现有索引条目无 quality 覆盖时的默认 usage_policy 决定系统实际安全性 — 默认 direct_driver 则治理形同虚设，默认 review_required 则破坏现有工作流，设计对此沉默"
+  ],
+  "missing_evidence": [
+    "quality.json 与 index.json 的一致性保证机制（同步钩子、CI 检查、或原子写入策略）未在设计中出现",
+    "knowledge_gateway.py 是否需要修改以消费 quality 元数据的决策未做出 — 这是运行时 enforcement 的核心接口",
+    "负向探针的具体测试用例和测试基础设施未定义 — quality requirements 要求负向样本但 proposed changes 不含测试文件"
+  ],
+  "minimum_fix": "在开始实现前，先解决三个设计决策：(1) 定义未评级条目的默认 usage_policy 及其迁移路径；(2) 明确 knowledge_gateway.py 是否需要读取 quality 元数据来决定路由行为，还是 quality 检查仅作为独立审计层；(3) 为 sidecar 定义一致性保证 — 至少要在 knowledge-quality-check 中增加 index.json↔quality.json 交叉校验（orphan quality 条目、missing quality 覆盖、path 不匹配），作为 check 的必选项而非可选项。同时将负向探针文件和测试基础设施加入 proposed changes 列表。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "RSP-26 是残留解决方案书中定义的残留待完善项，之前可能已多次被标记为将处理但未实际落地。本轮设计评审本身可能成为又一次文档闭环：设计方案写得很完整但没有代码执行。anti-loop 信号在于：如果本轮只产出 contract JSON 和文档级 quality.json，而 knowledge_quality.py 的语义检查（expired+active=fail 等核心规则）未被实现为可运行命令，则进入每次评审都通过但问题从未解决的循环。"
+  },
+  "user_intent_alignment": "aligned"
+}

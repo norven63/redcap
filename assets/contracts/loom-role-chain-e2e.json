@@ -1,0 +1,72 @@
+{
+  "schema_id": "redcap-loom-role-chain-e2e-contract",
+  "rsp": "RSP-05",
+  "schema_version": 1,
+  "purpose": "验证 Loom 角色链不是由 Cap 单体直接吞并，而是具备角色、会话、上下游交付、产物消费和失败回流的项目级运行证据。",
+  "scope": {
+    "closed_scope": "当前 fixture/runtime evidence loop",
+    "not_claimed": [
+      "真实外部长期生产成熟",
+      "宿主级加密证明每个角色一定由不同人或不同模型实例承载",
+      "RedCap 完整复活"
+    ]
+  },
+  "required_roles": [
+    "product_manager",
+    "architect",
+    "developer",
+    "tester",
+    "reviewer"
+  ],
+  "role_chain_order": [
+    "product_manager",
+    "architect",
+    "developer",
+    "tester",
+    "reviewer"
+  ],
+  "required_record_fields": [
+    "project_id",
+    "task_id",
+    "role",
+    "session_id",
+    "provider",
+    "agent_instance_id",
+    "upstream_nonce",
+    "role_nonce",
+    "downstream_nonce",
+    "handoff_inputs",
+    "handoff_outputs",
+    "consumed_artifacts",
+    "produced_artifacts",
+    "evidence_files",
+    "attestation"
+  ],
+  "positive_acceptance": [
+    "所有角色存在且 provider 为 codex-cli。",
+    "不同角色不能复用 session_id。",
+    "不同角色不能复用 agent_instance_id。",
+    "nonce 链必须从 root:<task_id> 开始，逐角色向下游传递。",
+    "每个下游角色必须记录消费了上一角色输出和产物。",
+    "每个角色产物文件必须实际存在。"
+  ],
+  "negative_probes": [
+    {
+      "id": "single-ai-multi-role",
+      "must_fail_when": "多个角色复用同一 agent_instance_id"
+    },
+    {
+      "id": "cross-role-session-reuse",
+      "must_fail_when": "多个角色复用同一 session_id"
+    },
+    {
+      "id": "missing-or-shared-nonce",
+      "must_fail_when": "角色缺少 role_nonce、downstream_nonce，或复用 nonce"
+    },
+    {
+      "id": "missing-handoff-consumption",
+      "must_fail_when": "下游角色没有记录消费上一角色输出和产物"
+    }
+  ],
+  "completion_claim_boundary": "完成声明只能说 RSP-05 在当前运行机和 fixture 证据闭环内通过，不能说 Loom 已经具备长期生产成熟。"
+}

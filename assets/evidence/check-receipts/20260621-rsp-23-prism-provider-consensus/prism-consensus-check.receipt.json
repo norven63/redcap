@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-consensus-check",
+  "command": "runtime/bin/redcap prism-consensus check --out assets/evidence/rsp/rsp-23-prism-provider-consensus.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-consensus",
+    "check",
+    "--out",
+    "assets/evidence/rsp/rsp-23-prism-provider-consensus.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "ok": true,
+  "elapsed_seconds": 0.383,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-23-prism-provider-consensus/prism-consensus-check.stderr.txt",
+  "stdout_sha256": "29840f3776729a2d03913701326b220cb75c60491ef30690c36a7e4233c3e2ec",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 8206,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:59:12Z",
+  "executor": "cap",
+  "expected_exit_code": 0
+}

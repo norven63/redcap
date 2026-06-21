@@ -1,0 +1,83 @@
+{
+  "task": "RSP-10 长任务循环边界治理设计评审",
+  "task_id": "20260621-rsp-10-long-task-loop-boundary",
+  "title": "RSP-10 长任务循环边界治理",
+  "risk_level": "medium",
+  "user_intent": "Norven 要求 RedCap 能处理复杂自动化长任务，但不能无限循环、过度触发或任务未完成就汇报完成。当前任务是把 RSP-10 从已有长任务合同推进为可关闭的专门证据闭环。",
+  "main_claim": "本轮尚未声明完成；计划扩展现有 runtime/core/long_task_contract.py，而不是另造一套循环框架。新增 long-task boundary-check 命令、RSP-10 合同、正负向探针、RSP 证据和完成声明。",
+  "changed_reality": [
+    "runtime/core/long_task_contract.py 已有 decide/start/record/complete/self-check，能创建 active_run、记录迭代、维护 failure_backlog、验证 completion_boundary。",
+    "assets/contracts/long-task-contract.json 已声明策略模板不执行循环，真实入口必须通过 long-task start 创建 active_run。",
+    "assets/docs/residual-todo-final-solution-plan.md 将 RSP-10 标记为尚未闭环，要求长任务进入、推进、停止条件均可触发，同根因三轮失败继续重跑必须失败。"
+  ],
+  "target_reality": "RSP-10 具备专门合同、运行检查入口和证据文件：短任务不过度进入长任务，复杂任务能进入并推进，盲目重复失败被阻断，低质量完成证据不能收口，完成声明严格限定在当前证据范围。",
+  "evidence": [
+    {
+      "kind": "document",
+      "reference": "assets/docs/residual-todo-final-solution-plan.md",
+      "summary": "RSP-10 的问题定义、验收和负向探针要求。"
+    },
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/long-task-contract.json",
+      "summary": "现有长任务策略模板。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/long_task_contract.py",
+      "summary": "现有长任务决策、运行、记录、收口和自检逻辑。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "聚合检查入口。"
+    },
+    {
+      "kind": "lifecycle",
+      "reference": "assets/evidence/lifecycle/20260621-rsp-10-long-task-loop-boundary.json",
+      "summary": "本轮生命周期包。"
+    }
+  ],
+  "review_mode": "design_review",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review RSP-10 long-task loop boundary implementation plan before code changes.",
+    "allowed_paths": [
+      "assets/docs/residual-todo-final-solution-plan.md",
+      "assets/contracts/long-task-contract.json",
+      "runtime/core/long_task_contract.py",
+      "runtime/core/check_runner.py",
+      "assets/evidence/lifecycle/20260621-rsp-10-long-task-loop-boundary.json"
+    ],
+    "max_files": 8,
+    "max_bytes_per_file": 90000,
+    "max_total_bytes": 260000
+  },
+  "proposed_changes": [
+    "新增 assets/contracts/long-task-loop-boundary.json，定义 RSP-10 专门验收、正向探针和负向探针。",
+    "扩展 runtime/core/long_task_contract.py，新增 boundary-check 命令，复用现有 decide/start/record/complete 校验链生成 RSP-10 证据。",
+    "在 runtime/bin/redcap 帮助文本中加入 boundary-check。",
+    "在 runtime/core/check_runner.py 增加 long-task-loop-boundary-check。",
+    "生成 assets/evidence/rsp/rsp-10-long-task-loop-boundary.json 和 assets/evidence/rsp/rsp-10-claim.json。"
+  ],
+  "quality_requirements": [
+    "不能只证明有合同或自检，必须有 RSP-10 专属正负向探针输出。",
+    "短任务不过度触发、复杂任务进入、record 推进、complete 收口、盲目重跑拒绝、低质量完成证据拒绝都必须被机器检查覆盖。",
+    "不能降低现有长任务严格度，不能通过放宽阈值来让检查通过。",
+    "完成声明只能覆盖 RSP-10 当前运行机证据闭环，不能声明真实长期生产成熟或 RedCap 完整复活。"
+  ],
+  "known_non_goals": [
+    "不在本轮真实启动外部项目长任务开发。",
+    "不把 fixture 通过写成长期生产样本通过。",
+    "不读取或迁移旧 RedCap 仓库。"
+  ],
+  "questions_for_prism": [
+    "这个方案是否足以关闭 RSP-10 当前范围，还是仍缺关键负向探针？",
+    "boundary-check 是否应该复用 self-check 的完整探针，还是需要专门输出 RSP-10 验收结构？",
+    "完成声明应如何收窄，才能避免把长任务边界治理写成 RedCap 完整复活？"
+  ]
+}

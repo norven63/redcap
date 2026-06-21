@@ -1,0 +1,49 @@
+{
+  "task": "Review whether RSP-23 concerns were resolved by actual provider disagreement trace.",
+  "user_intent": "Norven requires Prism（棱镜，异构 AI 评审助手）provider disagreement to be explicit, bounded, reviewable, executable, and not replaced by paperwork.",
+  "main_claim": "Cap accepted both round-1 concerns and changed the runtime: prism-consensus can now consume real Kimi and Claude Code review/raw outputs, produce a provider disagreement trace, mark must_respond=true, surface material disagreement, and refuse silent pass.",
+  "changed_reality": [
+    "runtime/core/prism_provider_consensus.py now has trace command and provider-run-dir validation.",
+    "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json was generated from the actual round-1 Kimi and Claude Code review/raw outputs.",
+    "assets/evidence/rsp/rsp-23-prism-provider-consensus.json now includes actual-provider-disagreement-trace in checks and positive acceptance.",
+    "The trace shows both providers returned concern, material disagreement is present, must_respond=true, bounded_outcome=requires_resolution, and refuses_silent_pass=true."
+  ],
+  "evidence": [
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/prism_provider_consensus.py",
+      "summary": "Trace command and provider-run-dir validation added."
+    },
+    {
+      "kind": "trace",
+      "reference": "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/provider-disagreement-trace.json",
+      "summary": "Actual provider disagreement trace generated from real round-1 raw outputs."
+    },
+    {
+      "kind": "raw",
+      "reference": "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/kimi.raw.json",
+      "summary": "Kimi round-1 raw output used by the trace."
+    },
+    {
+      "kind": "raw",
+      "reference": "assets/evidence/prism/20260621-rsp-23-prism-provider-consensus/claude-code.raw.json",
+      "summary": "Claude Code round-1 raw output used by the trace."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-23-prism-provider-consensus.json",
+      "summary": "RSP-23 refreshed evidence with actual-provider-disagreement-trace."
+    }
+  ],
+  "review_mode": "followup_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "This is still scoped to RSP-23 only.",
+    "Do not claim RedCap 完整复活.",
+    "If concern remains, identify the minimum runtime fix; do not ask for more receipts or generic documentation."
+  ]
+}

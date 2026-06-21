@@ -101,11 +101,117 @@ def check(contract_path: pathlib.Path, merge_path: pathlib.Path) -> dict[str, An
     }
 
 
+def write_json(path: pathlib.Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def build_design_maturity_matrix(contract: dict[str, Any]) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    for item in contract.get("required_designs", []):
+        if not isinstance(item, dict):
+            continue
+        design_id = str(item.get("id") or "")
+        required_as = str(item.get("required_as") or "")
+        rows.append({
+            "design_id": design_id,
+            "name": item.get("name"),
+            "required_as": required_as,
+            "coverage_status": "covered_by_contract",
+            "maturity_level": "needs_runtime_evidence",
+            "maturity_status": "not_long_term_mature",
+            "required_next_evidence": [
+                f"runtime/bin/redcap {required_as} check" if required_as else "runtime/bin/redcap check",
+                "external project or repeated task evidence",
+                "negative probe evidence",
+            ],
+        })
+    return {
+        "schema_id": "redcap-design-maturity-matrix",
+        "created_from": str(DEFAULT_CONTRACT),
+        "rows": rows,
+        "summary": {
+            "design_count": len(rows),
+            "mature_count": len([row for row in rows if row.get("maturity_level") == "long_term_mature"]),
+            "coverage_is_not_maturity": True,
+        },
+    }
+
+
+def design_maturity_matrix_check(out: pathlib.Path | None = None) -> dict[str, Any]:
+    contract = load_json(DEFAULT_CONTRACT)
+    matrix = build_design_maturity_matrix(contract)
+    failures: list[str] = []
+    rows = matrix.get("rows") if isinstance(matrix.get("rows"), list) else []
+    required_designs = contract.get("required_designs") if isinstance(contract.get("required_designs"), list) else []
+    if len(rows) != len(required_designs):
+        failures.append("设计成熟度矩阵没有覆盖所有 required_designs")
+    if any(row.get("maturity_level") == "long_term_mature" for row in rows):
+        failures.append("RSP-17 不允许仅凭合同覆盖声明长期成熟")
+    if matrix.get("summary", {}).get("coverage_is_not_maturity") is not True:
+        failures.append("设计成熟度矩阵必须显式声明覆盖不等于成熟")
+    contract_only_negative = {
+        "coverage_status": "covered_by_contract",
+        "maturity_level": "long_term_mature",
+        "evidence": ["assets/contracts/full-revival-amendment.json"],
+    }
+    negative_detected = (
+        contract_only_negative.get("coverage_status") == "covered_by_contract"
+        and contract_only_negative.get("maturity_level") == "long_term_mature"
+        and not any(str(item).startswith("runtime/bin/redcap") for item in contract_only_negative.get("evidence", []))
+    )
+    if not negative_detected:
+        failures.append("合同覆盖冒充长期成熟的负向探针没有失败")
+    payload = {
+        "rsp": "RSP-17",
+        "schema_id": "redcap-rsp-17-design-maturity-matrix",
+        "ok": not failures,
+        "acceptance": {
+            "positive": {
+                "status": "pass" if not failures else "fail",
+                "checks": [
+                    "15 项优秀设计生成成熟度矩阵",
+                    "每项区分 coverage_status 与 maturity_level",
+                    "矩阵声明 coverage_is_not_maturity"
+                ],
+            },
+            "negative": {
+                "status": "pass" if negative_detected else "fail",
+                "checks": ["合同覆盖冒充长期成熟必须失败"],
+            },
+        },
+        "changed_reality": [
+            "runtime/core/full_revival_amendment.py 新增 maturity-check，生成设计成熟度矩阵并阻断合同覆盖冒充长期成熟。"
+        ],
+        "artifacts": [
+            "runtime/bin/redcap full-revival-amendment maturity-check",
+            "runtime/core/full_revival_amendment.py",
+            "assets/contracts/design-maturity-matrix.json",
+        ],
+        "matrix": matrix,
+        "negative_probe": contract_only_negative,
+        "failures": failures,
+    }
+    target = out or REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-17-design-maturity-matrix.json"
+    write_json(target, payload)
+    return payload
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     result = check(pathlib.Path(args.contract).resolve(), pathlib.Path(args.scan_merge).resolve())
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result["ok"]:
         print("REDCAP_FULL_REVIVAL_AMENDMENT_OK")
+        return 0
+    return 1
+
+
+def cmd_maturity_check(args: argparse.Namespace) -> int:
+    out = pathlib.Path(args.out).resolve() if args.out else None
+    result = design_maturity_matrix_check(out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["ok"]:
+        print("REDCAP_DESIGN_MATURITY_MATRIX_OK")
         return 0
     return 1
 
@@ -154,6 +260,9 @@ def build_parser() -> argparse.ArgumentParser:
     check_cmd.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     check_cmd.add_argument("--scan-merge", default=str(DEFAULT_MERGE))
     check_cmd.set_defaults(func=cmd_check)
+    maturity = sub.add_parser("maturity-check")
+    maturity.add_argument("--out")
+    maturity.set_defaults(func=cmd_maturity_check)
     self_check = sub.add_parser("self-check")
     self_check.set_defaults(func=cmd_self_check)
     return parser

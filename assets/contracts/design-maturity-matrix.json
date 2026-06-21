@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-design-maturity-matrix-contract",
+  "rsp": "RSP-17",
+  "command": "runtime/bin/redcap full-revival-amendment maturity-check",
+  "positive_acceptance": [
+    "所有 required_designs 都生成成熟度行",
+    "每项区分 coverage_status 与 maturity_level",
+    "矩阵必须声明 coverage_is_not_maturity"
+  ],
+  "negative_probe": [
+    "合同覆盖不得冒充长期成熟"
+  ],
+  "evidence_file": "assets/evidence/rsp/rsp-17-design-maturity-matrix.json"
+}

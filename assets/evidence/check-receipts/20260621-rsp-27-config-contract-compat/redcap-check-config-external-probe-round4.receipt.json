@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "redcap-check-config-external-probe-round4",
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "config-contract-compat-external-probe"
+  ],
+  "expected_exit_code": 0,
+  "exit_code": 0,
+  "ok": true,
+  "started_at": "2026-06-20T20:57:26+00:00",
+  "ended_at": "2026-06-20T20:57:27+00:00",
+  "elapsed_seconds": 0.44,
+  "stdout_tail": "REDCAP_CHECK_STEP_START name=config-contract-compat-external-probe timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=config-contract-compat-external-probe elapsed_seconds=0.403\n{\n  \"schema_id\": \"redcap-check-summary\",\n  \"ok\": true,\n  \"completed_steps\": 1,\n  \"total_steps\": 1\n}\nREDCAP_CHECK_OK\n",
+  "stderr_tail": ""
+}

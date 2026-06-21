@@ -1,0 +1,29 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "gate-with-lifecycle-rsp-04",
+  "command": "runtime/bin/redcap gate --task RSP-04 Prism 通信上下文边界实现与验收 --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-04-prism-context-boundary.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "gate",
+    "--task",
+    "RSP-04 Prism 通信上下文边界实现与验收",
+    "--risk-level",
+    "medium",
+    "--lifecycle-packet",
+    "assets/evidence/lifecycle/20260621-rsp-04-prism-context-boundary.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "timed_out": false,
+  "elapsed_seconds": 14.061,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/gate-with-lifecycle-rsp-04.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-04-prism-context-boundary/gate-with-lifecycle-rsp-04.stderr.txt",
+  "stdout_sha256": "689c4afe002525124f45090541a14ed688f3677f61d126eb559a3b4b47a700ba",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1347,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T19:19:30+00:00",
+  "executor": "cap"
+}

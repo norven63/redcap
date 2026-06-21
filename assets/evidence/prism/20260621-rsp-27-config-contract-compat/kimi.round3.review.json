@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Round 3 improves transparency: the compat-check receipt now shows concrete negative probes for unknown schema_version (999 rejected), unknown top-level field ('surprise' rejected), and dry-run migration. However, the integration_probe_log that is supposed to prove project-install init behavior is inside the generated evidence report, which is line-truncated in the bundle. The project-install self-check receipt only shows a generic `ok: true` marker with no probe facts, and the project_install.py guard code itself is still not readable. So the claimed guard-in-init-path is documented but not independently inspectable.",
+  "main_concern": "There is still no independent, inspectable trace showing that the real `project-install init` command fails before writing state/hooks/config when the existing install.json has an unknown schema_version, or that legacy migration preserves host config contents. The only proof is a self-generated evidence report whose integration section is unreadable in this bundle.",
+  "top_risks": [
+    "project-install init may call the compat guard only inside the self-check harness or a helper that is not actually on the live init path, so normal users could still silently overwrite an unknown-version install.json.",
+    "Migration may preserve top-level host config references (hook_config, codex_config, runtime_bin) while dropping or rewriting nested fields, and no probe verifies the contents inside those host-owned objects.",
+    "package/release-check paths that write or consume install-manifest.json are not covered by visible negative probes, so manifest version drift may still pass silently."
+  ],
+  "missing_evidence": [
+    "Readable integration_probe_log from assets/evidence/rsp/rsp-27-config-contract-compat.json showing before/after facts for legacy migration and unknown-version rejection in project-install init.",
+    "A command receipt or probe log for a direct `runtime/bin/redcap project-install init` invocation against a directory with an unknown-version install.json, capturing exit code, stderr, and file-state before/after.",
+    "A negative probe for package-manifest unknown schema_version/unknown fields in the package/release-check flow."
+  ],
+  "minimum_fix": "Add an independent probe receipt that runs `runtime/bin/redcap project-install init` in a fresh temp project with an existing install.json whose schema_version is 999, and assert non-zero exit code with install.json unchanged and no .codex host config created. Include that receipt (with readable stdout/stderr) in the review bundle. Also add a package-manifest negative probe if the package/release-check path is in scope.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The response is more concrete than round 2 — command receipts with stdout tails reduce the self-report loop — but the critical init-path integration remains inside the same generated evidence file without an external probe receipt."
+  },
+  "user_intent_alignment": "Closer, but not yet grounded. The user wants project-level config drift prevented in real operations; a standalone compat-check and a passing self-check are not a substitute for an enforced, observable guard on the actual init command."
+}

@@ -1,0 +1,85 @@
+{
+  "task": "Review RSP-27 config contract compatibility implementation.",
+  "user_intent": "Norven requires RedCap to prevent project-level .redcap configs, hook-related config, contracts, and runtime state from silently drifting across versions. Unknown versions and unknown fields must not pass silently; old versions must be migrated with dry-run, backup, and receipt or explicitly rejected.",
+  "main_claim": "RSP-27 is implemented within its own scope because RedCap now has a config compatibility contract, a config compat-check command, a config migrate command with dry-run/apply, schema_version written to RedCap-owned install.json and install-manifest.json, unknown-version and unknown-field negative probes, and aggregate check wiring.",
+  "changed_reality": [
+    "Added assets/contracts/config-contract-compat.json.",
+    "Added runtime/core/config_contract_compat.py.",
+    "Added runtime/bin/redcap config compat-check|migrate|self-check.",
+    "Added runtime/core/check_runner.py step config-contract-compat-check.",
+    "Updated runtime/core/project_install.py to write schema_version to install-manifest.json and install.json, and audit install-manifest schema_version.",
+    "Generated assets/evidence/rsp/rsp-27-config-contract-compat.json and assets/evidence/rsp/rsp-27-claim.json.",
+    "Generated executed-check receipts under assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/."
+  ],
+  "evidence": [
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/config-contract-compat.json",
+      "summary": "RSP-27 config compatibility contract with matrix, migration rules, host-owned exceptions, and acceptance criteria."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/config_contract_compat.py",
+      "summary": "Executable checker and migration command."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/project_install.py",
+      "summary": "Project installation now writes and audits schema_version for RedCap-owned generated configs."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap",
+      "summary": "Command entry for config compat-check, migrate, self-check."
+    },
+    {
+      "kind": "runtime",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "Aggregate check step config-contract-compat-check."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/rsp/rsp-27-config-contract-compat.json",
+      "summary": "Current RSP-27 positive and negative acceptance evidence."
+    },
+    {
+      "kind": "claim",
+      "reference": "assets/evidence/rsp/rsp-27-claim.json",
+      "summary": "Scoped RSP-27 completion claim excluding RedCap parent completion."
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/rsp-contract-rsp-27-final.executed.receipt.json",
+      "summary": "RSP contract check receipt for scoped claim."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not claim RedCap 完整复活.",
+    "Check whether RedCap-owned configs get schema_version without corrupting host-owned Codex config formats.",
+    "Check whether unknown schema_version and unknown fields are rejected, not silently ignored.",
+    "Check whether migration requires dry-run and apply creates backup and receipt.",
+    "Concern or block findings must identify a concrete minimum fix."
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review RSP-27 implementation evidence only.",
+    "allowed_paths": [
+      "assets/contracts/config-contract-compat.json",
+      "runtime/core/config_contract_compat.py",
+      "runtime/core/project_install.py",
+      "runtime/bin/redcap",
+      "runtime/core/check_runner.py",
+      "assets/evidence/rsp/rsp-27-config-contract-compat.json",
+      "assets/evidence/rsp/rsp-27-claim.json"
+    ],
+    "max_files": 10,
+    "max_bytes_per_file": 40000,
+    "max_total_bytes": 160000
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "gate-with-lifecycle-rsp-25",
+  "command": "runtime/bin/redcap gate --task RSP-25 Stop Hook 误伤率与漏检率持续度量实现 --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-25-hook-quality-metrics.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "gate",
+    "--task",
+    "RSP-25 Stop Hook 误伤率与漏检率持续度量实现",
+    "--risk-level",
+    "medium",
+    "--lifecycle-packet",
+    "assets/evidence/lifecycle/20260621-rsp-25-hook-quality-metrics.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 1.074,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-25-hook-quality-metrics/gate-with-lifecycle-rsp-25.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-25-hook-quality-metrics/gate-with-lifecycle-rsp-25.stderr.txt",
+  "stdout_sha256": "6475f02d45b537ad9ea1add2eb1eb782c3c80fa755bfdbb4593d20bb946b0772",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1441,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T18:23:28+00:00",
+  "executor": "cap"
+}

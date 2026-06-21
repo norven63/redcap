@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-rsp-20-codex-cli-isolation",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-20-codex-cli-isolation",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-20T19:39:57+00:00",
+  "task_started_at": "2026-06-20T19:39:57+00:00",
+  "updated_at": "2026-06-20T19:50:40+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "3424651f-1fde-45ef-9765-871f2390f7a3",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_f34aeb46-026b-415c-90b8-a1751a3d11e8",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-20-codex-cli-isolation/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "RSP-20 concerns accepted and resolved by contract, negative probes, live carrier-probe, executed-check receipts, and lifecycle evidence; scope remains RSP-20 only."
+  }
+}

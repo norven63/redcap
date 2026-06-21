@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-resolution",
+    "--merge",
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/merge-round3.json",
+    "--resolution",
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/resolution.json",
+    "--review",
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/kimi.round3.review.json",
+    "--review",
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/claude-code.round3.review.json",
+    "--manifest",
+    "assets/evidence/prism/20260621-rsp-16-cap-revival-portability/session.json"
+  ],
+  "command": "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260621-rsp-16-cap-revival-portability/merge-round3.json --resolution assets/evidence/prism/20260621-rsp-16-cap-revival-portability/resolution.json --review assets/evidence/prism/20260621-rsp-16-cap-revival-portability/kimi.round3.review.json --review assets/evidence/prism/20260621-rsp-16-cap-revival-portability/claude-code.round3.review.json --manifest assets/evidence/prism/20260621-rsp-16-cap-revival-portability/session.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.049,
+  "executed_at": "2026-06-20T21:30:23+00:00",
+  "executor": "redcap-rsp-16-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "prism-resolution-rsp-16",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/prism-resolution-rsp-16.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/prism-resolution-rsp-16.stdout.txt",
+  "stdout_sha256": "b6eda136a9005d4f9cef07693957e2a7c89c01e2e75cab44218a61ce447d30dd",
+  "stdout_tail": "{\n  \"ok\": true,\n  \"merge_path\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-16-cap-revival-portability/merge-round3.json\",\n  \"resolution_path\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-rsp-16-cap-revival-portability/resolution.json\",\n  \"must_respond\": true,\n  \"expected_resolutions\": [\n    {\n      \"provider\": \"kimi\",\n      \"verdict\": \"concern\"\n    },\n    {\n      \"provider\": \"claude-code\",\n      \"verdict\": \"concern\"\n    }\n  ],\n  \"conclusion_state\": \"resolved\",\n  \"failures\": []\n}\nPRISM_CONCERN_RESOLUTION_OK\n"
+}

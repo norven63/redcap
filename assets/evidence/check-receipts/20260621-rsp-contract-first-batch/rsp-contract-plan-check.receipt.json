@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap rsp-contract check --plan assets/docs/residual-todo-final-solution-plan.md",
+  "executed_at": "2026-06-20T16:41:54+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/rsp-contract-plan-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/rsp-contract-plan-check.stdout.txt",
+  "stdout_sha256": "f631f46dad4d61e633cf5c6a4ea66cd8e97ce788b9ca02d71189aa8f42c3398b"
+}

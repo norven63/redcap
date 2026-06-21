@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-resolution-check",
+  "command": "runtime/prism/bin/prism resolution-check --merge assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/evidence-refresh-merge.json --resolution assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/resolution.json --manifest assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/session.json",
+  "argv": [
+    "runtime/prism/bin/prism",
+    "resolution-check",
+    "--merge",
+    "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/evidence-refresh-merge.json",
+    "--resolution",
+    "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/resolution.json",
+    "--manifest",
+    "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/session.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.051,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-25-hook-quality-metrics/prism-resolution-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-25-hook-quality-metrics/prism-resolution-check.stderr.txt",
+  "stdout_sha256": "a1e01a52e0630791f891b50d5b1ab6f5cfbda884fe9847272db4e3e03c47182f",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 573,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T18:19:46+00:00",
+  "executor": "cap"
+}

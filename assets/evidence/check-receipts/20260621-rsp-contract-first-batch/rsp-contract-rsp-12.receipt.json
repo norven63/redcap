@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap rsp-contract check --rsp RSP-12 --claim-file assets/evidence/rsp/rsp-12-claim.json --evidence-file assets/evidence/rsp/rsp-12-reality-change-proof.json --plan assets/docs/residual-todo-final-solution-plan.md",
+  "executed_at": "2026-06-20T16:41:55+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/rsp-contract-rsp-12.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/rsp-contract-rsp-12.stdout.txt",
+  "stdout_sha256": "2b2b5ef935066747e1ce327970f01ebd55357da2d2e8de272e6ee3afc1144009"
+}

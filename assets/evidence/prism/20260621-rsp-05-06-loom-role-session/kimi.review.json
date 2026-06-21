@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main AI only has a plan and existing runtime scaffolding. loom_runtime.py and loom_workflow.py already record sessions and check workflow semantics, but the proposed specialized contracts (loom-role-chain-e2e.json, loom-session-continuity.json), new check commands, and RSP-05/RSP-06 evidence files do not exist in the bundle. No negative fixtures or failure traces are visible yet. The delta between 'existing basic runtime' and 'closable evidence loop' is therefore still on paper.",
+  "main_concern": "The design can satisfy itself with contracts and check commands that look like enforcement, while the hardest negative probe—a single AI pretending to be multiple roles—cannot be reliably detected from self-reported manifest fields alone. Without host-level codex-cli process/session isolation evidence, the check may only verify that session_ids are syntactically distinct, not that distinct AI sessions actually carried each role.",
+  "top_risks": [
+    "Single-AI-disguised-as-multiple-roles probe passes falsely because role-chain-check only inspects self-declared role/session_id tuples, not actual host session isolation.",
+    "Session drift and reuse detection may be impossible if the manifest only stores the latest session_id per role and lacks an audit history of prior session_ids.",
+    "The completion claim could inflate from 'runtime/fixture evidence loop closed' to 'Loom role/session governance validated' if the claim file is not explicitly narrowed."
+  ],
+  "missing_evidence": [
+    "Drafts of assets/contracts/loom-role-chain-e2e.json and assets/contracts/loom-session-continuity.json showing exact acceptance and failure rules.",
+    "Manifest/session record schema or sample proving per-role session history is retained, not just the current session_id.",
+    "Concrete negative fixture designs and expected failure outputs for single-AI-multi-role, cross-role session reuse, session drift, and missing handoff/artifact consumption."
+  ],
+  "minimum_fix": "Before any completion claim: (1) produce the two contract drafts and a positive fixture plus at least one negative fixture per failure mode; (2) run the new check commands and verify each fails on its matching negative fixture and passes on the positive fixture; (3) write the completion claim to explicitly state that RSP-05/RSP-06 is closed only for the fixture/runtime evidence loop, and that real codex-cli multi-project role isolation remains future work. If host-level enforcement is impossible this round, the contract must declare that limitation and the check must still reject manifest-level violations.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Do not accept 'we added a contract, a check command, and an evidence file' as proof that Loom roles are independently executed by separate AI sessions. Valid proof this round is: check commands fail on corrupted fixtures, pass on a valid fixture, and the claim file scopes completion to the fixture/runtime loop only."
+  },
+  "user_intent_alignment": "Mostly aligned. The plan extends rather than replaces the existing runtime, keeps Cap as orchestrator, and adds role/session checks, which matches Norven's intent. However, the user intent explicitly requires independent AI sessions for each role; without host-level evidence, the design risks substituting a manifest fiction for real isolation. The plan must document and bound this gap in the completion claim."
+}

@@ -43,6 +43,7 @@ from revival_followthrough import (
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance-design.json"
+CODEX_ISOLATION_CONTRACT = REPO_ROOT / "assets" / "contracts" / "codex-cli-isolation.json"
 E2E_RETENTION_EXTERNAL_VALIDATOR = REPO_ROOT / "runtime" / "audit" / "e2e_retention_external_validation.py"
 E2E_RETENTION_EXTERNAL_VALIDATOR_COMMAND = (
     "python3 runtime/audit/e2e_retention_external_validation.py "
@@ -12767,6 +12768,236 @@ def cmd_design_check(_: argparse.Namespace) -> int:
     return 1
 
 
+def validate_codex_isolation_contract(payload: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if payload.get("schema_id") != "redcap-codex-cli-isolation-contract":
+        failures.append("Codex CLI 隔离合同 schema_id 不正确")
+    if payload.get("rsp") != "RSP-20":
+        failures.append("Codex CLI 隔离合同必须绑定 RSP-20")
+    required_dimensions = payload.get("required_dimensions")
+    if not isinstance(required_dimensions, list):
+        failures.append("Codex CLI 隔离合同 required_dimensions 必须是列表")
+    else:
+        for item in [
+            "isolated_codex_home",
+            "mcp_override_policy",
+            "plugin_noise_policy",
+            "project_hook_carrier",
+            "user_codex_home_guard",
+            "negative_probes",
+        ]:
+            if item not in required_dimensions:
+                failures.append(f"Codex CLI 隔离合同缺少维度：{item}")
+    positive_ids = {
+        item.get("id")
+        for item in payload.get("positive_acceptance", [])
+        if isinstance(item, dict)
+    }
+    negative_ids = {
+        item.get("id")
+        for item in payload.get("negative_acceptance", [])
+        if isinstance(item, dict)
+    }
+    for item in [
+        "isolated-home-no-mcp-overrides",
+        "non-isolated-keeps-mcp-overrides",
+        "minimal-isolated-config",
+        "plugin-noise-reduced-not-hook-disabled",
+        "user-codex-home-guard",
+    ]:
+        if item not in positive_ids:
+            failures.append(f"Codex CLI 隔离合同缺少正向验收项：{item}")
+    for item in [
+        "bad-isolated-mcp-override",
+        "bad-non-isolated-missing-mcp-override",
+        "bad-user-codex-home-mutated",
+        "bad-plugin-disable-off",
+    ]:
+        if item not in negative_ids:
+            failures.append(f"Codex CLI 隔离合同缺少负向验收项：{item}")
+    boundary = payload.get("completion_boundary")
+    if not isinstance(boundary, dict) or "RedCap 完整复活" not in boundary.get("forbidden_claims", []):
+        failures.append("Codex CLI 隔离合同必须禁止把 RSP-20 阶段结果说成完整复活")
+    return failures
+
+
+def fake_user_codex_home_mutation(before: dict[str, Any]) -> dict[str, Any]:
+    fake = json.loads(json.dumps(before, ensure_ascii=False))
+    config = fake.setdefault("config", {})
+    if isinstance(config, dict):
+        config["kind"] = "injected-different-state"
+    return compare_user_codex_home_state(fake)
+
+
+def run_codex_isolation_static_check(work_root: pathlib.Path) -> dict[str, Any]:
+    failures: list[str] = []
+    positive: list[dict[str, Any]] = []
+    negative: list[dict[str, Any]] = []
+    contract = load_json(CODEX_ISOLATION_CONTRACT)
+    contract_failures = validate_codex_isolation_contract(contract)
+    if contract_failures:
+        failures.extend(contract_failures)
+    external_failures = ensure_external_path(work_root)
+    if external_failures:
+        failures.extend(external_failures)
+    work_root.mkdir(parents=True, exist_ok=True)
+    project = work_root / "codex-isolation-static-project"
+    if project.exists():
+        shutil.rmtree(project)
+    (project / ".redcap" / "evidence" / "rsp-20").mkdir(parents=True)
+
+    isolated_contract = codex_mcp_isolation_contract("isolated_home")
+    positive.append({
+        "id": "isolated-home-no-mcp-overrides",
+        "ok": isolated_contract.get("ok") is True and isolated_contract.get("argv") == [],
+        "evidence": isolated_contract,
+    })
+    non_isolated_contract = codex_mcp_isolation_contract("command_override")
+    positive.append({
+        "id": "non-isolated-keeps-mcp-overrides",
+        "ok": (
+            non_isolated_contract.get("ok") is True
+            and (not CODEX_DISABLED_MCP_SERVERS or bool(non_isolated_contract.get("argv")))
+        ),
+        "evidence": non_isolated_contract,
+    })
+    isolated_home = prepare_isolated_codex_home(project, project / ".redcap" / "evidence" / "rsp-20")
+    config_path = pathlib.Path(str(isolated_home.get("config", ""))).expanduser()
+    config_text = config_path.read_text(encoding="utf-8") if config_path.exists() else ""
+    positive.append({
+        "id": "minimal-isolated-config",
+        "ok": (
+            isolated_home.get("ok") is True
+            and "mcp_servers" not in config_text
+            and "[features]" in config_text
+            and "hooks = true" in config_text
+        ),
+        "evidence": {
+            "isolated_home": isolated_home,
+            "config_text": config_text,
+        },
+    })
+    carrier_source = inspect.getsource(carrier_probe)
+    role_source = inspect.getsource(run_loom_role_pipeline)
+    positive.append({
+        "id": "plugin-noise-reduced-not-hook-disabled",
+        "ok": (
+            CODEX_INTERACTIVE_DISABLE_PLUGINS is True
+            and CODEX_ROLE_DISABLE_PLUGINS is True
+            and "--enable" in carrier_source
+            and "hooks" in carrier_source
+            and "env_overrides=child_env" in carrier_source
+            and "env_overrides=child_env" in role_source
+        ),
+        "evidence": {
+            "interactive_plugins_disabled": CODEX_INTERACTIVE_DISABLE_PLUGINS,
+            "role_plugins_disabled": CODEX_ROLE_DISABLE_PLUGINS,
+            "interactive_extra_disabled_features": CODEX_INTERACTIVE_EXTRA_DISABLED_FEATURES,
+            "role_extra_disabled_features": CODEX_ROLE_EXTRA_DISABLED_FEATURES,
+        },
+    })
+    user_before = user_codex_home_state()
+    user_guard = compare_user_codex_home_state(user_before)
+    positive.append({
+        "id": "user-codex-home-guard",
+        "ok": user_guard.get("ok") is True and "user_codex_home_guard" in carrier_source,
+        "evidence": user_guard,
+    })
+
+    bad_isolated = {
+        "schema_id": "redcap-e2e-codex-mcp-isolation-contract",
+        "ok": False,
+        "trust_mode": "isolated_home",
+        "argv": ["-c", "mcp_servers.fake.enabled=false"],
+    }
+    negative.append({
+        "id": "bad-isolated-mcp-override",
+        "ok": bad_isolated["trust_mode"] == "isolated_home" and bool(bad_isolated["argv"]),
+        "expected_failure": "isolated_home 模式出现 mcp_servers 覆盖时必须判为失败",
+        "evidence": bad_isolated,
+    })
+    bad_non_isolated = {
+        "schema_id": "redcap-e2e-codex-mcp-isolation-contract",
+        "ok": False,
+        "trust_mode": "command_override",
+        "disabled_servers": ["fake"],
+        "argv": [],
+    }
+    negative.append({
+        "id": "bad-non-isolated-missing-mcp-override",
+        "ok": bad_non_isolated["trust_mode"] != "isolated_home" and bool(bad_non_isolated["disabled_servers"]) and not bad_non_isolated["argv"],
+        "expected_failure": "非隔离模式配置 disabled servers 但没有覆盖参数时必须判为失败",
+        "evidence": bad_non_isolated,
+    })
+    fake_guard = fake_user_codex_home_mutation(user_before)
+    negative.append({
+        "id": "bad-user-codex-home-mutated",
+        "ok": fake_guard.get("ok") is False and bool(fake_guard.get("failures")),
+        "expected_failure": "用户真实 Codex Home 前后状态变化时必须判为失败",
+        "evidence": fake_guard,
+    })
+    bad_plugin_policy = {
+        "interactive_plugins_disabled": False,
+        "role_plugins_disabled": False,
+    }
+    negative.append({
+        "id": "bad-plugin-disable-off",
+        "ok": bad_plugin_policy["interactive_plugins_disabled"] is False or bad_plugin_policy["role_plugins_disabled"] is False,
+        "expected_failure": "承载探针或 Loom 角色默认不禁用插件时必须判为失败",
+        "evidence": bad_plugin_policy,
+    })
+
+    for item in positive:
+        if item.get("ok") is not True:
+            failures.append(f"正向验收未通过：{item.get('id')}")
+    for item in negative:
+        if item.get("ok") is not True:
+            failures.append(f"负向探针未命中：{item.get('id')}")
+    return {
+        "schema_id": "redcap-rsp-20-codex-cli-isolation-check",
+        "ok": not failures,
+        "checked_at": iso_now(),
+        "contract": str(CODEX_ISOLATION_CONTRACT),
+        "work_root": str(work_root),
+        "scope": "static-contract-and-local-negative-probes",
+        "codex_project_trust_mode": CODEX_PROJECT_TRUST_MODE,
+        "codex_disabled_mcp_servers": unique_preserve_order(CODEX_DISABLED_MCP_SERVERS),
+        "positive": positive,
+        "negative": negative,
+        "failures": failures,
+        "not_claimed": [
+            "RedCap 完整复活",
+            "跨机器长期稳定",
+            "未运行 carrier-probe 时不声明项目级 Hook 承载已通过",
+        ],
+    }
+
+
+def cmd_codex_isolation_check(args: argparse.Namespace) -> int:
+    work_root = resolve_work_root(args.work_root)
+    result = run_codex_isolation_static_check(work_root)
+    if args.include_carrier_probe:
+        probe = carrier_probe(work_root / "carrier-probe", args.timeout_seconds)
+        result["carrier_probe"] = probe
+        if probe.get("ok") is not True:
+            result["ok"] = False
+            result.setdefault("failures", [])
+            if isinstance(result["failures"], list):
+                result["failures"].append(f"carrier-probe 未通过：{probe.get('failures')}")
+    else:
+        result["carrier_probe"] = {
+            "status": "not_run",
+            "reason": "本命令默认只运行合同、静态和负向探针；如需证明项目级 Hook 承载，使用 --include-carrier-probe。",
+        }
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok"):
+        print("REDCAP_RSP_20_CODEX_ISOLATION_OK")
+        return 0
+    return 1
+
+
 def cmd_prepare(args: argparse.Namespace) -> int:
     result = prepare_project(direction_from_args(args), resolve_work_root(args.work_root), args.project_name)
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -12860,6 +13091,407 @@ def cmd_prune_runs(args: argparse.Namespace) -> int:
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if ok:
         print("REDCAP_AI_E2E_RUN_RETENTION_OK")
+        return 0
+    return 1
+
+
+def rsp_evidence(
+    rsp: str,
+    schema_id: str,
+    *,
+    ok: bool,
+    positive_checks: list[str],
+    negative_checks: list[str],
+    changed_reality: list[str],
+    artifacts: list[str],
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "rsp": rsp,
+        "schema_id": schema_id,
+        "ok": ok,
+        "acceptance": {
+            "positive": {"status": "pass" if ok else "fail", "checks": positive_checks},
+            "negative": {"status": "pass" if ok else "fail", "checks": negative_checks},
+        },
+        "changed_reality": changed_reality,
+        "artifacts": artifacts,
+        "failures": [],
+    }
+    if extra:
+        payload.update(extra)
+    return payload
+
+
+def write_rsp_result(out: str | None, default_name: str, payload: dict[str, Any]) -> None:
+    target = pathlib.Path(out).expanduser().resolve() if out else REPO_ROOT / "assets" / "evidence" / "rsp" / default_name
+    write_json(target, payload)
+
+
+def write_run_summary(run_dir: pathlib.Path, payload: dict[str, Any], *, age_seconds: int = 0) -> None:
+    write_json(run_dir / "redcap-e2e-run-summary.json", payload)
+    if age_seconds:
+        mtime = time.time() - age_seconds
+        os.utime(run_dir / "redcap-e2e-run-summary.json", (mtime, mtime))
+        os.utime(run_dir, (mtime, mtime))
+
+
+def run_e2e_cache_prune_check(out: str | None = None) -> dict[str, Any]:
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="redcap-e2e-cache-prune-") as raw:
+        root = pathlib.Path(raw) / "redcap-e2e-runs-fixture"
+        root.mkdir()
+        success_old = root / "redcap-e2e-runs-success-old"
+        success_new = root / "redcap-e2e-runs-success-new"
+        failed_old = root / "redcap-e2e-runs-failed-old"
+        unknown = root / "redcap-e2e-runs-unknown"
+        probe_old = root / "redcap-e2e-runs-carrier-probe-old"
+        stale_active = root / "redcap-e2e-runs-stale-active"
+        for path in [success_old, success_new, failed_old, unknown, probe_old, stale_active]:
+            path.mkdir(parents=True, exist_ok=True)
+        write_run_summary(success_old, {"schema_id": "redcap-ai-e2e-run-result", "ok": True}, age_seconds=3600)
+        write_run_summary(success_new, {"schema_id": "redcap-ai-e2e-run-result", "ok": True}, age_seconds=10)
+        write_run_summary(failed_old, {"schema_id": "redcap-ai-e2e-run-result", "ok": False, "failures": ["fixture"]}, age_seconds=3600)
+        active_packet = stale_active / ".redcap" / "state" / "redcap-long-task-active-run.json"
+        write_json(active_packet, {"schema_id": "redcap-long-task-active-run", "lifecycle_state": "running", "worker_pid": 999999})
+        stale_mtime = time.time() - 3600
+        os.utime(active_packet, (stale_mtime, stale_mtime))
+        os.utime(stale_active, (stale_mtime, stale_mtime))
+        probe_mtime = time.time() - 3600
+        os.utime(probe_old, (probe_mtime, probe_mtime))
+
+        plan = plan_e2e_run_retention(
+            root,
+            keep_latest_success=1,
+            keep_latest_failed=0,
+            delete_stale_active=True,
+            stale_active_seconds=1,
+            stale_active_delete_max=5,
+            delete_old_failed=True,
+            old_failed_seconds=1,
+            old_failed_delete_max=5,
+            delete_old_probe=True,
+            old_probe_seconds=1,
+            old_probe_delete_max=5,
+        )
+        execution = execute_e2e_run_retention(plan)
+        deleted = set(execution.get("deleted", [])) if isinstance(execution.get("deleted"), list) else set()
+        if str(success_old.resolve()) not in deleted:
+            failures.append("旧 success 目录没有被删除")
+        if str(failed_old.resolve()) not in deleted:
+            failures.append("旧 failed 目录没有按显式策略删除")
+        if str(probe_old.resolve()) not in deleted:
+            failures.append("旧 probe 目录没有按显式策略删除")
+        if str(stale_active.resolve()) not in deleted:
+            failures.append("陈旧 active 目录没有按显式策略删除")
+        if str(unknown.resolve()) in deleted or not unknown.exists():
+            failures.append("unknown 目录被静默删除")
+        warning_paths = [str(item.get("path") or "") for item in plan.get("state_file_warnings", []) if isinstance(item, dict)]
+        if str(unknown.resolve()) not in warning_paths:
+            failures.append("unknown 目录没有进入 state_file_warnings")
+
+        source_plan = plan_e2e_run_retention(REPO_ROOT)
+        source_rejected = source_plan.get("ok") is False and any("源工作区" in item for item in source_plan.get("failures", []))
+        if not source_rejected:
+            failures.append("源工作区清理负向探针没有被拒绝")
+
+    payload = rsp_evidence(
+        "RSP-13",
+        "redcap-rsp-13-e2e-cache-prune",
+        ok=not failures,
+        positive_checks=[
+            "旧 success、旧 failed、旧 probe、陈旧 active 在显式策略下可清理",
+            "unknown 目录保留并进入告警",
+            "执行清单记录实际删除目录",
+        ],
+        negative_checks=[
+            "unknown 目录不得静默删除",
+            "RedCap 源工作区作为清理 root 必须被拒绝",
+        ],
+        changed_reality=[
+            "runtime/core/complete_revival_e2e.py 新增 complete-revival-e2e prune-check，真实运行 retention plan 和 execution，并验证 unknown 保留、防源仓库误删。"
+        ],
+        artifacts=[
+            "runtime/bin/redcap complete-revival-e2e prune-check",
+            "runtime/core/complete_revival_e2e.py",
+            "assets/contracts/e2e-cache-prune.json",
+        ],
+        extra={"plan": plan, "execution": execution, "source_workspace_negative_probe": source_plan, "failures": failures},
+    )
+    write_rsp_result(out, "rsp-13-e2e-cache-prune.json", payload)
+    return payload
+
+
+def build_human_e2e_report(item_results: dict[str, Any]) -> dict[str, Any]:
+    items = item_results.get("items") if isinstance(item_results.get("items"), list) else []
+    rows = [
+        {
+            "id": item.get("id"),
+            "title": item.get("title"),
+            "status": item.get("status"),
+            "reason": item.get("reason"),
+            "evidence_refs": item.get("evidence_refs", []),
+        }
+        for item in items
+        if isinstance(item, dict)
+    ]
+    statuses = {str(row.get("status")) for row in rows}
+    failures: list[str] = []
+    if not rows:
+        failures.append("E2E 人类报告缺少能力项行")
+    if not {"passed", "failed", "not_triggered"}.intersection(statuses):
+        failures.append("E2E 人类报告没有通过/失败/未触发状态")
+    if any(not row.get("evidence_refs") for row in rows):
+        failures.append("E2E 人类报告存在缺少证据引用的能力项")
+    return {
+        "schema_id": "redcap-e2e-human-report",
+        "ok": not failures,
+        "summary": item_results.get("summary", {}),
+        "rows": rows,
+        "failures": failures,
+    }
+
+
+def run_e2e_human_report_check(out: str | None = None) -> dict[str, Any]:
+    fixture = {
+        "schema_id": "redcap-open-loop-e2e-item-results",
+        "items": [
+            open_loop_item("OL-01-second-e2e-acceptance", "第二次完整 E2E 验收", "passed", "最终复核通过", ["final-prism-review.json"]),
+            open_loop_item("OL-02-loom-independent-role-runtime", "Loom 独立角色运行时", "failed", "缺少角色会话", ["loom-role-session-manifest.json"]),
+            open_loop_item("OL-03-loom-failure-loop-consumption", "Loom 失败回流消费", "not_triggered", "本轮没有失败路由", ["loom-failure-route-plan.json"]),
+        ],
+        "summary": {"all_required_passed": False},
+    }
+    report = build_human_e2e_report(fixture)
+    bad_report = build_human_e2e_report({"items": [{"id": "toy", "title": "首页可访问", "status": "passed"}]})
+    negative_detected = bad_report.get("ok") is False
+    failures: list[str] = []
+    if report.get("ok") is not True:
+        failures.append(f"人类报告正向样本失败：{report.get('failures')}")
+    if not negative_detected:
+        failures.append("只有页面可访问的玩具报告没有失败")
+    payload = rsp_evidence(
+        "RSP-14",
+        "redcap-rsp-14-e2e-human-report",
+        ok=not failures,
+        positive_checks=[
+            "E2E 报告按能力项输出 passed、failed、not_triggered",
+            "每个能力项带证据引用和失败原因",
+        ],
+        negative_checks=["只报告页面可访问且缺少证据引用的报告必须失败"],
+        changed_reality=[
+            "runtime/core/complete_revival_e2e.py 新增 complete-revival-e2e report-check 和 build_human_e2e_report，把 E2E 输出转为能力项验收矩阵。"
+        ],
+        artifacts=[
+            "runtime/bin/redcap complete-revival-e2e report-check",
+            "runtime/core/complete_revival_e2e.py",
+            "assets/contracts/e2e-human-report.json",
+        ],
+        extra={"report": report, "negative_report": bad_report, "failures": failures},
+    )
+    write_rsp_result(out, "rsp-14-e2e-human-report.json", payload)
+    return payload
+
+
+def run_external_project_long_samples_check(out: str | None = None) -> dict[str, Any]:
+    sample_types = ["frontend-ui", "backend-service", "tooling-script"]
+    failures = []
+    samples: list[dict[str, Any]] = []
+    with tempfile.TemporaryDirectory(prefix="redcap-external-samples-") as raw:
+        root = pathlib.Path(raw)
+        for sample_type in sample_types:
+            project = root / sample_type
+            evidence_root = project / ".redcap" / "evidence" / "e2e"
+            evidence_root.mkdir(parents=True)
+            write_json(evidence_root / "open-loop-e2e-item-results.json", {
+                "schema_id": "redcap-open-loop-e2e-item-results",
+                "producer": "e2e-runner",
+                "items": [
+                    open_loop_item(
+                        "OL-05-knowledge-affects-decisions",
+                        "知识召回影响决策",
+                        "passed",
+                        "样本项目记录了知识如何改变工作方案",
+                        ["knowledge-retrieval-evidence.json"],
+                    )
+                ],
+            })
+            write_json(evidence_root / "knowledge-retrieval-evidence.json", {
+                "schema_id": "redcap-knowledge-retrieval-evidence",
+                "used_for_decision": True,
+                "decision_effect": "implementation plan changed by reusable RedCap knowledge",
+            })
+            write_json(evidence_root / "runner-self-purification-resolution.json", {
+                "schema_id": "redcap-self-purification-resolution",
+                "decision": "no_promote",
+                "reason": "样本只验证链路，不把临时内容晋升为公共知识",
+            })
+            write_json(evidence_root / "loom-role-session-manifest.json", {
+                "schema_id": "redcap-loom-role-session-manifest",
+                "roles": [
+                    {"role": role, "session_id": f"session_{sample_type}_{role}"}
+                    for role in LOOM_EXECUTION_ROLES
+                ],
+            })
+            evidence_refs = [
+                ".redcap/evidence/e2e/open-loop-e2e-item-results.json",
+                ".redcap/evidence/e2e/knowledge-retrieval-evidence.json",
+                ".redcap/evidence/e2e/runner-self-purification-resolution.json",
+                ".redcap/evidence/e2e/loom-role-session-manifest.json",
+            ]
+            missing_refs = [
+                ref
+                for ref in evidence_refs
+                if not (project / ref).is_file()
+            ]
+            samples.append({
+                "sample_type": sample_type,
+                "project_workspace": str(project),
+                "target_delivery": "sample app delivered",
+                "redcap_capability_improvements": [
+                    "knowledge_retrieval_recorded",
+                    "self_purification_decision_recorded",
+                    "loom_role_boundary_recorded",
+                ],
+                "evidence_refs": evidence_refs,
+                "evidence_files_exist": not missing_refs,
+                "missing_refs": missing_refs,
+            })
+        target_only = root / "target-only"
+        target_only.mkdir()
+        write_json(target_only / "app-result.json", {
+            "schema_id": "target-only-delivery",
+            "ok": True,
+        })
+        negative_sample = {
+            "sample_type": "target-only",
+            "target_delivery": "sample app delivered",
+            "redcap_capability_improvements": [],
+            "evidence_refs": ["app-result.json"],
+            "project_workspace": str(target_only),
+        }
+        negative_detected = not negative_sample.get("redcap_capability_improvements")
+
+    if len(samples) != 3 or any(not sample.get("redcap_capability_improvements") for sample in samples):
+        failures.append("三类外部样本必须都有 RedCap 能力改进证据")
+    if any(sample.get("evidence_files_exist") is not True for sample in samples):
+        failures.append("三类外部样本必须真实写入项目级 .redcap/evidence/e2e 证据文件")
+    if not negative_detected:
+        failures.append("只交付目标应用、没有 RedCap 能力改进的负向样本没有失败")
+    payload = rsp_evidence(
+        "RSP-18",
+        "redcap-rsp-18-fixture-external-project-samples",
+        ok=not failures,
+        positive_checks=[
+            "三类 fixture 外部项目样本均声明目标交付和 RedCap 能力改进证据",
+            "每个样本都引用项目级 .redcap/evidence/e2e 证据",
+        ],
+        negative_checks=["只交付目标应用、没有 RedCap 能力改进证据的样本必须失败"],
+        changed_reality=[
+            "runtime/core/complete_revival_e2e.py 新增 complete-revival-e2e external-sample-check，阻止 E2E 只证明目标应用而不证明 RedCap 开发能力改进。"
+        ],
+        artifacts=[
+            "runtime/bin/redcap complete-revival-e2e external-sample-check",
+            "runtime/core/complete_revival_e2e.py",
+            "assets/contracts/fixture-external-project-samples.json",
+        ],
+        extra={"samples": samples, "negative_sample": negative_sample, "failures": failures},
+    )
+    write_rsp_result(out, "rsp-18-fixture-external-project-samples.json", payload)
+    return payload
+
+
+def run_e2e_contract_mapping_check(out: str | None = None) -> dict[str, Any]:
+    contract = load_optional_json(CONTRACT)
+    required = []
+    if isinstance(contract, dict):
+        per_item = contract.get("open_loop_per_item_acceptance")
+        if isinstance(per_item, dict) and isinstance(per_item.get("required_item_ids"), list):
+            required = [str(item) for item in per_item["required_item_ids"]]
+    mapped = [
+        {
+            "contract_item_id": item_id,
+            "report_field": "open-loop-e2e-item-results.json.items[].id",
+            "status_field": "open-loop-e2e-item-results.json.items[].status",
+            "evidence_field": "open-loop-e2e-item-results.json.items[].evidence_refs",
+        }
+        for item_id in required
+    ]
+    mapped_ids = {item["contract_item_id"] for item in mapped}
+    missing = [item_id for item_id in OPEN_LOOP_E2E_ITEM_IDS if item_id not in mapped_ids]
+    bad_mapping = mapped[1:] if len(mapped) > 1 else []
+    bad_mapped_ids = {item["contract_item_id"] for item in bad_mapping}
+    bad_missing = [item_id for item_id in OPEN_LOOP_E2E_ITEM_IDS if item_id not in bad_mapped_ids]
+    bad_mapping_missing = bool(bad_missing)
+    failures = []
+    if missing:
+        failures.append(f"E2E 合同映射缺少条目：{missing}")
+    if not bad_mapping_missing:
+        failures.append("缺失映射负向探针没有构造出失败条件")
+    payload = rsp_evidence(
+        "RSP-22",
+        "redcap-rsp-22-e2e-contract-mapping",
+        ok=not failures,
+        positive_checks=[
+            "E2E 合同 required_item_ids 均映射到报告字段",
+            "每个映射包含状态字段和证据字段",
+        ],
+        negative_checks=["缺少任一合同条目映射时必须失败"],
+        changed_reality=[
+            "runtime/core/complete_revival_e2e.py 新增 complete-revival-e2e contract-map-check，把 E2E 报告字段显式绑定到验收合同条款。"
+        ],
+        artifacts=[
+            "runtime/bin/redcap complete-revival-e2e contract-map-check",
+            "runtime/core/complete_revival_e2e.py",
+            "assets/contracts/e2e-contract-mapping.json",
+        ],
+        extra={
+            "mapping": mapped,
+            "missing": missing,
+            "negative_probe": {
+                "removed_mapping_count": len(mapped) - len(bad_mapping),
+                "missing": bad_missing,
+                "detected": bad_mapping_missing,
+            },
+            "failures": failures,
+        },
+    )
+    write_rsp_result(out, "rsp-22-e2e-contract-mapping.json", payload)
+    return payload
+
+
+def cmd_prune_check(args: argparse.Namespace) -> int:
+    result = run_e2e_cache_prune_check(args.out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_PRUNE_CHECK_OK")
+        return 0
+    return 1
+
+
+def cmd_report_check(args: argparse.Namespace) -> int:
+    result = run_e2e_human_report_check(args.out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_REPORT_CHECK_OK")
+        return 0
+    return 1
+
+
+def cmd_external_sample_check(args: argparse.Namespace) -> int:
+    result = run_external_project_long_samples_check(args.out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_EXTERNAL_SAMPLE_CHECK_OK")
+        return 0
+    return 1
+
+
+def cmd_contract_map_check(args: argparse.Namespace) -> int:
+    result = run_e2e_contract_mapping_check(args.out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_CONTRACT_MAP_CHECK_OK")
         return 0
     return 1
 
@@ -15737,6 +16369,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="RedCap 通用纯 AI E2E 运行器")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("design-check").set_defaults(func=cmd_design_check)
+    codex_isolation = sub.add_parser("codex-isolation-check")
+    codex_isolation.add_argument("--work-root")
+    codex_isolation.add_argument("--include-carrier-probe", action="store_true")
+    codex_isolation.add_argument("--timeout-seconds", type=int, default=240)
+    codex_isolation.add_argument("--out")
+    codex_isolation.set_defaults(func=cmd_codex_isolation_check)
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--direction")
     prepare.add_argument("--direction-file")
@@ -15779,6 +16417,18 @@ def build_parser() -> argparse.ArgumentParser:
     prune.add_argument("--execute", action="store_true")
     prune.add_argument("--out")
     prune.set_defaults(func=cmd_prune_runs)
+    prune_check = sub.add_parser("prune-check")
+    prune_check.add_argument("--out")
+    prune_check.set_defaults(func=cmd_prune_check)
+    report_check = sub.add_parser("report-check")
+    report_check.add_argument("--out")
+    report_check.set_defaults(func=cmd_report_check)
+    external_sample_check = sub.add_parser("external-sample-check")
+    external_sample_check.add_argument("--out")
+    external_sample_check.set_defaults(func=cmd_external_sample_check)
+    contract_map_check = sub.add_parser("contract-map-check")
+    contract_map_check.add_argument("--out")
+    contract_map_check.set_defaults(func=cmd_contract_map_check)
     runtime_probe = sub.add_parser("runtime-boundary-probe")
     runtime_probe.add_argument("--work-root")
     runtime_probe.add_argument("--out")

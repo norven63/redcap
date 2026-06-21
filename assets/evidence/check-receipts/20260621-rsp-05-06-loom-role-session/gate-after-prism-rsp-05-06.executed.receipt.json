@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "gate-after-prism-rsp-05-06.executed",
+  "command": "runtime/bin/redcap gate --task RSP-05/RSP-06 Loom 角色链与会话接续收口 --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-05-06-loom-role-session.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "gate",
+    "--task",
+    "RSP-05/RSP-06 Loom 角色链与会话接续收口",
+    "--risk-level",
+    "medium",
+    "--lifecycle-packet",
+    "assets/evidence/lifecycle/20260621-rsp-05-06-loom-role-session.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 11.525,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/gate-after-prism-rsp-05-06.executed.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/gate-after-prism-rsp-05-06.executed.stderr.txt",
+  "stdout_sha256": "48ab63211238fc62bff1df3b5289ae236779f081d88f7a4ff144e4d4c6d6c8e4",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1412,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T03:44:41+00:00",
+  "executor": "cap"
+}

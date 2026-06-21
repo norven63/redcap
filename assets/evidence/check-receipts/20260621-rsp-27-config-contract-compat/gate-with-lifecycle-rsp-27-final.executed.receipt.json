@@ -1,0 +1,12 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap gate --task RSP-27 配置契约版本兼容性完成验收 --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-27-config-contract-compat.json",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-20T21:01:49+00:00",
+  "executor": "redcap-rsp-27-final-check",
+  "stdout_sha256": "1ef2ad3f4c47ae6ae6338e01538e358f4ec722571a6ffbea7354ea494ff10805",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_receipt": "assets/evidence/check-receipts/20260621-rsp-27-config-contract-compat/gate-with-lifecycle-rsp-27-final.receipt.json"
+}

@@ -1,0 +1,11 @@
+{
+  "command": "python3 -m py_compile runtime/core/revival_followthrough.py runtime/core/rsp_contract.py",
+  "executed_at": "2026-06-20T16:41:53+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/py-compile.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-contract-first-batch/py-compile.stdout.txt",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

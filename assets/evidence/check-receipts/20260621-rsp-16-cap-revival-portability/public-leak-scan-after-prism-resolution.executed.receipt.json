@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "soul-load",
+    "public-leak-scan",
+    "--out",
+    "assets/evidence/rsp/rsp-16-public-leak-scan.json"
+  ],
+  "command": "runtime/bin/redcap soul-load public-leak-scan --out assets/evidence/rsp/rsp-16-public-leak-scan.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.426,
+  "executed_at": "2026-06-20T21:30:02+00:00",
+  "executor": "redcap-rsp-16-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "public-leak-scan-after-prism-resolution",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/public-leak-scan-after-prism-resolution.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-16-cap-revival-portability/public-leak-scan-after-prism-resolution.stdout.txt",
+  "stdout_sha256": "4ab121a2f8d428a6c15338cd3703af3f16fdd09378bc34fa39de11a480eecde6",
+  "stdout_tail": "{\n  \"created_at\": \"2026-06-20T21:30:02+00:00\",\n  \"ok\": true,\n  \"rsp\": \"RSP-16\",\n  \"scan\": {\n    \"forbidden_fragment_sha256s\": [\n      \"37102691bf6d7d04cb2414addf33d724bdf2337cb5f0affb17c8f72ced42ab4b\",\n      \"1ccb4a2a495b747ed22c82768b94b10e5cac8b238147bbccc8049424a697acd1\",\n      \"bd082a1da151dac2e4bb382e3ac95f35a94ef063d0a406122cdf00f0c324f260\",\n      \"8967f0210c601580699d3419702e7033f524c8d7c0aa1a852a06b65c9032cc8b\"\n    ],\n    \"hit_count\": 0,\n    \"hits\": [],\n    \"ok\": true,\n    \"scanned_paths\": [\n      \"assets/docs\",\n      \"assets/contracts\",\n      \"runtime\",\n      \"assets/evidence\"\n    ]\n  },\n  \"schema_id\": \"redcap-cap-revival-public-leak-scan\"\n}\nREDCAP_CAP_REVIVAL_PORTABILITY_OK\n"
+}

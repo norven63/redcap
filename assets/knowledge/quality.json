@@ -1,0 +1,231 @@
+{
+  "schema_id": "redcap-knowledge-quality",
+  "version": 1,
+  "index_path": "assets/knowledge/index.json",
+  "default_missing_policy": "review_required",
+  "entries": {
+    "directory-architecture": {
+      "applicability": "RedCap 目录结构与运行资产归属设计。",
+      "confidence": "medium",
+      "expiry_condition": "目录结构合同或根目录策略变更时必须重新复核。",
+      "index_path": "assets/docs/directory-architecture.md",
+      "index_route": "revival-doc",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/docs/directory-architecture.md"
+      ],
+      "status": "active",
+      "usage_policy": "review_required",
+      "valid_until": "2026-09-21"
+    },
+    "hook-intent-matrix-conservative-degraded": {
+      "applicability": "Hook 意图判断退化、误伤和漏检治理。",
+      "confidence": "medium",
+      "expiry_condition": "意图判断矩阵、Stop 策略或 Hook 适配器变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/hook-intent-matrix-conservative-degraded.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/hook-intent-matrix-conservative-degraded.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "loom-runtime-session-continuity": {
+      "applicability": "Loom 独立角色会话接续、session_id 丢失报警和上下游交付治理。",
+      "confidence": "medium",
+      "expiry_condition": "Loom 角色承载方、Codex CLI 调用方式或会话清单格式变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/loom-runtime-session-continuity.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/loom-runtime-session-continuity.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "old-prism-lock-pattern": {
+      "applicability": "仅作为旧 RedCap Prism 锁机制考古参考，不能直接驱动当前实现。",
+      "confidence": "low",
+      "expiry_condition": "只有在明确考古任务和新旧实现差异复核后才可使用。",
+      "index_path": "/Users/norven/workspace/redcap/prism/tools/prism-run-state.sh",
+      "index_route": "old-redcap-reference",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/index.json"
+      ],
+      "status": "legacy_reference",
+      "usage_policy": "review_required"
+    },
+    "old-session-ownership-pattern": {
+      "applicability": "仅作为旧 RedCap Codex 会话所有权模式考古参考，不能直接驱动当前实现。",
+      "confidence": "low",
+      "expiry_condition": "只有在明确考古任务和新旧实现差异复核后才可使用。",
+      "index_path": "/Users/norven/workspace/redcap/compass/tools/redcap-codex-session-ownership.sh",
+      "index_route": "old-redcap-reference",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/index.json"
+      ],
+      "status": "legacy_reference",
+      "usage_policy": "review_required"
+    },
+    "open-loop-terminal-closeout-hard-block": {
+      "applicability": "开放队列、终局验收和完成声明边界治理。",
+      "confidence": "medium",
+      "expiry_condition": "终局目标合同、开放队列结构或完成声明检查器变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/open-loop-terminal-closeout-hard-block.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/open-loop-terminal-closeout-hard-block.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "raw-evidence-access-boundary": {
+      "applicability": "原始证据、归档包、清理和发布边界。",
+      "confidence": "medium",
+      "expiry_condition": "原始证据访问、发布打包或缓存清理规则变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/raw-evidence-access-boundary.md"
+      ],
+      "status": "active",
+      "usage_policy": "review_required",
+      "valid_until": "2026-09-21"
+    },
+    "revival-doctrine": {
+      "applicability": "RedCap 复活原则、反空转和完成口径治理。",
+      "confidence": "medium",
+      "expiry_condition": "复活原则或终局验收标准变更时必须重新复核。",
+      "index_path": "assets/docs/redcap-revival-doctrine.md",
+      "index_route": "revival-doc",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/docs/redcap-revival-doctrine.md"
+      ],
+      "status": "active",
+      "usage_policy": "review_required",
+      "valid_until": "2026-09-21"
+    },
+    "revival-map": {
+      "applicability": "新旧 RedCap 迁移地图和模块边界理解。",
+      "confidence": "medium",
+      "expiry_condition": "迁移地图、模块边界或旧仓库考古结论变更时必须重新复核。",
+      "index_path": "assets/docs/redcap-revival-map.md",
+      "index_route": "revival-doc",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/docs/redcap-revival-map.md"
+      ],
+      "status": "active",
+      "usage_policy": "review_required",
+      "valid_until": "2026-09-21"
+    },
+    "rsp-03-provider-health": {
+      "applicability": "Kimi、Claude Code 和其他评审方调用路径、超时、续接和失败分类。",
+      "confidence": "medium",
+      "expiry_condition": "评审方 CLI 路径、参数、会话输出格式或超时策略变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/rsp-03-provider-health.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/rsp-03-provider-health.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "rsp-21-advisory-stop-health": {
+      "applicability": "建议型 Stop 健康状态、degraded 升级和阻断边界。",
+      "confidence": "medium",
+      "expiry_condition": "Stop 健康状态合同或 Hook 事件结构变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/rsp-21-advisory-stop-health.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/rsp-21-advisory-stop-health.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "rsp-25-hook-quality-metrics": {
+      "applicability": "Hook 误伤率、漏检率和趋势度量。",
+      "confidence": "medium",
+      "expiry_condition": "Hook 质量样本、阈值或事件来源变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/rsp-25-hook-quality-metrics.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/rsp-25-hook-quality-metrics.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "rsp-contract-reality-evidence-gate": {
+      "applicability": "RSP 完成口径、证据路径和真实行为变化检查。",
+      "confidence": "medium",
+      "expiry_condition": "RSP 合同、完成声明 schema 或证据结构变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/rsp-contract-reality-evidence-gate.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/rsp-contract-reality-evidence-gate.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "rsp-residual-batch-mutation-cross-check": {
+      "applicability": "残留 RSP 批量收口、棱镜 concern resolution、负向探针故障注入和跨检查断言。",
+      "confidence": "medium",
+      "expiry_condition": "残留批量检查器、RSP 合同、棱镜 resolution 或负向探针结构变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/rsp-residual-batch-mutation-cross-check.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/rsp-residual-batch-mutation-cross-check.md",
+        "assets/evidence/prism/20260621-rsp-09-13-14-17-18-22-residual-batch/resolution-round3.json"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "self-purification-runtime-loop": {
+      "applicability": "任务前知识检索、任务后候选、晋升/不晋升和私有人格边界。",
+      "confidence": "medium",
+      "expiry_condition": "自我净化流程、公共晋升策略或私有人格边界变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/self-purification-runtime-loop.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/self-purification-runtime-loop.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    },
+    "stop-advisory-main-axis-meta-guidance": {
+      "applicability": "Stop 建议型检查的二次回答主轴保持与元指导隔离。",
+      "confidence": "medium",
+      "expiry_condition": "Stop 建议文本、恢复锚点或人类可读策略变更时必须重新复核。",
+      "index_path": "assets/knowledge/entries/stop-advisory-main-axis-meta-guidance.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-06-21",
+      "source_refs": [
+        "assets/knowledge/entries/stop-advisory-main-axis-meta-guidance.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-09-21"
+    }
+  }
+}

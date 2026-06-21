@@ -1,0 +1,52 @@
+{
+  "schema_id": "redcap-prism-context-boundary-contract",
+  "version": 1,
+  "cap_context_budget": {
+    "max_total_bytes": 8192,
+    "max_structured_review_bytes": 4096,
+    "max_brief_excerpt_bytes": 2048,
+    "max_manifest_bytes": 65536,
+    "forbidden_cap_path_suffixes": [
+      ".raw.txt",
+      ".raw.json"
+    ],
+    "forbidden_cap_text_markers": [
+      "BEGIN RAW",
+      "\"raw_path\"",
+      ".raw.txt",
+      ".raw.json"
+    ]
+  },
+  "request_file_access_required": {
+    "mode": "bounded-read",
+    "fields": [
+      "paths",
+      "max_files",
+      "max_bytes_per_file",
+      "max_total_bytes",
+      "purpose"
+    ]
+  },
+  "provider_artifact_layers": [
+    "raw",
+    "brief",
+    "structured_review"
+  ],
+  "raw_access_policy": {
+    "cap_context": "forbidden",
+    "checker_access": "stat-only",
+    "audit_replay": "path-and-hash-only"
+  },
+  "negative_fixtures": [
+    "raw-in-cap",
+    "brief-over-limit",
+    "raw-in-brief",
+    "unbounded-manifest",
+    "self-check-recursion",
+    "file-access-boundary-mismatch",
+    "raw-read-full-content-checker",
+    "cap-input-unlisted-file",
+    "cap-input-extra-content",
+    "cap-input-stale-manifest"
+  ]
+}

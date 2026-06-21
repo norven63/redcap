@@ -1,0 +1,77 @@
+{
+  "task": "RSP-01/RSP-02/RSP-21/RSP-25 Stop 与 Hook 意图治理批次实施评审",
+  "user_intent": "Norven 要求根据 residual-todo-final-solution-plan 逐项实施和落地，当前进入 Stop 建议型检查误伤治理、Hook 语义判断统一链路、degraded 健康升级、误伤/漏检趋势度量四个残留项；实现必须正面解决问题，不能通过删除、绕过或降级原能力来换取通过。",
+  "main_claim": "本轮尚未声明完成；准备实现一组运行时检查与回放能力，让 Stop 建议不抢占用户原问题主轴，让 Hook 意图判断具备可审计的规则结果、语义结果和最终裁决，让 degraded 状态可被健康检查和阈值升级捕捉，并让 Hook 误伤率/漏检率形成可持续度量。",
+  "changed_reality": [
+    "RSP-01、RSP-02、RSP-21、RSP-25 目前仍只是方案书条目，缺少对应完成声明证据文件和正向/负向运行验收。",
+    "advisory-stop、intent-judge、host hook 相关检查已经存在，但尚未按 RSP 完成口径证明四个条目全部解决。",
+    "本轮必须产出运行时代码变化、样本回放、健康报告、趋势度量和 rsp-contract 完成证据，不能只补文档或状态说明。"
+  ],
+  "evidence": [
+    {
+      "kind": "document",
+      "reference": "assets/docs/residual-todo-final-solution-plan.md",
+      "summary": "方案书定义 RSP-01/RSP-02/RSP-21/RSP-25 的根因、最终方案、不降级保证、正向验收、负向探针和证据路径。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/advisory_stop.py",
+      "summary": "Stop 建议型检查的当前实现入口，需要评审是否应扩展 replay、主轴保持、health 状态和 degraded 升级。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/intent_judge.py",
+      "summary": "Hook 语义判断的当前实现入口，需要评审是否已形成规则结果、语义结果和最终裁决的统一链路。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/host-adapters/codex/codex-hook.py",
+      "summary": "Codex Hook 宿主适配器，需要评审新增质量度量时是否保持宿主边界诚实。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/rsp_contract.py",
+      "summary": "本批完成声明必须通过 rsp-contract，不能用文档替代真实行为变化。"
+    }
+  ],
+  "review_mode": "design_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "paths": [
+      "assets/docs/residual-todo-final-solution-plan.md",
+      "runtime/core/advisory_stop.py",
+      "runtime/core/intent_judge.py",
+      "runtime/core/prompt_intent.py",
+      "runtime/core/human_output_policy.py",
+      "runtime/core/scan_conclusion_guard.py",
+      "runtime/core/final_claim_guard.py",
+      "runtime/core/rsp_contract.py",
+      "runtime/core/check_runner.py",
+      "runtime/host-adapters/codex/codex-hook.py",
+      "runtime/bin/redcap"
+    ],
+    "max_files": 16,
+    "max_bytes_per_file": 40000,
+    "max_total_bytes": 140000
+  },
+  "known_constraints": [
+    "不删除 Stop 核心检查能力，不把 Stop 降级为无记录提醒。",
+    "不允许 Stop 建议成为新的用户任务主轴；二次回答必须先回应用户原问题。",
+    "不关闭确定性安全规则，不把所有判断无条件交给大模型。",
+    "语义评审失败时，高风险请求不得静默放行。",
+    "degraded 不得当作 healthy；连续 degraded 或关键完成声明场景必须升级。",
+    "Hook 质量阈值不能被随意放宽；阈值变更需要 Prism 评审。",
+    "本轮通过只允许关闭 RSP-01/RSP-02/RSP-21/RSP-25 的当前机器化落地范围，不得声明 RedCap 完整复活。"
+  ],
+  "questions_for_prism": [
+    "本批四项是否应该合并实现，还是必须拆成更小批次以避免互相污染？",
+    "Stop 主轴保持、Hook 语义裁决、degraded 健康升级、误伤/漏检度量的最小运行时接口分别应是什么？",
+    "哪些负向样本必须纳入本批，才能证明不是只修当前对话里暴露出的样本？",
+    "有哪些实现方式会在表面上解决误伤，实质上削弱防空转和防误收口能力？"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "prism-resolution-rsp-05-06-final.executed",
+  "command": "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260621-rsp-05-06-loom-role-session/merge.json --resolution assets/evidence/prism/20260621-rsp-05-06-loom-role-session/resolution.json --manifest assets/evidence/prism/20260621-rsp-05-06-loom-role-session/session.json",
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-resolution",
+    "--merge",
+    "assets/evidence/prism/20260621-rsp-05-06-loom-role-session/merge.json",
+    "--resolution",
+    "assets/evidence/prism/20260621-rsp-05-06-loom-role-session/resolution.json",
+    "--manifest",
+    "assets/evidence/prism/20260621-rsp-05-06-loom-role-session/session.json"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.243,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/prism-resolution-rsp-05-06-final.executed.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-05-06-loom-role-session/prism-resolution-rsp-05-06-final.executed.stderr.txt",
+  "stdout_sha256": "5bad95d6bbf4d775454b13d8dc5b7db85901cb7431851023a15a0d2321bd15b5",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 556,
+  "stderr_length": 0,
+  "executed_at": "2026-06-21T03:44:13+00:00",
+  "executor": "cap"
+}

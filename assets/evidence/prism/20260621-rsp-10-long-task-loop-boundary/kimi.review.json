@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "当前只有设计计划与既有的长任务合同/代码；RSP-10 尚未新增可运行的 boundary-check 命令、正负向探针或证据文件。用户要的现实——机器可检查的长任务循环边界闭环——还没有发生，只是形成了看起来完整的方案文档和声明结构。",
+  "main_concern": "boundary-check 被计划描述为'复用现有 decide/start/record/complete 校验链'，但现有校验链目前更偏向合同 JSON 结构与 self-check，未必真正实例化 active_run 并跑完正负向场景。这会让 RSP-10 的验收退化成'生成了一份边界检查报告/合同/声明'，而不是真实阻止短任务过度触发、同根因盲目重跑和低质量完成证据收口。",
+  "top_risks": [
+    "boundary-check 退化为对合同文件和 self-check 输出的元检查，缺少对 active_run 的短任务/复杂任务/失败重跑/低质量完成的实际探针。",
+    "RSP-10 专门合同可能只重复 generic long-task contract 的条款，没有针对'同根因三轮继续失败''低质量完成证据拒绝'等验收项的独立机器断言。",
+    "完成声明和证据文件容易把'RSP-10 方案通过评审'误写为'RSP-10 已关闭/RedCap 长任务已成熟'，违反 RSP-12 文档不能替代实现。"
+  ],
+  "missing_evidence": [
+    "assets/docs/residual-todo-final-solution-plan.md 中 RSP-10 具体验收标准与负向探针定义（bundle 展示内容被截断）。",
+    "runtime/core/long_task_contract.py 中 complete/self-check/boundary 相关实现全貌（bundle 在 90000 字节处截断）。",
+    "boundary-check 的真实探针设计：包括输入 fixture、active_run 状态序列、预期通过/失败断言，而不仅是命令行接口和帮助文本。"
+  ],
+  "minimum_fix": "实现 boundary-check 时，必须让它使用临时 active_run fixture 真实调用 decide/start/record/complete，覆盖四个场景：1) 低风险短任务被判定为 fast_path 不进入长任务；2) 复杂任务通过 decide→start→record→complete 正常推进并写入终止边界；3) 同根因连续失败达到阈值后被拒绝继续重跑；4) 缺少 action_evidence/objective_delta/failure_backlog 时 complete 被拒绝。每个场景都要有独立断言和可机读输出。完成声明只能声明'RSP-10 当前证据闭环'，不能扩展到 RedCap 完整复活。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "如果 main AI 下一轮只返回'已新增 long-task-loop-boundary.json 和 boundary-check 帮助文本'而没有展示探针失败/通过日志与 active_run 状态转换，则视为用文档替代实现；应拒绝关闭 RSP-10。"
+  },
+  "user_intent_alignment": "方案方向（扩展现有合同、不另造框架、收窄完成声明）与用户意图一致，但目前还停留在纸面；需要把'可机器检查的正负向探针'作为最低通过门槛，而不是把合同、声明和检查报告本身当作完成。"
+}

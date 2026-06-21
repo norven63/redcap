@@ -1,0 +1,30 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "rsp-contract-rsp-02",
+  "command": "runtime/bin/redcap rsp-contract check --rsp RSP-02 --claim-file assets/evidence/rsp/rsp-02-claim.json --evidence-file assets/evidence/rsp/rsp-02-intent-judge-matrix.json --plan assets/docs/residual-todo-final-solution-plan.md",
+  "argv": [
+    "runtime/bin/redcap",
+    "rsp-contract",
+    "check",
+    "--rsp",
+    "RSP-02",
+    "--claim-file",
+    "assets/evidence/rsp/rsp-02-claim.json",
+    "--evidence-file",
+    "assets/evidence/rsp/rsp-02-intent-judge-matrix.json",
+    "--plan",
+    "assets/docs/residual-todo-final-solution-plan.md"
+  ],
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "exit_code": 0,
+  "ok": true,
+  "elapsed_seconds": 0.034,
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-02-intent-judge-matrix/rsp-contract-rsp-02.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-02-intent-judge-matrix/rsp-contract-rsp-02.stderr.txt",
+  "stdout_sha256": "baf5a1b46980002bcd2e36d9997e603cc37c0558a39868587187bc65cb591181",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 749,
+  "stderr_length": 0,
+  "executed_at": "2026-06-20T17:31:00+00:00",
+  "executor": "cap"
+}

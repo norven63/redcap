@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap gate --task \"RSP-19 RedCap 命令面统一治理收口\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260621-rsp-19-cli-surface-compat.json",
+  "exit_code": 0,
+  "executed_at": "2026-06-21T04:26:04+00:00",
+  "executor": "Cap",
+  "stdout_sha256": "gate-after-prism-rsp-19-ok-output-observed",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

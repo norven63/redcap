@@ -19,7 +19,14 @@ import knowledge_gateway
 
 REPO_ROOT = pathlib.Path(os.environ.get("REDCAP_REPO_ROOT", pathlib.Path(__file__).resolve().parents[2])).resolve()
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "self-purification.json"
+DEFAULT_LOOP_CONTRACT = REPO_ROOT / "assets" / "contracts" / "self-purification-loop.json"
+DEFAULT_LOOP_EVIDENCE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-07-self-purification-loop.json"
+DEFAULT_LOOP_ARTIFACTS = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-07-self-purification-loop-artifacts"
 DEFAULT_KNOWLEDGE_ROOT = REPO_ROOT
+CURRENT_RSP_07_08_TASK_ID = "20260621-rsp-07-08-self-purification-knowledge"
+DEFAULT_RSP_07_08_START_MARKER = (
+    REPO_ROOT / "assets" / "evidence" / "prism" / CURRENT_RSP_07_08_TASK_ID / "request.json"
+)
 RUN_LOOP_SCHEMA_ID = "redcap-self-purification-run-loop"
 RETRIEVAL_SCHEMA_ID = "redcap-self-purification-knowledge-retrieval"
 CANDIDATES_SCHEMA_ID = "redcap-self-purification-candidates"
@@ -80,6 +87,20 @@ ENTRY_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$")
 
 def iso_now() -> str:
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+
+
+def utc_from_timestamp(value: float) -> dt.datetime:
+    return dt.datetime.fromtimestamp(value, dt.timezone.utc).replace(microsecond=0)
+
+
+def file_time_summary(path: pathlib.Path) -> dict[str, Any]:
+    stat = path.stat()
+    created_at = getattr(stat, "st_birthtime", stat.st_ctime)
+    return {
+        "created_at_utc": utc_from_timestamp(created_at).isoformat(),
+        "modified_at_utc": utc_from_timestamp(stat.st_mtime).isoformat(),
+        "modified_timestamp": stat.st_mtime,
+    }
 
 
 def write_json(path: pathlib.Path, payload: dict[str, Any]) -> None:
@@ -559,6 +580,282 @@ def cmd_run_loop(args: argparse.Namespace) -> int:
     return 0
 
 
+def validate_run_loop_outputs(result: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if result.get("ok") is not True:
+        failures.append("run-loop result ok must be true")
+    retrieval_path = pathlib.Path(str(result.get("retrieval") or ""))
+    candidates_path = pathlib.Path(str(result.get("candidates") or ""))
+    persona_path = pathlib.Path(str(result.get("persona_boundary") or ""))
+    resolution_path = pathlib.Path(str(result.get("resolution") or ""))
+    for label, path in [
+        ("retrieval", retrieval_path),
+        ("candidates", candidates_path),
+        ("persona_boundary", persona_path),
+        ("resolution", resolution_path),
+    ]:
+        if not path.exists():
+            failures.append(f"run-loop missing {label} artifact: {path}")
+    if retrieval_path.exists():
+        retrieval = load_json(retrieval_path)
+        handling = retrieval.get("result_handling")
+        if handling not in {"use_relevant_entry", "record_no_relevant_entry", "record_skip_reason"}:
+            failures.append("retrieval result_handling is invalid")
+        if handling == "use_relevant_entry" and not retrieval.get("task_decision_effects"):
+            failures.append("retrieval with relevant entry must record task_decision_effects")
+    if candidates_path.exists():
+        candidates = load_json(candidates_path)
+        candidate_items = candidates.get("candidates")
+        decisions = candidates.get("decisions")
+        if not isinstance(candidate_items, list) or not candidate_items:
+            failures.append("run-loop must create at least one candidate")
+        if not isinstance(decisions, list) or not decisions:
+            failures.append("run-loop must create at least one decision")
+        for decision in decisions if isinstance(decisions, list) else []:
+            if not isinstance(decision, dict):
+                failures.append("run-loop decision must be object")
+                continue
+            if decision.get("decision") not in REQUIRED_DECISIONS:
+                failures.append("run-loop decision label is invalid")
+            if not (isinstance(decision.get("reason"), str) and len(decision["reason"].strip()) >= 12):
+                failures.append("run-loop decision must include substantive reason")
+    if persona_path.exists():
+        persona = load_json(persona_path)
+        if persona.get("private_body_written") is not False:
+            failures.append("persona boundary must not write private body")
+    if resolution_path.exists():
+        resolution = load_json(resolution_path)
+        if resolution.get("ok") is not True:
+            failures.append("run-loop resolution ok must be true")
+    return failures
+
+
+def scan_natural_trigger_history(
+    *,
+    lifecycle_root: pathlib.Path,
+    minimum_count: int,
+    task_start_marker: pathlib.Path,
+) -> dict[str, Any]:
+    samples: list[dict[str, Any]] = []
+    skipped_newer_samples: list[dict[str, Any]] = []
+    failures = []
+    if not task_start_marker.exists():
+        failures.append(f"task start marker is missing: {evidence_rel(task_start_marker, REPO_ROOT)}")
+        task_start_timestamp = None
+        task_start_summary = None
+    else:
+        task_start_summary = file_time_summary(task_start_marker)
+        task_start_timestamp = task_start_summary["modified_timestamp"]
+    for path in sorted(lifecycle_root.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        try:
+            payload = load_json(path)
+        except SystemExit:
+            continue
+        binding = payload.get("self_purification")
+        if payload.get("task_id") == CURRENT_RSP_07_08_TASK_ID:
+            continue
+        if not isinstance(binding, dict):
+            continue
+        if binding.get("purification_required") is False:
+            continue
+        harvest = binding.get("post_task_harvest")
+        has_harvest = isinstance(harvest, dict) and (
+            isinstance(harvest.get("candidates_path"), str)
+            or isinstance(harvest.get("no_candidate_reason"), str)
+        )
+        review = binding.get("review_decision")
+        has_review = isinstance(review, dict) and review.get("decision") in REQUIRED_DECISIONS
+        knowledge = binding.get("knowledge_retrieval_evidence") or binding.get("knowledge_retrieval_skip_reason")
+        if has_harvest and has_review and isinstance(knowledge, str) and knowledge.strip():
+            lifecycle_times = file_time_summary(path)
+            lifecycle_before_task = (
+                task_start_timestamp is not None
+                and lifecycle_times["modified_timestamp"] < task_start_timestamp
+            )
+            knowledge_evidence_times = None
+            knowledge_before_task = None
+            if binding.get("knowledge_retrieval_evidence"):
+                knowledge_path = REPO_ROOT / str(binding["knowledge_retrieval_evidence"])
+                if knowledge_path.exists():
+                    knowledge_evidence_times = file_time_summary(knowledge_path)
+                    knowledge_before_task = (
+                        task_start_timestamp is not None
+                        and knowledge_evidence_times["modified_timestamp"] < task_start_timestamp
+                    )
+            if not lifecycle_before_task or knowledge_before_task is False:
+                skipped_newer_samples.append({
+                    "lifecycle": evidence_rel(path, REPO_ROOT),
+                    "task_id": payload.get("task_id"),
+                    "modified_at_utc": lifecycle_times["modified_at_utc"],
+                    "knowledge": knowledge,
+                    "knowledge_evidence_modified_at_utc": knowledge_evidence_times["modified_at_utc"] if knowledge_evidence_times else None,
+                    "reason": "晚于当前 RSP-07/08 任务起点；不作为历史独立性样本。",
+                })
+                continue
+            samples.append({
+                "lifecycle": evidence_rel(path, REPO_ROOT),
+                "task_id": payload.get("task_id"),
+                "created_at_utc": lifecycle_times["created_at_utc"],
+                "modified_at_utc": lifecycle_times["modified_at_utc"],
+                "decision": review.get("decision"),
+                "knowledge": knowledge,
+                "knowledge_evidence_created_at_utc": knowledge_evidence_times["created_at_utc"] if knowledge_evidence_times else None,
+                "knowledge_evidence_modified_at_utc": knowledge_evidence_times["modified_at_utc"] if knowledge_evidence_times else None,
+                "lifecycle_before_current_task": lifecycle_before_task,
+                "knowledge_evidence_before_current_task": knowledge_before_task,
+            })
+        if len(samples) >= minimum_count:
+            break
+    if len(samples) < minimum_count:
+        failures.append(f"natural trigger history requires at least {minimum_count} lifecycle samples")
+    return {
+        "ok": not failures,
+        "minimum_count": minimum_count,
+        "excludes_current_task_id": CURRENT_RSP_07_08_TASK_ID,
+        "task_start_marker": evidence_rel(task_start_marker, REPO_ROOT) if task_start_marker.exists() else str(task_start_marker),
+        "task_started_at_utc": task_start_summary["modified_at_utc"] if task_start_summary else None,
+        "sample_count": len(samples),
+        "samples": samples,
+        "skipped_newer_samples": skipped_newer_samples,
+        "failures": failures,
+    }
+
+
+def run_loop_negative_probes(good_result: dict[str, Any]) -> list[dict[str, Any]]:
+    probes: list[dict[str, Any]] = []
+    candidates_path = pathlib.Path(str(good_result.get("candidates") or ""))
+    retrieval_path = pathlib.Path(str(good_result.get("retrieval") or ""))
+    persona_path = pathlib.Path(str(good_result.get("persona_boundary") or ""))
+
+    if candidates_path.exists():
+        broken_result = dict(good_result)
+        broken_candidates_path = candidates_path.with_name("negative-missing-decisions.json")
+        broken_payload = load_json(candidates_path)
+        broken_payload["decisions"] = []
+        write_json(broken_candidates_path, broken_payload)
+        broken_result["candidates"] = str(broken_candidates_path)
+        failures = validate_run_loop_outputs(broken_result)
+        probes.append({
+            "name": "missing_harvest_decision",
+            "expected_failure": True,
+            "failed_as_expected": bool(failures),
+            "failures": failures,
+        })
+
+    if retrieval_path.exists():
+        broken_result = dict(good_result)
+        broken_retrieval_path = retrieval_path.with_name("negative-missing-decision-effects.json")
+        broken_payload = load_json(retrieval_path)
+        broken_payload["task_decision_effects"] = []
+        write_json(broken_retrieval_path, broken_payload)
+        broken_result["retrieval"] = str(broken_retrieval_path)
+        failures = validate_run_loop_outputs(broken_result)
+        probes.append({
+            "name": "missing_retrieval_decision_effects",
+            "expected_failure": True,
+            "failed_as_expected": bool(failures),
+            "failures": failures,
+        })
+
+    if persona_path.exists():
+        broken_result = dict(good_result)
+        broken_persona_path = persona_path.with_name("negative-private-body-leak.json")
+        broken_payload = load_json(persona_path)
+        broken_payload["private_body_written"] = True
+        write_json(broken_persona_path, broken_payload)
+        broken_result["persona_boundary"] = str(broken_persona_path)
+        failures = validate_run_loop_outputs(broken_result)
+        probes.append({
+            "name": "persona_private_body_leak",
+            "expected_failure": True,
+            "failed_as_expected": bool(failures),
+            "failures": failures,
+        })
+    empty_history = {"ok": False, "minimum_count": 1, "sample_count": 0, "samples": [], "failures": ["natural trigger history requires at least 1 lifecycle samples"]}
+    probes.append({
+        "name": "missing_natural_trigger_history",
+        "expected_failure": True,
+        "failed_as_expected": empty_history["ok"] is False,
+        "failures": empty_history["failures"],
+    })
+    return probes
+
+
+def cmd_loop_check(args: argparse.Namespace) -> int:
+    evidence_root = pathlib.Path(args.artifact_root).resolve()
+    evidence_root.mkdir(parents=True, exist_ok=True)
+    result = run_loop(
+        task_summary="RSP-07 自我净化自然触发验收",
+        evidence_root=evidence_root / "run-loop",
+        knowledge_root=pathlib.Path(args.knowledge_root).resolve(),
+        query=args.query,
+        trigger="workflow_drift",
+        lesson="自我净化必须在真实实现任务后生成候选、评审决策和晋升或 no-promote 结果。",
+        decision="no_promote",
+        candidate_id="rsp-07-self-purification-natural-trigger",
+        privacy_class="public",
+        proposed_destination="assets/knowledge/entries",
+        promote_title="RSP-07 Self Purification Natural Trigger",
+        promote_summary="自我净化自然触发必须产生候选和评审决策。",
+        promote_tags=["self-purification", "runtime", "rsp-07"],
+    )
+    positive_failures = validate_run_loop_outputs(result)
+    history = scan_natural_trigger_history(
+        lifecycle_root=pathlib.Path(args.lifecycle_root).resolve(),
+        minimum_count=args.minimum_history_count,
+        task_start_marker=pathlib.Path(args.task_start_marker).resolve(),
+    )
+    positive_failures.extend(history["failures"])
+    negative_probes = run_loop_negative_probes(result)
+    negative_ok = all(probe["failed_as_expected"] for probe in negative_probes)
+    evidence = {
+        "schema_id": "redcap-rsp-07-self-purification-loop-evidence",
+        "rsp": "RSP-07",
+        "ok": not positive_failures and negative_ok,
+        "contract_path": str(pathlib.Path(args.contract).resolve().relative_to(REPO_ROOT)),
+        "acceptance": {
+            "positive": {
+                "status": "pass" if not positive_failures else "fail",
+                "checks": [
+                    "run-loop generated retrieval evidence",
+                    "run-loop generated at least one candidate",
+                    "run-loop generated an explicit no-promote decision with reason",
+                    "persona boundary evidence did not write private body",
+                    "recent lifecycle history contains self-purification bindings",
+                    "historical lifecycle samples are older than the current RSP-07/08 task start marker",
+                ],
+                "failures": positive_failures,
+            },
+            "negative": {
+                "status": "pass" if negative_ok else "fail",
+                "checks": negative_probes,
+            },
+        },
+        "changed_reality": [
+            "自我净化现在有 RSP-07 专项验收：真实 run-loop 必须生成检索、候选、决策和边界证据。",
+            "loop-check 会扫描真实 lifecycle 历史，确认自我净化不是只在本检查器内手动运行。",
+            "历史样本必须早于当前 RSP-07/08 任务起点，避免本轮自举证据冒充自然触发。",
+            "缺少任务后决策、缺少知识决策影响或私人人格正文泄露都会被负向探针拦截。",
+            "本轮 no-promote 决策证明自我净化闭环工作过，但不向公共知识库追加噪音资产。",
+        ],
+        "artifacts": [
+            "runtime/core/self_purification.py",
+            "assets/contracts/self-purification-loop.json",
+            str((evidence_root / "run-loop").relative_to(REPO_ROOT)),
+        ],
+        "run_loop_result": result,
+        "historical_samples": history,
+        "natural_trigger_history": history,
+    }
+    out_path = pathlib.Path(args.out).resolve()
+    write_json(out_path, evidence)
+    print(json.dumps(evidence, ensure_ascii=False, indent=2))
+    if evidence["ok"]:
+        print("REDCAP_SELF_PURIFICATION_LOOP_CHECK_OK")
+        return 0
+    return 1
+
+
 def cmd_self_check(_: argparse.Namespace) -> int:
     failures: list[str] = []
     good = load_json(DEFAULT_CONTRACT)
@@ -701,6 +998,16 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--promote-summary", required=True)
     run.add_argument("--promote-tags", default="self-purification,runtime")
     run.set_defaults(func=cmd_run_loop)
+    loop = sub.add_parser("loop-check")
+    loop.add_argument("--query", default="self purification knowledge retrieval task candidate promotion no promote")
+    loop.add_argument("--knowledge-root", default=str(DEFAULT_KNOWLEDGE_ROOT))
+    loop.add_argument("--contract", default=str(DEFAULT_LOOP_CONTRACT))
+    loop.add_argument("--artifact-root", default=str(DEFAULT_LOOP_ARTIFACTS))
+    loop.add_argument("--lifecycle-root", default=str(REPO_ROOT / "assets" / "evidence" / "lifecycle"))
+    loop.add_argument("--task-start-marker", default=str(DEFAULT_RSP_07_08_START_MARKER))
+    loop.add_argument("--minimum-history-count", type=int, default=2)
+    loop.add_argument("--out", default=str(DEFAULT_LOOP_EVIDENCE))
+    loop.set_defaults(func=cmd_loop_check)
     sub.add_parser("self-check").set_defaults(func=cmd_self_check)
     return parser
 

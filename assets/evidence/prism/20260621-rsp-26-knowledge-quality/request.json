@@ -1,0 +1,86 @@
+{
+  "task": "RSP-26 知识正确性退化治理设计评审",
+  "task_id": "20260621-rsp-26-knowledge-quality",
+  "title": "RSP-26 知识正确性退化治理",
+  "risk_level": "medium",
+  "user_intent": "Norven 要求 RedCap 不能只提高知识命中率，还必须防止陈旧、冲突、不适用或 no-promote 的知识直接驱动实现决策。当前任务是把 RSP-26 从方案落地为可运行检查与负向探针。",
+  "main_claim": "本轮尚未声明完成；准备新增 knowledge-quality 合同、质量元数据、检查命令、聚合检查入口和 RSP-26 证据。知识命中必须有来源、复核时间、适用边界、过期条件和使用策略；陈旧或冲突知识必须降权、提示复核或阻断。",
+  "changed_reality": [
+    "assets/knowledge/index.json 已有 index-first 知识索引和搜索增强，但索引条目尚未统一携带质量元数据。",
+    "runtime/core/knowledge_gateway.py 已能校验索引结构和搜索，但尚未判断知识陈旧、冲突、no-promote 关联或直接驱动风险。",
+    "assets/docs/residual-todo-final-solution-plan.md 已把 RSP-26 定义为残留待完善项，要求错误知识命中无解释影响决策必须失败。"
+  ],
+  "target_reality": "新增可运行的知识质量治理入口，检查每个可复用知识条目的 source_refs、reviewed_at、applicability、expiry_condition、confidence、status 和 usage_policy；低置信、陈旧、冲突、no-promote 关联知识不能作为 direct_driver；负向样本必须证明错误知识无解释影响实现会失败。",
+  "evidence": [
+    {
+      "kind": "document",
+      "reference": "assets/docs/residual-todo-final-solution-plan.md",
+      "summary": "RSP-26 的问题定义、正向验收和负向探针要求。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/knowledge_gateway.py",
+      "summary": "当前 index-first 知识网关和搜索逻辑。"
+    },
+    {
+      "kind": "data",
+      "reference": "assets/knowledge/index.json",
+      "summary": "当前知识索引条目。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "聚合检查入口，后续可接入 knowledge-quality-check。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/bin/redcap",
+      "summary": "命令入口，后续可接入 knowledge-quality check|self-check。"
+    }
+  ],
+  "review_mode": "design_review",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review RSP-26 design before implementation.",
+    "allowed_paths": [
+      "assets/docs/residual-todo-final-solution-plan.md",
+      "runtime/core/knowledge_gateway.py",
+      "assets/knowledge/index.json",
+      "runtime/core/check_runner.py",
+      "runtime/bin/redcap"
+    ],
+    "max_files": 10,
+    "max_bytes_per_file": 50000,
+    "max_total_bytes": 180000
+  },
+  "proposed_changes": [
+    "新增 assets/contracts/knowledge-quality.json，定义质量字段、状态、使用策略、过期/冲突/no-promote 处理规则和负向样本要求。",
+    "新增 assets/knowledge/quality.json，用 sidecar 方式覆盖现有知识索引条目，避免大规模改写 index.json。",
+    "新增 runtime/core/knowledge_quality.py，提供 check 和 self-check；检查质量元数据覆盖率、路径存在性、私有路径泄漏、过期状态、冲突裁决和使用策略。",
+    "将 runtime/bin/redcap 接入 knowledge-quality check|self-check。",
+    "将 runtime/core/check_runner.py 接入 knowledge-quality-check。",
+    "生成 assets/evidence/rsp/rsp-26-knowledge-quality.json 与 assets/evidence/rsp/rsp-26-claim.json。"
+  ],
+  "quality_requirements": [
+    "知识质量检查不能只验证字段存在，必须检查字段语义：过期 active/direct_driver 必须失败，冲突无裁决必须失败，no-promote direct_driver 必须失败。",
+    "old-redcap-reference 路由不能被默认当作可直接驱动实现的知识；最多 review_required 或 hint_only。",
+    "私人人格、绝对私有路径或凭据样式内容不得作为公共知识质量来源。",
+    "RSP-26 只关闭当前知识正确性治理能力，不声明知识库长期永远正确，也不声明 RedCap 完整复活。"
+  ],
+  "known_non_goals": [
+    "不重写 knowledge-gateway 搜索算法。",
+    "不批量读取旧 RedCap 仓库。",
+    "不把所有历史知识都强制晋升为公共知识。",
+    "不要求每个参考型旧路径都立刻迁移为活跃知识。"
+  ],
+  "questions_for_prism": [
+    "sidecar 质量元数据是否足以避免 index.json 大规模膨胀，同时又不会产生双源漂移？",
+    "哪些负向探针是 RSP-26 必不可少的最低集合？",
+    "old-redcap-reference 应该如何限制，才能既允许考古参考，又避免旧知识直接驱动实现？",
+    "是否需要把 knowledge-quality-check 接入默认聚合检查，还是只在知识相关任务前后运行？"
+  ]
+}

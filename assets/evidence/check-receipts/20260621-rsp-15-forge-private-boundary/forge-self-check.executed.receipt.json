@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "forge",
+    "self-check"
+  ],
+  "command": "runtime/bin/redcap forge self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.054,
+  "executed_at": "2026-06-20T21:42:56+00:00",
+  "executor": "redcap-rsp-15-check",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "forge-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/forge-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_path": "assets/evidence/check-receipts/20260621-rsp-15-forge-private-boundary/forge-self-check.stdout.txt",
+  "stdout_sha256": "2d72ef19ae759e339f7d59ebda54c07f68396aae379985f26f767534db84da76",
+  "stdout_tail": "{\n  \"failures\": [],\n  \"ok\": true\n}\nREDCAP_FORGE_SELF_CHECK_OK\n"
+}
