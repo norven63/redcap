@@ -898,11 +898,59 @@ def run_impact_negative_probes(trace: dict[str, Any], *, index_path: pathlib.Pat
     return probes
 
 
+def write_lifecycle_prompt_events(events_path: pathlib.Path, packet: dict[str, Any]) -> None:
+    prompt_context = packet.get("prompt_context") if isinstance(packet.get("prompt_context"), dict) else {}
+    excerpt = str(prompt_context.get("source_prompt_excerpt") or "").strip()
+    prompt_kind = str(prompt_context.get("prompt_kind") or "directive").strip()
+    authorized_scope = str(prompt_context.get("authorized_scope") or "implementation").strip()
+    if not excerpt:
+        raise ValueError("lifecycle regression sample missing prompt_context.source_prompt_excerpt")
+    event = {
+        "event": "UserPromptSubmit",
+        "recorded_at": "fixture",
+        "schema_id": "redcap-lifecycle-regression-prompt-event",
+        "session_id": "knowledge-gateway-impact-regression",
+        "turn_id": f"fixture-{packet.get('task_id') or events_path.stem}",
+        "source": "knowledge-gateway-impact-check",
+        "prompt": {
+            "present": True,
+            "normalized_excerpt": excerpt,
+            "normalized_excerpt_truncated": False,
+            "length": len(excerpt),
+        },
+        "prompt_intent": {
+            "prompt_kind": prompt_kind if prompt_kind in {"question", "directive", "mixed"} else "directive",
+            "authorized_scope": (
+                authorized_scope
+                if authorized_scope in {"answer_only", "review_only", "implementation", "completion"}
+                else "implementation"
+            ),
+            "action_evidence": "substantive",
+            "reason": "historical lifecycle regression fixture bound to the sample prompt, not the current live host prompt",
+        },
+    }
+    events_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = events_path.with_name(f".{events_path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, events_path)
+
+
 def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, Any]:
     probes: list[dict[str, Any]] = []
     for sample in DEFAULT_LIFECYCLE_REGRESSION_SAMPLES:
+        sample_packet = load_json(sample)
+        sample_events_path = artifact_root / f"{sample.stem}-events.jsonl"
+        write_lifecycle_prompt_events(sample_events_path, sample_packet)
         completed = subprocess.run(
-            ["runtime/bin/redcap", "lifecycle", "check", "--packet", str(sample.relative_to(REPO_ROOT))],
+            [
+                "runtime/bin/redcap",
+                "lifecycle",
+                "check",
+                "--packet",
+                str(sample.relative_to(REPO_ROOT)),
+                "--events",
+                rel_path(sample_events_path),
+            ],
             cwd=str(REPO_ROOT),
             capture_output=True,
             text=True,
@@ -911,6 +959,7 @@ def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, An
         probes.append({
             "name": f"positive_{sample.stem}",
             "packet": str(sample.relative_to(REPO_ROOT)),
+            "events": rel_path(sample_events_path),
             "expected_exit_code": 0,
             "exit_code": completed.returncode,
             "ok": completed.returncode == 0,
@@ -931,8 +980,18 @@ def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, An
     write_json(bad_knowledge_path, bad_knowledge)
     base_packet["self_purification"]["knowledge_retrieval_evidence"] = rel_path(bad_knowledge_path)
     write_json(bad_packet_path, base_packet)
+    negative_events_path = artifact_root / "negative-lifecycle-events.jsonl"
+    write_lifecycle_prompt_events(negative_events_path, base_packet)
     completed = subprocess.run(
-        ["runtime/bin/redcap", "lifecycle", "check", "--packet", rel_path(bad_packet_path)],
+        [
+            "runtime/bin/redcap",
+            "lifecycle",
+            "check",
+            "--packet",
+            rel_path(bad_packet_path),
+            "--events",
+            rel_path(negative_events_path),
+        ],
         cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
@@ -941,6 +1000,7 @@ def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, An
     probes.append({
         "name": "negative_lifecycle_missing_knowledge_impact",
         "packet": rel_path(bad_packet_path),
+        "events": rel_path(negative_events_path),
         "expected_exit_code": 1,
         "exit_code": completed.returncode,
         "ok": completed.returncode != 0 and "decision effects" in completed.stdout,
@@ -964,7 +1024,15 @@ def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, An
     ordinary_packet_path = artifact_root / "ordinary-lifecycle-missing-knowledge-impact.json"
     write_json(ordinary_packet_path, ordinary_packet)
     completed = subprocess.run(
-        ["runtime/bin/redcap", "lifecycle", "check", "--packet", rel_path(ordinary_packet_path)],
+        [
+            "runtime/bin/redcap",
+            "lifecycle",
+            "check",
+            "--packet",
+            rel_path(ordinary_packet_path),
+            "--events",
+            rel_path(negative_events_path),
+        ],
         cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
@@ -973,6 +1041,7 @@ def run_lifecycle_regression_probes(artifact_root: pathlib.Path) -> dict[str, An
     probes.append({
         "name": "ordinary_task_negative_lifecycle_missing_knowledge_impact",
         "packet": rel_path(ordinary_packet_path),
+        "events": rel_path(negative_events_path),
         "expected_exit_code": 1,
         "exit_code": completed.returncode,
         "ok": completed.returncode != 0 and "decision effects" in completed.stdout,

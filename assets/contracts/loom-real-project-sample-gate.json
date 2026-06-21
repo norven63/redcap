@@ -1,0 +1,97 @@
+{
+  "schema_id": "redcap-loom-real-project-sample-gate-contract",
+  "schema_version": 1,
+  "purpose": "把 LS-006 从“fixture 通过但缺少真实外部长期项目样本证明”升级为可执行门禁：真实样本必须来自 RedCap 源码仓库之外，并证明 Loom 角色链、会话连续性、失败回流、变更接入、交付证据和 RedCap 能力反馈。生成样本只能证明门禁机制，不能关闭 LS-006。",
+  "scope": {
+    "closed_scope": "真实外部项目样本清单的结构化验收门禁",
+    "not_claimed": [
+      "未提供样本清单时不证明 LS-006 已关闭",
+      "不替代完整 E2E（端到端验收）",
+      "不声明 RedCap 完整复活或生产可用",
+      "real-sample-generate 生成的样本不等于独立外部长期项目样本"
+    ]
+  },
+  "accepted_manifest_schema_id": "redcap-loom-real-project-sample",
+  "accepted_session_manifest_schema_ids": [
+    "redcap-loom-runtime-session-manifest",
+    "redcap-e2e-loom-role-session-manifest"
+  ],
+  "minimum": {
+    "iterations": 2,
+    "required_roles": [
+      "product_manager",
+      "architect",
+      "developer",
+      "tester",
+      "reviewer"
+    ],
+    "required_capability_improvements": [
+      "loom_role_boundary_recorded",
+      "loom_failure_route_consumed",
+      "redcap_capability_feedback_recorded"
+    ]
+  },
+  "required_manifest_fields": [
+    "schema_id",
+    "sample_id",
+    "project_workspace",
+    "task_id",
+    "iterations",
+    "target_delivery",
+    "change_intake",
+    "failure_routes",
+    "redcap_capability_improvements",
+    "evidence_refs",
+    "sample_origin"
+  ],
+  "positive_acceptance": [
+    "project_workspace 必须存在，且不能位于当前 RedCap 源码仓库内。",
+    "项目内必须存在原生 .redcap/state/loom/session-manifest.json，或样本清单必须显式提供 loom_session_manifest 指向既有外部 E2E 角色会话清单；两者都必须通过对应的角色链与会话连续性校验。",
+    "至少两轮迭代必须有实际证据文件。",
+    "必须有变更接入证据和目标交付证据。",
+    "失败回流账本必须至少包含一条已完成路由，并且不能留下 open 或 accepted 状态。",
+    "样本必须记录 RedCap 能力反馈，证明目标是改进“渔”，不是只产出“鱼”。"
+  ],
+  "independent_external_acceptance": [
+    "关闭 LS-006 必须使用 runtime/bin/redcap loom real-sample-check --manifest <file> --require-verified --require-independent。",
+    "关闭 LS-006 还必须使用 runtime/bin/redcap loom-external-sample-audit check --manifest <file> --require-receipts 对同一独立外部样本做旁路审计，审计器不得导入 loom_runtime.py。",
+    "旁路审计必须至少有一条损坏样本负向探针回执，证明审计器不会对自洽但错误的样本静默通过。",
+    "若存在可用的异构评审执行方，应保留一次由异构评审执行方运行旁路审计命令的证据，用于打断单一主体自证循环。",
+    "sample_origin.type 必须是 independent_external_project。",
+    "sample_origin.preexisting_project_evidence_refs 必须指向项目内真实存在的来源证据，证明样本不是由 RedCap 生成器即时制造。",
+    "若使用 redcap-e2e-loom-role-session-manifest，必须证明所有必需角色由 codex-cli 承载、session_id 唯一且连续、上下游交付证据真实存在、session_loss_alarms 为空。",
+    "task_id 不能包含 fixture、generated 或 synthetic 这类生成夹具标记。",
+    "生成样本可以通过普通 require-verified 机制检查，但 independent_external_verified 必须为 false。"
+  ],
+  "negative_probes": [
+    {
+      "id": "missing-manifest",
+      "must_fail_when": "require-verified 已打开但没有传入真实样本清单"
+    },
+    {
+      "id": "inside-redcap-source",
+      "must_fail_when": "project_workspace 位于当前 RedCap 源码仓库内"
+    },
+    {
+      "id": "single-iteration",
+      "must_fail_when": "样本只有一轮迭代"
+    },
+    {
+      "id": "missing-capability-feedback",
+      "must_fail_when": "样本没有记录 RedCap 能力反馈"
+    },
+    {
+      "id": "missing-failure-route-consumption",
+      "must_fail_when": "样本没有已完成的失败回流路由"
+    },
+    {
+      "id": "generated-sample-as-independent",
+      "must_fail_when": "require-independent 已打开，但样本由 real-sample-generate 生成或 sample_origin 不是 independent_external_project"
+    },
+    {
+      "id": "cross-project-existing-file-reference",
+      "must_fail_when": "样本引用的证据文件真实存在，但该文件不位于样本 project_workspace 边界内"
+    }
+  ],
+  "completion_claim_boundary": "只有 runtime/bin/redcap loom real-sample-check --manifest <file> --require-verified --require-independent、runtime/bin/redcap loom-external-sample-audit check --manifest <file> --require-receipts、损坏样本负向探针和可用时的异构评审执行方审计证据同时通过，才能说 LS-006 的真实独立外部项目样本证明已通过；只运行 self-check、real-sample-generate、普通 require-verified 或不带 manifest 的 pending 状态都不能关闭 LS-006。"
+}

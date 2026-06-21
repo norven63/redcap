@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-loop-scan-ledger-final-rescan",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-scan-ledger-final-rescan",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-21T10:14:33+00:00",
+  "task_started_at": "2026-06-21T10:14:33+00:00",
+  "updated_at": "2026-06-21T10:23:18+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "e49e4af8-a727-4371-9cad-bd16c91c337a",
+      "round_count": 2,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-scan-ledger-final-rescan/claude-code.supplement.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_04789aec-44de-403f-9027-ec3db9a87823",
+      "round_count": 2,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-scan-ledger-final-rescan/kimi.supplement.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "主 AI 声称 8 个发现形成结构化账本等待评审，但扫描证据链存在三个现实偏差：(1) LS-005 将\"私有人格 12 小时未沉淀\"当作问题，但自净化的 persona-distillation-decision 机制明确输出 no_persona_update 本身就是正确行为——把正确行为写成 P2 问题会稀释账本可信度；(2) LS-001 与 LS-008 共享同一根因（UserPromptSubmit 作为全局单例污染历史和续跑判定），但两处发现未交叉引用，解决方案也未合并，可能导致两处独立修复互相冲突；(3) 所有 8 个发现都来自 check 命令和 du/find 的表面输出，但 file_access 授权了 check_runner.py、knowledge_gateway.py、loom_runtime.py 等核心实现文件——扫描未读取任何源码即形成根因假设，根因假设的置信度未经代码验证。",
+  "main_concern": "扫描账本将 LS-005（私有人格未沉淀）列为 P2 问题，但证据显示 self-purification check ok=true、knowledge-quality check ok=true、persona decision 多为 not_persona——这说明自净化机制正按设计运行，正确地将近期内容判定为非人格。将正确行为记录为\"问题\"会：(a) 在后续修复阶段触发对正常运行机制的误改；(b) 降低账本信噪比，让真正需要修复的 P0/P1 项淹没在误报中；(c) 违反 known_non_goals 中的\"不读取旧 RedCap 仓库\"——因为没有对比旧仓库的 persona 写入频率基线，就无法判断 12 小时无沉淀是异常还是稳态。建议将 LS-005 降级为观察项（observation）而非待修复问题，或补充旧仓库基线对比后再定级。",
+  "top_risks": [
+    "LS-001 与 LS-008 共享 UserPromptSubmit 全局单例根因但未交叉引用：两处独立修复可能引入竞态——为 LS-008 添加 goal 续跑桥接时可能破坏 LS-001 的历史样本隔离，反之亦然。需要合并根因分析后再出方案",
+    "LS-005 误将正确行为当问题：若按当前 P2 方案实施私有候选账本和人工确认入口，可能在 persona-distillation-decision 已正确判定 no_persona 的情况下引入冗余确认步骤，破坏自净化自动化闭环。需要先验证当前 persona 判定逻辑是否已有足够边界，再决定是否需要额外入口",
+    "8 个发现均未读取授权范围内的核心源码（check_runner.py、knowledge_gateway.py、loom_runtime.py），根因假设基于命令输出推断而非代码路径追踪。后续修复阶段若直接按假设实施，可能在错误位置打补丁——例如 LS-001 的 prompt fixture 方案可能需要在 knowledge_gateway 而非 check_runner 中实现"
+  ],
+  "missing_evidence": [
+    "check_runner.py 中 knowledge-impact-trace-check 的实现：需要确认历史样本回归时如何获取 UserPromptSubmit——是通过全局单例、参数注入还是事件重放，才能判断 LS-001 的根因假设是否正确",
+    "knowledge_gateway.py 中 UserPromptSubmit 的生成和消费链路：需要确认 codex_internal_context source=goal 是否完全不经过 UserPromptSubmit，还是经过了但被宿主钩子降级，才能判断 LS-008 的根因假设是否正确",
+    "旧 RedCap 仓库或历史基线中 persona 沉淀的频率和触发条件：需要对比才能判断 LS-005 的 12 小时无沉淀是异常退化还是正常稳态"
+  ],
+  "minimum_fix": "在将 8 个候选发现写入最终账本前：(1) 合并 LS-001 和 LS-008 的根因分析，在 knowledge_gateway.py 中追踪 UserPromptSubmit 的完整生产-消费链路，确认两处问题是否共享同一修复点；(2) 将 LS-005 从 P2 问题降级为观察项，补充旧仓库 persona 沉淀基线对比后再决定是否转为待修复问题；(3) 为每个 P0/P1 发现补读至少一个核心源码文件验证根因假设，不能仅凭命令输出推断。此三项完成后再将修正后的账本提交棱镜复评。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "本轮明确限定为扫描+账本+棱镜评审，不执行修复，不声明完整复活。但风险在于：若本轮评审通过后写入的账本包含 LS-005 这类误报，下一轮修复阶段会基于错误账本执行不必要的改动，形成'扫描→误报→修复误报→再扫描→发现新问题'的循环。防循环措施：要求 LS-005 降级为观察项并补源码验证后再入账本。"
+  },
+  "user_intent_alignment": "aligned"
+}

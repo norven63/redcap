@@ -1,14 +1,15 @@
 {
   "schema_id": "redcap-open-loop-closure-queue",
   "schema_version": 1,
-  "status": "verified",
+  "status": "verified_with_terminal_open_boundary",
   "purpose": "把当前讨论过但尚未闭环的问题统一编排为可执行、可验证、可回流的任务队列，避免 RedCap 只围绕示例项目产出“鱼”，而没有强化自身工程能力这张“渔网”。",
   "anti_completion_rule": "本队列、手册、评审请求、回执和单轮检查都不是 RedCap 完整复活完成证据；只有对应代码路径、运行检查、负向探针、外部项目端到端验收和棱镜评审通过，才允许关闭对应条目。",
   "exit_criteria": [
     "每个 P0 条目必须拥有已执行的 runtime_checks、对应证据文件和棱镜复核结论。",
     "涉及 E2E 的条目必须在外部项目证据包中出现，而不是只在 RedCap 源仓库自检中出现。",
     "任何新发现问题必须先进入本队列并重新排序，不能靠口头说明跳过。",
-    "只有全部 P0/P1 条目状态为 verified，且没有 failure_backlog open_items，才允许进入完整复活收口检查。"
+    "只有全部 P0/P1 条目状态为 verified，且没有 failure_backlog open_items，才允许进入完整复活前置收口检查。",
+    "若存在 terminal_blocker=true 的开放条目，只允许阶段或前置收口，不允许 RedCap 完整复活终局关闭。"
   ],
   "owner_boundary": {
     "cap": "Cap 负责总编排、需求方和验收方视角、风险仲裁和证据收口，不直接替 Loom 角色开发目标项目。",
@@ -521,7 +522,7 @@
       "id": "OL-09-terminal-language-reconciliation",
       "title": "历史终局措辞与当前阶段状态对齐",
       "priority": "P2",
-      "status": "open",
+      "status": "verified",
       "root_cause": "部分历史合同或队列可能残留过强完成措辞，容易诱导把阶段成果当成 RedCap 完整复活完成。",
       "required_change": [
         "清点历史终局措辞。",
@@ -545,7 +546,91 @@
         "terminal-goal self-check 通过。",
         "complete-revival-check 在未完成时仍阻止完整复活声明。",
         "最终收口前有新的终局验收回执。"
-      ]
+      ],
+      "verified_runtime_evidence": [
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-terminal-goal-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-complete-revival-preflight-boundary.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-complete-revival-terminal-required-negative.receipt.json"
+      ],
+      "closure_note": {
+        "verified_at": "2026-06-21T14:47:36Z",
+        "current_phase_anchor": "RedCap 完整复活父任务仍为 in_progress；当前只能说明阶段性基线、前置验收或正式可用基线，不允许把这些说成完整复活。",
+        "terminal_authorization_rule": "只有 complete-revival-check 输出 terminal_completion_authorized=true，且 redcap-complete-revival 任务事实 verified，才允许关闭完整复活父任务。",
+        "not_claimed": [
+          "不声明 RedCap 完整复活",
+          "不把 complete-revival-check 的前置通过当成终局完成",
+          "不删除历史记录，只用当前状态锚点约束后续表述"
+        ]
+      }
+    },
+    {
+      "id": "OL-11-long-term-third-party-production-sample",
+      "title": "长期第三方生产项目样本",
+      "priority": "P2",
+      "status": "external-sample-required",
+      "terminal_blocker": true,
+      "root_cause": "LS-006 已证明独立外部 E2E 项目样本，但它不能等同跨机器、跨用户、长期第三方生产项目成熟度证明；若不显式入队，后续容易把短期样本误报成生产成熟。",
+      "required_change": [
+        "在 RedCap 源仓库之外选择真实第三方或长期外部项目样本。",
+        "样本必须覆盖多轮需求变更、失败回流、角色会话接续、自我净化、知识检索、项目级安装和证据保留。",
+        "样本不得由本轮检查即时生成，也不得包含私有人格正文或用户敏感内容。"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap loom real-sample-check --manifest <长期样本清单> --require-verified --require-independent",
+        "runtime/bin/redcap loom-external-sample-audit check --manifest <长期样本清单> --require-receipts",
+        "runtime/bin/redcap project-install production-readiness-check",
+        "runtime/bin/redcap evidence-retention check",
+        "runtime/bin/redcap complete-revival-check --require-terminal-verified"
+      ],
+      "evidence_required": [
+        "长期第三方项目样本清单",
+        "角色会话与上下游交付证据",
+        "失败回流和重新验收证据",
+        "自我净化与知识影响证据",
+        "项目级 .redcap 隔离、安装和证据保留证据",
+        "棱镜对长期样本可采信性的复核结论"
+      ],
+      "exit_criteria": [
+        "长期第三方项目样本通过 real-sample-check --require-verified --require-independent。",
+        "独立审计器确认样本不是即时生成样本，也不是跨项目拼接的伪样本。",
+        "样本覆盖多轮变更、失败回流和重新验收。",
+        "棱镜确认该样本可以作为长期第三方生产项目证明。",
+        "complete-revival-check --require-terminal-verified 不再因 OL-11 或 LS-009 失败。"
+      ],
+      "promotion_criteria": [
+        "该项只能由真实长期外部项目样本关闭，不能由当前仓库 fixture、自生成样本或单轮 E2E 替代。",
+        "关闭时必须同步关闭循环扫描账本 LS-009 开放边界。",
+        "关闭后必须重新运行 release 和 terminal 检查画像。"
+      ],
+      "verified_runtime_evidence": [
+        "runtime/core/complete_revival_check.py",
+        "runtime/core/revival_followthrough.py",
+        "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-complete-revival-terminal-open-boundary-negative-after-ledger-update.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-complete-revival-preflight-after-open-boundary.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-existing-trpg-projects-candidate-scan.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-workspace-wide-redcap-evidence-scan.receipt.json"
+      ],
+      "prism_review": "resolved",
+      "candidate_scan": {
+        "checked_projects": [
+          "/Users/norven/workspace/trpg-server",
+          "/Users/norven/workspace/trpg-web"
+        ],
+        "receipt": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-existing-trpg-projects-candidate-scan.receipt.json",
+        "result": "not_qualified",
+        "reason": "两个候选项目存在，但 maxdepth 4 内未发现 .redcap、loom-real-project-sample.json、open-loop-e2e-item-results.json、session-manifest.json 或 redcap-e2e-run-retention-after-run.json，不能作为长期 RedCap 运行样本关闭 OL-11。",
+        "workspace_wide_receipt": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-workspace-wide-redcap-evidence-scan.receipt.json",
+        "workspace_wide_result": "只发现 /Users/norven/workspace/redcap-e2e-runs 下的 RedCap 自生成 E2E 运行和 LS-006 样本；这些证据可证明短期外部 E2E，但不能替代长期第三方生产项目样本。"
+      },
+      "closure_note": {
+        "current_state": "本条已入队且已接入终局阻断，但样本本身尚未取得，不能关闭。",
+        "not_claimed": [
+          "不声明 RedCap 完整复活",
+          "不声明 RedCap 已通过长期第三方生产项目验证",
+          "不把 LS-006 的短期外部 E2E 样本扩张为 OL-11 证明"
+        ]
+      }
     }
   ]
 }

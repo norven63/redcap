@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "loom",
+    "real-sample-check",
+    "--manifest",
+    "/Users/norven/workspace/redcap-e2e-runs/ls-006-loom-real-sample-20260621/.redcap/evidence/loom-real-project-sample.json",
+    "--require-verified",
+    "--out",
+    "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-verified-rerun-result.json"
+  ],
+  "command": "runtime/bin/redcap loom real-sample-check --manifest /Users/norven/workspace/redcap-e2e-runs/ls-006-loom-real-sample-20260621/.redcap/evidence/loom-real-project-sample.json --require-verified --out assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-verified-rerun-result.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.05,
+  "executed_at": "2026-06-21T14:24:14Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-006-loom-real-sample-require-verified-rerun",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-require-verified-rerun.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1313,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-require-verified-rerun.receipt.stdout.txt",
+  "stdout_sha256": "0d8e86f7f19c0e5e48ccd6e44b8e27aba3b5f70892f8f3729eccb272144730f9"
+}

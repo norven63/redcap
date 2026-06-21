@@ -1,0 +1,41 @@
+{
+  "task": "循环账本修复队列实施复评 r4：伪造独立样本对抗探针与内容级外部样本摘要",
+  "user_intent": "Norven 要求正面修复账本残留项，不能降级、绕过、削弱校验，必须经棱镜评审确认。",
+  "main_claim": "r3 concern 要求补伪造 independent_external_project 对抗样本和内容级外部项目证据。本轮已新增 forged-independent-origin-negative 自检，并补充外部 E2E 内容摘要与哈希；请求判断 concern 是否仍阻断当前账本闭环。此声明不等同 RedCap 完整复活。",
+  "changed_reality": [
+    "runtime/core/loom_runtime.py 的 real_sample_self_check 新增 forged-independent-origin-negative：伪造 independent_external_project 标签且提供存在的 preexisting_project_evidence_refs，仍因会话清单 task_id 与 nonce 链不匹配失败。",
+    "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r2/evidence-supplement.json 已补外部 E2E 样本内容摘要：5 个角色、5 个唯一 session_id、provider=codex-cli、session_loss_alarms=[]、9 个开放项全通过、10 个交付物。",
+    "新增回执 ls-006-real-sample-self-check-with-forgery-probe.receipt.json 和 ls-006-independent-external-sample-after-forgery-probe.receipt.json。",
+    "LS-006 账本已记录伪造独立样本负向探针，关闭边界仍限定为 Loom 独立外部样本证明，不关闭 RedCap 完整复活。"
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "paths": [
+      "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r2/evidence-supplement.json",
+      "runtime/core/loom_runtime.py",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-real-sample-self-check-with-forgery-probe.receipt.stdout.txt",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-result-after-forgery-probe.json",
+      "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json"
+    ],
+    "max_files": 8,
+    "max_bytes_per_file": 80000,
+    "max_total_bytes": 260000
+  },
+  "questions_for_prism": [
+    "伪造 independent_external_project 标签和存在的来源引用仍失败，是否解除“只看标签”的 concern？",
+    "外部 E2E 内容摘要是否足以支持 LS-006 作为工程级独立样本证明，而非空文件或玩具证据？",
+    "当前是否仍存在必须修复后才能关闭 LS-006、OL-09 或 LS-005 的问题？",
+    "若仍只有未来增强建议，请明确区分 concern 和 blocker。"
+  ],
+  "known_boundaries": [
+    "不声明 RedCap 完整复活。",
+    "不声明跨机器或真实生产负载验收。",
+    "只请求评审当前账本残留项闭环质量。"
+  ]
+}

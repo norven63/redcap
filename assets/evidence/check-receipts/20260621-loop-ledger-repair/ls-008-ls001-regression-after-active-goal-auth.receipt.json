@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "knowledge-impact-trace-check"
+  ],
+  "command": "runtime/bin/redcap check --only knowledge-impact-trace-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.558,
+  "executed_at": "2026-06-21T14:15:59Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-008-ls001-regression-after-active-goal-auth",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-008-ls001-regression-after-active-goal-auth.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 290,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-008-ls001-regression-after-active-goal-auth.stdout.txt",
+  "stdout_sha256": "bfe997f93dcc5d3ee16d573254210db6315a323c4c4c20d64e4631d011740b47"
+}

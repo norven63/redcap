@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "complete-revival-check",
+    "--skip-host-hook-audit"
+  ],
+  "command": "runtime/bin/redcap complete-revival-check --skip-host-hook-audit",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 12.242,
+  "executed_at": "2026-06-21T15:51:10Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ol-11-complete-revival-preflight-pass",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-complete-revival-preflight-pass.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 19696,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-complete-revival-preflight-pass.receipt.stdout.txt",
+  "stdout_sha256": "35675c5fcc7501716618711c9a953404baad5ed4093444c0024ed298642c0d69"
+}

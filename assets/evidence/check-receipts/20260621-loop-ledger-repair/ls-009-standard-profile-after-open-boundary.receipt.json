@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--profile",
+    "standard"
+  ],
+  "command": "runtime/bin/redcap check --profile standard",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 5.008,
+  "executed_at": "2026-06-21T15:43:39Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-009-standard-profile-after-open-boundary",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-standard-profile-after-open-boundary.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1578,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-standard-profile-after-open-boundary.receipt.stdout.txt",
+  "stdout_sha256": "585457d90ebb41f8214a93c46379668daefaa869a7b4dacaae791c2216f9ae4e"
+}

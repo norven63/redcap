@@ -1,0 +1,101 @@
+{
+  "task": "循环账本修复队列实施复评：LS-006 独立外部样本、OL-09 终局措辞边界、LS-005 观察触发频率",
+  "user_intent": "Norven 要求按照账本逐项落地，不能用账本、报告或局部检查替代真实修复；每项完成后必须验证没有降级、绕过、折损功能或破坏整体设计。",
+  "main_claim": "本轮请求评审三个阶段闭环：LS-006 已用既有独立外部 E2E 项目样本通过强门禁；OL-09 已用终局目标检查和完整复活负向检查关闭；LS-005 已把人格观察检查接入 standard 和 release 检查画像。此声明不等同 RedCap 完整复活。",
+  "changed_reality": [
+    "runtime/core/loom_runtime.py 支持 redcap-e2e-loom-role-session-manifest 外部 E2E 角色会话清单校验；原生 Loom 会话清单路径未降级。",
+    "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json 指向 2026-06-20 既有外部 E2E 项目，不由本轮生成器即时制造。",
+    "runtime/bin/redcap loom real-sample-check --manifest assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json --require-verified --require-independent 已通过；生成样本在同一独立门禁下仍按预期失败。",
+    "assets/contracts/open-loop-closure-queue.json 中 OL-09 已改为 verified，并记录 complete-revival-check 前置通过与 require-terminal-verified 负向失败回执。",
+    "runtime/core/check_runner.py 的 standard 和 release 画像已包含 persona-observation-check；runtime/core/check_profiles.py 会校验合同与实际画像同步。"
+  ],
+  "evidence": [
+    {
+      "kind": "code",
+      "reference": "runtime/core/loom_runtime.py",
+      "summary": "独立外部样本校验、E2E 角色会话清单校验、生成样本负向边界。"
+    },
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/loom-real-project-sample-gate.json",
+      "summary": "LS-006 独立外部项目样本完成边界。"
+    },
+    {
+      "kind": "sample",
+      "reference": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json",
+      "summary": "既有外部 E2E 项目样本清单。"
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-verified.receipt.json",
+      "summary": "LS-006 独立外部样本强门禁通过。"
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-generated-sample-independent-negative.receipt.json",
+      "summary": "生成样本在独立外部门禁下按预期失败，未被冒充为独立样本。"
+    },
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/open-loop-closure-queue.json",
+      "summary": "OL-09 当前阶段锚点与终局完成授权边界。"
+    },
+    {
+      "kind": "receipt",
+      "reference": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-complete-revival-terminal-required-negative.receipt.json",
+      "summary": "完整复活父任务未终局时，强制终局验收按预期失败。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/check_runner.py",
+      "summary": "standard 和 release 检查画像包含 persona-observation-check。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/check_profiles.py",
+      "summary": "检查画像合同与实际运行器一致性自检。"
+    },
+    {
+      "kind": "ledger",
+      "reference": "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
+      "summary": "LS-005、LS-006、OL-09 对应账本状态与完成边界。"
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "paths": [
+      "runtime/core/loom_runtime.py",
+      "runtime/core/check_runner.py",
+      "runtime/core/check_profiles.py",
+      "assets/contracts/loom-real-project-sample-gate.json",
+      "assets/contracts/open-loop-closure-queue.json",
+      "assets/contracts/check-profiles.json",
+      "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-verified.receipt.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-generated-sample-independent-negative.receipt.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-complete-revival-terminal-required-negative.receipt.json"
+    ],
+    "max_files": 14,
+    "max_bytes_per_file": 50000,
+    "max_total_bytes": 220000
+  },
+  "known_constraints": [
+    "不得把本轮闭环扩大成 RedCap 完整复活。",
+    "不得接受自生成样本替代独立外部项目样本。",
+    "不得通过关闭检查、降低检查频率或改写口径来关闭观察项。",
+    "如果发现任何降级、绕过、证据不真实或完成边界过度声明，请给出 block 或 concern。"
+  ],
+  "questions_for_prism": [
+    "LS-006 是否已经通过独立外部样本强门禁解决原缺口？",
+    "OL-09 的关闭是否仍保持完整复活父任务未终局的边界？",
+    "LS-005 接入 standard 和 release 是否足以把保留观察转为常规流程机制？",
+    "本轮是否引入了新的绕过、降级、证据冒充或完成口径过度声明风险？"
+  ]
+}

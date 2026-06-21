@@ -22,14 +22,16 @@ Usage:
   runtime/bin/redcap complete-revival-e2e design-check|codex-isolation-check|prepare|preflight|preflight-regression-test|carrier-probe|convergence-check|convergence-guard-check|prune-runs|prune-check|report-check|external-sample-check|contract-map-check|harness-timeout-regression-test|runner-negative-probe-regression-test|run|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
-  runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|failure-route|role-chain-check|session-check|self-check [...]
-  runtime/bin/redcap loom role-chain-check|session-check [...]
+  runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|failure-route|role-chain-check|session-check|real-sample-check|real-sample-generate|self-check [...]
+  runtime/bin/redcap loom role-chain-check|session-check|real-sample-check|real-sample-generate [...]
+  runtime/bin/redcap loom-external-sample-audit check|self-check [...]
   runtime/bin/redcap forge check|self-check [...]
   runtime/bin/redcap arsenal check|self-check [...]
-  runtime/bin/redcap project-install check|package|audit-package|release-check|init|matrix-check|self-check [...]
+  runtime/bin/redcap project-install check|package|audit-package|release-check|init|matrix-check|production-readiness-check|self-check [...]
   runtime/bin/redcap knowledge-gateway check|search|impact-check|draft|review|promote|self-check [...]
   runtime/bin/redcap knowledge-quality check|self-check [...]
   runtime/bin/redcap self-purification check|run-loop|loop-check|self-check [...]
+  runtime/bin/redcap persona-observation check|self-check [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
@@ -62,6 +64,8 @@ Usage:
   runtime/bin/redcap residual-batch check|mutation-check|self-check [...]
   runtime/bin/redcap known-issues-order check|self-check [...]
   runtime/bin/redcap known-issues-queue check|self-check [...]
+  runtime/bin/redcap evidence-retention check|plan|self-check [...]
+  runtime/bin/redcap check-profiles check|decide|self-check [...]
   runtime/bin/redcap long-task check|decide|start|record|complete|boundary-check|self-check [...]
   runtime/bin/redcap cli-surface check|self-check|extract [...]
   runtime/bin/redcap fsm-check [...]
@@ -72,7 +76,7 @@ Usage:
   runtime/bin/redcap temporary-usable-check
   runtime/bin/redcap process-artifacts check|self-check [...]
   runtime/bin/redcap layout-check [check|self-check]
-  runtime/bin/redcap check
+  runtime/bin/redcap check [--only STEP|--profile fast|standard|release|terminal]
 
 Commands:
   gate          Run deterministic Prism rule review.
@@ -98,6 +102,8 @@ Commands:
   loom-workflow Verify the role-based Loom engineering workflow contract.
   loom-runtime  Run the project-level Loom role session manifest and loss alarms.
   loom          Alias for loom-runtime role/session checks.
+  loom-external-sample-audit
+                Independently audit external Loom sample evidence without reusing the Loom runtime validator.
   forge         Verify RedCap Forge and redcap-arsenal promotion rules.
   arsenal       Verify the public reusable redcap-arsenal index.
   project-install
@@ -108,6 +114,8 @@ Commands:
                 Verify knowledge freshness, conflict, no-promote, and direct-driver eligibility metadata.
   self-purification
                 Run and verify pre-task retrieval, post-task harvest, promotion decisions, and Cap private persona boundaries.
+  persona-observation
+                Observe Cap persona distillation evidence and upgrade unsafe gaps to actionable problems.
   evidence-restore
                 Restore bounded generated evidence through a RedCap-owned writer.
   legacy-evidence
@@ -241,6 +249,9 @@ case "$cmd" in
   loom)
     exec python3 "$REPO_ROOT/runtime/core/loom_runtime.py" "$@"
     ;;
+  loom-external-sample-audit)
+    exec python3 "$REPO_ROOT/runtime/core/loom_external_sample_audit.py" "$@"
+    ;;
   forge)
     exec python3 "$REPO_ROOT/runtime/core/redcap_forge.py" "$@"
     ;;
@@ -261,6 +272,9 @@ case "$cmd" in
     ;;
   self-purification)
     exec python3 "$REPO_ROOT/runtime/core/self_purification.py" "$@"
+    ;;
+  persona-observation)
+    exec python3 "$REPO_ROOT/runtime/core/persona_observation.py" "$@"
     ;;
   evidence-restore)
     exec python3 "$REPO_ROOT/runtime/core/evidence_restore.py" "$@"
@@ -355,6 +369,10 @@ case "$cmd" in
       shift
       exec python3 "$REPO_ROOT/runtime/core/cap_revival_portability.py" --public-leak-scan "$@"
     fi
+    if [[ "${1:-}" == "sanitize-public-leaks" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/cap_revival_portability.py" --sanitize-public-leaks "$@"
+    fi
     exec python3 "$REPO_ROOT/runtime/core/soul_loader.py" "$@"
     ;;
   status)
@@ -381,6 +399,12 @@ case "$cmd" in
   known-issues-queue)
     exec python3 "$REPO_ROOT/runtime/core/known_issues_queue.py" "$@"
     ;;
+  evidence-retention)
+    exec python3 "$REPO_ROOT/runtime/core/evidence_retention.py" "$@"
+    ;;
+  check-profiles)
+    exec python3 "$REPO_ROOT/runtime/core/check_profiles.py" "$@"
+    ;;
   long-task)
     exec python3 "$REPO_ROOT/runtime/core/long_task_contract.py" "$@"
     ;;
@@ -391,6 +415,10 @@ case "$cmd" in
     exec python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" check "$@"
     ;;
   complete-revival-check)
+    if [[ "${1:-}" == "self-check" ]]; then
+      shift
+      exec python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" self-check "$@"
+    fi
     exec python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" check "$@"
     ;;
   temporary-usable-check)

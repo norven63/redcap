@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "loom",
+    "session-check",
+    "--project-root",
+    "/Users/norven/workspace/redcap-e2e-runs/ls-006-loom-real-sample-20260621",
+    "--task-id",
+    "fixture-task"
+  ],
+  "command": "runtime/bin/redcap loom session-check --project-root /Users/norven/workspace/redcap-e2e-runs/ls-006-loom-real-sample-20260621 --task-id fixture-task",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.053,
+  "executed_at": "2026-06-21T14:24:13Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-006-loom-real-project-session-correct-task",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-project-session-correct-task.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1019,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-project-session-correct-task.receipt.stdout.txt",
+  "stdout_sha256": "2564add308f1377dffe2146418df6012416f0e7198a10a1e4e52ac4eee0b8053"
+}

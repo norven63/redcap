@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "terminal-goal",
+    "check"
+  ],
+  "command": "runtime/bin/redcap terminal-goal check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.045,
+  "executed_at": "2026-06-21T15:41:44Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-009-terminal-goal-open-reason-after-boundary",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-terminal-goal-open-reason-after-boundary.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 2756,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-terminal-goal-open-reason-after-boundary.receipt.stdout.txt",
+  "stdout_sha256": "ec0e1f1ad25eb126188fbc8ae59db795cc033c32554a9c8745166de882efdae7"
+}

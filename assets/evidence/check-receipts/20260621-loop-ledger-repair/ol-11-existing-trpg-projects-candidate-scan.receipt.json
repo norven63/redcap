@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "bash",
+    "-lc",
+    "for d in /Users/norven/workspace/trpg-server /Users/norven/workspace/trpg-web; do echo \"### $d\"; if [ ! -d \"$d\" ]; then echo \"missing\"; continue; fi; find \"$d\" -maxdepth 4 \\( -name \".redcap\" -o -name \"loom-real-project-sample.json\" -o -name \"open-loop-e2e-item-results.json\" -o -name \"session-manifest.json\" -o -name \"redcap-e2e-run-retention-after-run.json\" \\) -print | sed \"s#^#candidate_evidence=#\"; done"
+  ],
+  "command": "bash -lc for d in /Users/norven/workspace/trpg-server /Users/norven/workspace/trpg-web; do echo \"### $d\"; if [ ! -d \"$d\" ]; then echo \"missing\"; continue; fi; find \"$d\" -maxdepth 4 \\( -name \".redcap\" -o -name \"loom-real-project-sample.json\" -o -name \"open-loop-e2e-item-results.json\" -o -name \"session-manifest.json\" -o -name \"redcap-e2e-run-retention-after-run.json\" \\) -print | sed \"s#^#candidate_evidence=#\"; done",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.123,
+  "executed_at": "2026-06-21T15:56:30Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ol-11-existing-trpg-projects-candidate-scan",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-existing-trpg-projects-candidate-scan.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 77,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-existing-trpg-projects-candidate-scan.receipt.stdout.txt",
+  "stdout_sha256": "177a651a27567745b4b9e88ff8c3a0f17c0823a4c80f472c0c88a0d4617bc4c2"
+}

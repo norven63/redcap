@@ -1,0 +1,44 @@
+{
+  "changed_reality": [
+    "新增并重跑损坏样本负向探针：ls-006-damaged-external-sample-manifest.json 将来源证据改为不存在文件，loom-external-sample-audit 返回 exit=1，回执 expected_exit_code=1 且 ok=true。",
+    "新增 Kimi 独立执行回执：通过 kimi -p 只读执行 loom-external-sample-audit check，Kimi 输出确认退出码 0、看到 REDCAP_LOOM_EXTERNAL_SAMPLE_AUDIT_OK、failures 为空。",
+    "修正 loom_external_sample_audit.py 的 .redcap/ 引用解析，使坏引用报告项目根相对真实路径。",
+    "LS-006 合同边界和账本已加入损坏样本负向探针与异构执行方审计证据要求。"
+  ],
+  "evidence_summary": "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r6/evidence-summary.json",
+  "file_access": {
+    "max_bytes_per_file": 140000,
+    "max_files": 9,
+    "max_total_bytes": 520000,
+    "mode": "bounded-read",
+    "paths": [
+      "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r6/evidence-summary.json",
+      "runtime/core/loom_external_sample_audit.py",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-external-sample-audit-damaged-negative-output.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-external-sample-audit-damaged-negative.receipt.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-kimi-independent-external-sample-audit.receipt.json",
+      "assets/contracts/loom-real-project-sample-gate.json",
+      "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json"
+    ]
+  },
+  "known_boundaries": [
+    "不声明 RedCap 完整复活。",
+    "不声明跨机器或真实生产负载验收。",
+    "当前 LS-006 证明的是 RedCap 源码仓库之外的独立 E2E 项目样本，不等同长期第三方生产项目。"
+  ],
+  "main_claim": "r5 concern 要求至少补 Kimi 独立运行旁路审计，或补损坏样本负向探针。本轮两项都已补齐：Kimi 通过自己的 CLI 只读运行审计命令并报告 ok marker 与 failures 为空；损坏样本缺失来源证据时旁路审计按预期 exit=1。请求判断 r5 concern 是否已闭合。此声明不等同 RedCap 完整复活。",
+  "questions_for_prism": [
+    "Kimi 独立执行审计命令与损坏样本负向探针是否满足 r5 的 minimum_fix？",
+    "当前双门禁加负向探针是否存在降级、绕过或功能折损？",
+    "若仍然担心“外部 E2E 项目样本不是长期第三方项目”，请判断这是否应作为新开放问题而非阻断 LS-006 当前外部 E2E 样本闭环。",
+    "当前是否仍存在必须继续修复的 blocker？如果只是未来增强或另立任务，请明确说明。"
+  ],
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "task": "循环账本修复队列实施复评 r6：LS-006 异构执行审计与损坏样本负向探针",
+  "user_intent": "Norven 要求正面修复账本残留项，不能降级、绕过、削弱校验；棱镜 concern 必须经过评审确认后才能关闭。"
+}

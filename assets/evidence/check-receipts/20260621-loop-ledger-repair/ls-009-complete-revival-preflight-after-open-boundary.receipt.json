@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "complete-revival-check",
+    "--skip-host-hook-audit"
+  ],
+  "command": "runtime/bin/redcap complete-revival-check --skip-host-hook-audit",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 12.037,
+  "executed_at": "2026-06-21T15:43:16Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-009-complete-revival-preflight-after-open-boundary",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-complete-revival-preflight-after-open-boundary.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 19542,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-complete-revival-preflight-after-open-boundary.receipt.stdout.txt",
+  "stdout_sha256": "e30f7995fe0bb10f60383279a59c853cc8667332dfb7963827baeab79103abc8"
+}

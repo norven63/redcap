@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--profile",
+    "standard"
+  ],
+  "command": "runtime/bin/redcap check --profile standard",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 4.165,
+  "executed_at": "2026-06-21T14:14:19Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-004-check-profile-standard",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profile-standard.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1428,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profile-standard.stdout.txt",
+  "stdout_sha256": "a28c80eaeaa3f7a8df45f4d55d072109d257d6e6844fc03978f09e0e4a818b39"
+}

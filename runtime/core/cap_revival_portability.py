@@ -49,6 +49,20 @@ def fixture_markers() -> dict[str, str]:
     }
 
 
+def public_text_replacements() -> dict[str, str]:
+    markers = fixture_markers()
+    return {
+        private_identity_path_marker(): "$CAP_HOME/identity.md",
+        markers["title"]: "[REDACTED_PRIVATE_TITLE]",
+        markers["body"]: "[REDACTED_PRIVATE_BODY]",
+        markers["secret"]: "[REDACTED_SECRET_VALUE]",
+    }
+
+
+def forbidden_public_fragments() -> list[str]:
+    return list(public_text_replacements().keys())
+
+
 def write_json(path: pathlib.Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
@@ -202,6 +216,63 @@ def text_leak_scan(paths: list[pathlib.Path], forbidden_fragments: list[str]) ->
         "forbidden_fragment_sha256s": [sha256_text(fragment) for fragment in forbidden_fragments if fragment],
         "hit_count": len(hits),
         "hits": hits,
+    }
+
+
+def sanitize_public_text_files(
+    paths: list[pathlib.Path],
+    replacements: dict[str, str],
+    *,
+    dry_run: bool,
+) -> dict[str, Any]:
+    changed_files: list[dict[str, Any]] = []
+    scanned_files = 0
+    for root in paths:
+        if not root.exists():
+            continue
+        files = [root] if root.is_file() else [item for item in root.rglob("*") if item.is_file()]
+        for file_path in files:
+            try:
+                original = file_path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            scanned_files += 1
+            updated = original
+            counts: dict[str, int] = {}
+            for fragment, replacement in replacements.items():
+                count = updated.count(fragment)
+                if count:
+                    counts[sha256_text(fragment)] = count
+                    updated = updated.replace(fragment, replacement)
+            if updated == original:
+                continue
+            rel = str(file_path.relative_to(REPO_ROOT)) if file_path.is_relative_to(REPO_ROOT) else str(file_path)
+            changed_files.append({
+                "path": rel,
+                "replacement_counts_by_fragment_sha256": counts,
+                "original_sha256": sha256_text(original),
+                "updated_sha256": sha256_text(updated),
+            })
+            if not dry_run:
+                tmp = file_path.with_name(f".{file_path.name}.{os.getpid()}.redact.tmp")
+                tmp.write_text(updated, encoding="utf-8")
+                os.replace(tmp, file_path)
+    post_scan = text_leak_scan(paths, list(replacements.keys()))
+    return {
+        "schema_id": "redcap-cap-revival-public-text-sanitize",
+        "rsp": "RSP-16",
+        "created_at": iso_now(),
+        "dry_run": dry_run,
+        "ok": bool(post_scan.get("ok")) if not dry_run else True,
+        "scanned_file_count": scanned_files,
+        "changed_file_count": len(changed_files),
+        "changed_files": changed_files,
+        "post_scan": post_scan,
+        "replacement_policy": {
+            "private_identity_path": "$CAP_HOME/identity.md",
+            "fixture_private_markers": "redacted symbolic placeholders",
+            "mode": "known-fragment replacement only; no broad content rewriting",
+        },
     }
 
 
@@ -374,7 +445,7 @@ def build_report(out_path: pathlib.Path | None) -> dict[str, Any]:
 
     public_text_scan = text_leak_scan(
         PUBLIC_SCAN_ROOTS,
-        [private_identity_path_marker(), markers["title"], markers["body"], markers["secret"]],
+        forbidden_public_fragments(),
     )
     public_structured_scan = structured_soul_evidence_scan()
 
@@ -442,8 +513,13 @@ def build_report(out_path: pathlib.Path | None) -> dict[str, Any]:
 
 def cmd_portability_check(args: argparse.Namespace) -> int:
     out_path = pathlib.Path(args.out).resolve() if args.out else None
-    if args.public_leak_scan:
-        markers = fixture_markers()
+    if args.sanitize_public_leaks:
+        report = sanitize_public_text_files(
+            PUBLIC_SCAN_ROOTS,
+            public_text_replacements(),
+            dry_run=bool(args.dry_run),
+        )
+    elif args.public_leak_scan:
         report = {
             "schema_id": "redcap-cap-revival-public-leak-scan",
             "rsp": "RSP-16",
@@ -451,7 +527,7 @@ def cmd_portability_check(args: argparse.Namespace) -> int:
             "ok": True,
             "scan": text_leak_scan(
                 PUBLIC_SCAN_ROOTS,
-                [private_identity_path_marker(), markers["title"], markers["body"], markers["secret"]],
+                forbidden_public_fragments(),
             ),
         }
         report["ok"] = bool(report["scan"].get("ok"))
@@ -470,6 +546,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="RedCap Cap 复活迁移与路径边界验证")
     parser.add_argument("--out")
     parser.add_argument("--public-leak-scan", action="store_true")
+    parser.add_argument("--sanitize-public-leaks", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
     parser.set_defaults(func=cmd_portability_check)
     return parser
 

@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "lifecycle",
+    "check",
+    "--packet",
+    "assets/evidence/lifecycle/20260621-loop-ledger-repair-lifecycle.json",
+    "--events",
+    "assets/evidence/lifecycle/20260621-loop-ledger-repair-lifecycle-events.jsonl"
+  ],
+  "command": "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260621-loop-ledger-repair-lifecycle.json --events assets/evidence/lifecycle/20260621-loop-ledger-repair-lifecycle-events.jsonl",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.492,
+  "executed_at": "2026-06-21T13:48:25Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "lifecycle-loop-ledger-repair-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/lifecycle-loop-ledger-repair-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 67,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/lifecycle-loop-ledger-repair-check.stdout.txt",
+  "stdout_sha256": "6d9ce851e9f2c192b5d4908060fd8236630913004af16b0dbf8ff0c8b9766b54"
+}

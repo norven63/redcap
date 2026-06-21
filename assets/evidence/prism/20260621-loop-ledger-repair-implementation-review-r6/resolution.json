@@ -1,0 +1,60 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-loop-ledger-repair-implementation-review-r6",
+  "merge_path": "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r6/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r6/review.kimi.json",
+    "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r6/review.claude-code.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 成立：不能用旁路审计替代合同主门禁，也不能只保留摘要式独立执行说明。本轮已补 runtime/bin/redcap loom real-sample-check --manifest <file> --require-verified --require-independent 的直接执行回执，并保留被审计 manifest、receipt、旁路审计 JSON 和 Kimi 执行回执。",
+      "implementation_evidence": [
+        "runtime/core/loom_runtime.py",
+        "runtime/core/loom_external_sample_audit.py",
+        "assets/contracts/loom-real-project-sample-gate.json",
+        "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-direct-real-sample-check-output.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-direct-real-sample-check.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-after-forgery-probe.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-real-sample-self-check-with-forgery-probe.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-kimi-independent-external-sample-audit.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 成立：缺文件负向探针不足以证明审计器能识别更真实的污染风险，且外部 E2E 项目样本不能等同长期第三方生产项目样本。本轮已新增跨项目存在文件负向探针，并把长期第三方生产项目证明拆为 LS-009 开放边界，防止被 LS-006 当前关闭声明吞掉。",
+      "implementation_evidence": [
+        "runtime/core/loom_external_sample_audit.py",
+        "assets/contracts/loom-real-project-sample-gate.json",
+        "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-cross-project-session-sample-manifest.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-cross-project-session-manifest.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-external-sample-audit-cross-project-negative-output.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-external-sample-audit-damaged-negative-output.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-external-sample-audit-cross-project-negative.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-external-sample-audit-damaged-negative.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "第六轮 concern 已全部采纳并转化为实现证据、负向探针和开放边界；该结论只说明 LS-006 当前外部 E2E 样本门禁证据补强，不声明 RedCap 完整复活或长期生产成熟。"
+  }
+}

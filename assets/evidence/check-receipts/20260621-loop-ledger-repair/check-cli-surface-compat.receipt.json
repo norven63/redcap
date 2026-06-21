@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "cli-surface-compat-check"
+  ],
+  "command": "runtime/bin/redcap check --only cli-surface-compat-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.182,
+  "executed_at": "2026-06-21T13:48:37Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "check-cli-surface-compat",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/check-cli-surface-compat.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 263,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/check-cli-surface-compat.stdout.txt",
+  "stdout_sha256": "93ee6e0ec1dcb10e0fa4fcab258fcc6a78b71b912540dc028000802b87dcf898"
+}

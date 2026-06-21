@@ -1,0 +1,45 @@
+{
+  "changed_reality": [
+    "新增 runtime/core/loom_external_sample_audit.py，源码声明并通过审计输出记录 imports_loom_runtime=false。",
+    "新增 runtime/bin/redcap loom-external-sample-audit check|self-check 入口，并登记进 cli-surface 合同。",
+    "独立审计器直接校验外部项目不在 RedCap 源码仓库内、sample_origin、preexisting_project_evidence_refs、角色会话清单、session_id 唯一性、provider=codex-cli、session_loss_alarms=[]、证据文件存在且非空、开放项结果、最终证据包、失败回流账本和执行回执哈希。",
+    "已运行 loom-external-sample-audit self-check、真实外部样本 check、executed-check 回执；审计结果 ok=true，failures=[]。",
+    "LS-006 合同关闭边界已升级为 real-sample-check --require-independent 与 loom-external-sample-audit --require-receipts 均通过。",
+    "LS-006 账本已补独立审计器证据，并将 Prism 状态标为待 r5 复评确认。"
+  ],
+  "evidence_summary": "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r5/evidence-summary.json",
+  "file_access": {
+    "max_bytes_per_file": 120000,
+    "max_files": 8,
+    "max_total_bytes": 420000,
+    "mode": "bounded-read",
+    "paths": [
+      "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r5/evidence-summary.json",
+      "runtime/core/loom_external_sample_audit.py",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit.json",
+      "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit.receipt.json",
+      "assets/contracts/loom-real-project-sample-gate.json",
+      "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json"
+    ]
+  },
+  "known_boundaries": [
+    "不声明 RedCap 完整复活。",
+    "不声明跨机器或真实生产负载验收。",
+    "只请求评审 LS-006 与本轮账本修复证据质量。"
+  ],
+  "main_claim": "r4 concern 指出 LS-006 仍存在同路径自证和证据摘要不足风险。本轮新增 loom-external-sample-audit：该审计器不导入 loom_runtime.py，独立解析外部样本、角色会话清单、E2E 结果、最终证据包、失败回流账本和执行回执，并已通过执行回执。请求判断 r4 concern 是否已闭合。此声明不等同 RedCap 完整复活。",
+  "questions_for_prism": [
+    "新增独立审计器是否足以回应 r4 的同路径自证 concern？",
+    "审计器对外部样本非空、角色会话连续、失败回流、最终证据包和回执哈希的核验是否构成可接受闭环？",
+    "LS-006 合同从单一 real-sample-check 升级为 real-sample-check + external-sample-audit 双门禁，是否存在降级、绕过或功能折损？",
+    "当前是否仍存在必须修复后才能继续账本闭环的 blocker？若只是未来增强，请明确标为非阻断建议。"
+  ],
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "task": "循环账本修复队列实施复评 r5：LS-006 独立外部样本旁路审计器",
+  "user_intent": "Norven 要求正面修复账本残留项，不能降级、绕过、削弱校验；棱镜 concern 必须经过评审确认后才能关闭。"
+}

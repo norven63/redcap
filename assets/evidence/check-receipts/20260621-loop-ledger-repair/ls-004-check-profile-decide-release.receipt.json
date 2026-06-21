@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check-profiles",
+    "decide",
+    "--task",
+    "修改项目级安装发布门禁",
+    "--changed-file",
+    "runtime/core/project_install.py"
+  ],
+  "command": "runtime/bin/redcap check-profiles decide --task 修改项目级安装发布门禁 --changed-file runtime/core/project_install.py",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.036,
+  "executed_at": "2026-06-21T14:14:39Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-004-check-profile-decide-release",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profile-decide-release.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 921,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profile-decide-release.stdout.txt",
+  "stdout_sha256": "3ec1208720973aa4388ff6d076270191cef19532217fbfbf7d99cf8224ac79c5"
+}

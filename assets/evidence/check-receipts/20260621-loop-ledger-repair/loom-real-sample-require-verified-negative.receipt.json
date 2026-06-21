@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "loom",
+    "real-sample-check",
+    "--require-verified"
+  ],
+  "command": "runtime/bin/redcap loom real-sample-check --require-verified",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.112,
+  "executed_at": "2026-06-21T13:46:43Z",
+  "executor": "cap",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "expected_exit_codes": [
+    1
+  ],
+  "name": "loom-real-sample-require-verified-negative",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/loom-real-sample-require-verified-negative.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 499,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/loom-real-sample-require-verified-negative.stdout.txt",
+  "stdout_sha256": "b66a4e1f8ef1b1c15a454c375f2bb653ded4e9c12216b8eed3fd67e54c956b99"
+}

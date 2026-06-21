@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-loop-scan-ledger-review",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-scan-ledger-review",
+  "status": "converged",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-21T09:43:47+00:00",
+  "task_started_at": "2026-06-21T09:43:47+00:00",
+  "updated_at": "2026-06-21T10:28:05+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "f2774fb1-f263-4e03-835d-08d420f92f64",
+      "round_count": 2,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-scan-ledger-review/claude-code.round2.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_80155a40-0cef-4756-85ef-349f3c9587e9",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-scan-ledger-review/kimi.round2.review.json"
+    }
+  },
+  "convergence": {
+    "state": "converged",
+    "reason": "Second-round concerns accepted into ledger constraints; final supplement review passed. Scan-and-ledger phase only, no repair claim."
+  }
+}

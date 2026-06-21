@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "evidence-retention",
+    "self-check"
+  ],
+  "command": "runtime/bin/redcap evidence-retention self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.271,
+  "executed_at": "2026-06-21T14:08:46Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-003-evidence-retention-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-003-evidence-retention-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 75,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-003-evidence-retention-self-check.stdout.txt",
+  "stdout_sha256": "aea3fb05a729184f495adf6e8858cde08279b42dd49939e31ea3b1c7e469bd79"
+}

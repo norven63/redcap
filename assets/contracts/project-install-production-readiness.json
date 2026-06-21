@@ -1,0 +1,21 @@
+{
+  "schema_id": "redcap-project-install-production-readiness-contract",
+  "schema_version": 1,
+  "purpose": "把 LS-007 从“基础安装检查通过但缺少生产投入证明”升级为可执行技术就绪门禁：先证明 RedCap 可以作为项目级 .redcap 包安装、运行、隔离和自检，再进入人工发布授权。",
+  "command": "runtime/bin/redcap project-install production-readiness-check",
+  "technical_acceptance": [
+    "project-install check 必须通过，证明项目安装合同和打包清单有效。",
+    "project-install release-check 必须通过，证明发布包可以真实解压并初始化外部项目。",
+    "project-install matrix-check 必须通过，证明外部项目初始化、重复初始化、卸载重装和源工作区隔离有效。",
+    "安装后运行时冒烟必须通过，至少在外部项目中运行 project-install check、cli-surface check 和 gate 低风险门禁。",
+    "坏包负向探针必须证明包含源仓库绝对路径的发布包会被 audit-package 拒绝。",
+    "安装后的项目 hooks 必须指向项目级 .redcap，不能指向 RedCap 源码工作区。",
+    ".redcap/.gitignore 必须默认隐藏运行时产物，避免外部项目误提交 RedCap 运行缓存。"
+  ],
+  "non_goals": [
+    "不自动公开发布 RedCap。",
+    "不替 Norven 做许可证、版本号、发布渠道、凭据和正式生产切换决策。",
+    "不声称 RedCap 完整复活，只证明项目级发布安装技术链路达到发布候选要求。"
+  ],
+  "completion_boundary": "本门禁通过只能证明 LS-007 的项目级发布安装技术就绪；不等同于公开发布授权，也不等同于 RedCap 完整复活。"
+}

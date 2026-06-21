@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "revival-followthrough",
+    "open-loop-check",
+    "--queue",
+    "assets/contracts/open-loop-closure-queue.json"
+  ],
+  "command": "runtime/bin/redcap revival-followthrough open-loop-check --queue assets/contracts/open-loop-closure-queue.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.044,
+  "executed_at": "2026-06-21T15:50:57Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ol-11-open-loop-terminal-blocker-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-open-loop-terminal-blocker-check.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 446,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-open-loop-terminal-blocker-check.receipt.stdout.txt",
+  "stdout_sha256": "4477c18ea1f2f82cd289b77f7e31f9035f579d3d4adac79aad14e73633edcd56"
+}

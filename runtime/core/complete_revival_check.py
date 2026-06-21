@@ -11,6 +11,7 @@ import sys
 from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+DEFAULT_LOOP_LEDGER = REPO_ROOT / "assets" / "evidence" / "loop-scans" / "20260621-redcap-directory-design-loop-ledger.json"
 NO_PROMOTE_RECORDS = [
     "assets/archaeology/no-promote/pathology-report-as-progress-v1.json",
     "assets/archaeology/no-promote/pathology-receipt-as-completion-v1.json",
@@ -133,7 +134,7 @@ def validate_revival_queue(payload: dict[str, Any], failures: list[str]) -> None
                 failures.append(f"复活队列条目命令失败：{entry.get('id')}")
 
 
-def validate_open_loop_queue(payload: dict[str, Any], failures: list[str]) -> None:
+def validate_open_loop_queue(payload: dict[str, Any], failures: list[str], *, require_terminal_verified: bool) -> None:
     if payload.get("schema_id") != "redcap-open-loop-closure-queue-check":
         failures.append("open-loop 队列输出 schema_id 错误")
         return
@@ -142,6 +143,63 @@ def validate_open_loop_queue(payload: dict[str, Any], failures: list[str]) -> No
     if payload.get("closeout_allowed") is not True:
         blockers = payload.get("closeout_blockers")
         failures.append(f"open-loop 队列仍有未闭环 P0/P1：{blockers}")
+    terminal_blockers = payload.get("terminal_blockers")
+    if require_terminal_verified and isinstance(terminal_blockers, list) and terminal_blockers:
+        failures.append(f"open-loop 队列仍有终局开放边界：{terminal_blockers}")
+
+
+def open_loop_scan_boundaries(path: pathlib.Path = DEFAULT_LOOP_LEDGER) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "ok": False,
+            "path": str(path.relative_to(REPO_ROOT)) if path.is_absolute() else str(path),
+            "open_boundaries": [],
+            "failures": [f"循环扫描账本无法读取：{exc}"],
+        }
+    findings = payload.get("findings")
+    if not isinstance(findings, list):
+        return {
+            "ok": False,
+            "path": str(path.relative_to(REPO_ROOT)) if path.is_absolute() else str(path),
+            "open_boundaries": [],
+            "failures": ["循环扫描账本缺少 findings 数组"],
+        }
+    open_boundaries: list[dict[str, Any]] = []
+    for finding in findings:
+        if not isinstance(finding, dict):
+            continue
+        status = str(finding.get("status") or "")
+        if finding.get("type") == "open_boundary" or status.startswith("open_"):
+            open_boundaries.append({
+                "id": finding.get("id"),
+                "title": finding.get("title"),
+                "severity": finding.get("severity"),
+                "status": status,
+                "next_step": finding.get("next_step"),
+                "completion_boundary": (
+                    finding.get("implementation_result", {})
+                    if isinstance(finding.get("implementation_result"), dict)
+                    else {}
+                ).get("completion_boundary"),
+            })
+    return {
+        "ok": True,
+        "path": str(path.relative_to(REPO_ROOT)) if path.is_absolute() else str(path),
+        "open_boundaries": open_boundaries,
+        "failures": [],
+    }
+
+
+def validate_loop_scan_boundaries(payload: dict[str, Any], failures: list[str], *, require_terminal_verified: bool) -> None:
+    if payload.get("ok") is not True:
+        failures.extend(payload.get("failures") or ["循环扫描账本开放边界检查失败"])
+        return
+    open_boundaries = payload.get("open_boundaries")
+    if require_terminal_verified and isinstance(open_boundaries, list) and open_boundaries:
+        ids = [str(item.get("id")) for item in open_boundaries if isinstance(item, dict)]
+        failures.append(f"循环扫描账本仍有开放边界，不能授权完整复活终局关闭：{ids}")
 
 
 def validate_status(payload: dict[str, Any], failures: list[str], *, require_terminal_verified: bool) -> None:
@@ -245,12 +303,27 @@ def check_complete_revival(
             failures.append(f"{name} 命令失败")
     validate_status(leading_json(commands["status"].get("stdout", "")), failures, require_terminal_verified=require_terminal_verified)
     validate_revival_queue(leading_json(commands["revival_queue"].get("stdout", "")), failures)
-    validate_open_loop_queue(leading_json(commands["open_loop_queue"].get("stdout", "")), failures)
+    validate_open_loop_queue(
+        leading_json(commands["open_loop_queue"].get("stdout", "")),
+        failures,
+        require_terminal_verified=require_terminal_verified,
+    )
     validate_terminal_goal(leading_json(commands["terminal_goal"].get("stdout", "")), failures, require_terminal_verified=require_terminal_verified)
     validate_contract(failures)
     validate_no_promote_records(failures)
+    loop_boundaries = open_loop_scan_boundaries()
+    validate_loop_scan_boundaries(loop_boundaries, failures, require_terminal_verified=require_terminal_verified)
     terminal_completion_authorized = require_terminal_verified and not failures
     status = "partial_pass_with_host_hook_pending" if skip_host_hook_audit and not failures else ("pass" if not failures else "fail")
+    completion_boundary = {
+        "machine_closeout_allowed": terminal_completion_authorized,
+        "can_record_terminal_task_fact": terminal_completion_authorized,
+        "required_task_fact_id": "redcap-complete-revival",
+        "authorized_task_fact_id": "redcap-complete-revival" if terminal_completion_authorized else None,
+        "human_report_level": "terminal" if terminal_completion_authorized else "phase_or_preflight",
+        "partial_status_never_closes_terminal_goal": status == "partial_pass_with_host_hook_pending",
+        "rule": "只有 terminal_completion_authorized=true 才允许关闭 redcap-complete-revival。",
+    }
     return {
         "schema_id": "redcap-complete-revival-check",
         "level": "完整复活终局验收" if require_terminal_verified else "完整复活前置验收",
@@ -268,7 +341,9 @@ def check_complete_revival(
         },
         "terminal_completion_authorized": terminal_completion_authorized,
         "authorizes_task_fact": "redcap-complete-revival" if terminal_completion_authorized else None,
+        "completion_boundary": completion_boundary,
         "checks": {name: summarize(result) for name, result in commands.items()},
+        "loop_scan_open_boundaries": loop_boundaries,
         "failures": failures,
     }
 
@@ -280,7 +355,10 @@ def cmd_check(args: argparse.Namespace) -> int:
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result["ok"]:
-        print("REDCAP_COMPLETE_REVIVAL_OK")
+        if result.get("terminal_completion_authorized") is True:
+            print("REDCAP_COMPLETE_REVIVAL_TERMINAL_OK")
+        else:
+            print("REDCAP_COMPLETE_REVIVAL_PREFLIGHT_OK")
         return 0
     return 1
 
@@ -326,7 +404,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         "failures": [],
     }
     closed_open_loop_failures: list[str] = []
-    validate_open_loop_queue(closed_open_loop, closed_open_loop_failures)
+    validate_open_loop_queue(closed_open_loop, closed_open_loop_failures, require_terminal_verified=True)
     if closed_open_loop_failures:
         failures.append(f"已闭环 open-loop 样例不应失败：{closed_open_loop_failures}")
     open_loop = {
@@ -334,12 +412,44 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         "ok": True,
         "closeout_allowed": False,
         "closeout_blockers": ["OL-01-second-e2e-acceptance: P0 仍未 verified"],
+        "terminal_blockers": [],
         "failures": [],
     }
     open_loop_failures: list[str] = []
-    validate_open_loop_queue(open_loop, open_loop_failures)
+    validate_open_loop_queue(open_loop, open_loop_failures, require_terminal_verified=True)
     if not any("open-loop 队列仍有未闭环" in item for item in open_loop_failures):
         failures.append("完整复活检查没有把 open-loop 未闭环队列视为阻断项")
+    terminal_open_loop = {
+        "schema_id": "redcap-open-loop-closure-queue-check",
+        "ok": True,
+        "closeout_allowed": True,
+        "closeout_blockers": [],
+        "terminal_blockers": ["OL-11-long-term-third-party-production-sample: external-sample-required"],
+        "failures": [],
+    }
+    terminal_open_loop_failures: list[str] = []
+    validate_open_loop_queue(terminal_open_loop, terminal_open_loop_failures, require_terminal_verified=True)
+    if not any("终局开放边界" in item for item in terminal_open_loop_failures):
+        failures.append("完整复活检查没有把 open-loop 终局开放边界视为阻断项")
+    preflight_terminal_open_loop_failures: list[str] = []
+    validate_open_loop_queue(terminal_open_loop, preflight_terminal_open_loop_failures, require_terminal_verified=False)
+    if preflight_terminal_open_loop_failures:
+        failures.append(f"前置验收不应因 open-loop 终局开放边界直接失败：{preflight_terminal_open_loop_failures}")
+    boundary_payload = {
+        "ok": True,
+        "open_boundaries": [
+            {"id": "LS-009", "status": "open_future_real_project_sample_required"}
+        ],
+        "failures": [],
+    }
+    boundary_failures: list[str] = []
+    validate_loop_scan_boundaries(boundary_payload, boundary_failures, require_terminal_verified=True)
+    if not any("开放边界" in item and "LS-009" in item for item in boundary_failures):
+        failures.append("要求终局验证时，循环扫描账本开放边界没有失败")
+    non_terminal_boundary_failures: list[str] = []
+    validate_loop_scan_boundaries(boundary_payload, non_terminal_boundary_failures, require_terminal_verified=False)
+    if non_terminal_boundary_failures:
+        failures.append(f"前置验收不应因开放边界直接失败：{non_terminal_boundary_failures}")
     open_status = {
         "schema_id": "redcap-status-surface",
         "ok": True,
@@ -367,9 +477,24 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         "ok": True,
         "status": "partial_pass_with_host_hook_pending",
         "host_hook_audit": {"status": "skipped"},
+        "terminal_completion_authorized": False,
+        "authorizes_task_fact": None,
+        "completion_boundary": {
+            "machine_closeout_allowed": False,
+            "can_record_terminal_task_fact": False,
+            "authorized_task_fact_id": None,
+            "partial_status_never_closes_terminal_goal": True,
+        },
     }
     if partial_shape.get("status") != "partial_pass_with_host_hook_pending":
         failures.append("跳过宿主审计时必须暴露 partial_pass_with_host_hook_pending")
+    if partial_shape.get("terminal_completion_authorized") is not False:
+        failures.append("部分通过不得授权终局完成")
+    if partial_shape.get("authorizes_task_fact") is not None:
+        failures.append("部分通过不得授权写入 redcap-complete-revival 任务事实")
+    boundary = partial_shape.get("completion_boundary", {})
+    if boundary.get("machine_closeout_allowed") is not False or boundary.get("can_record_terminal_task_fact") is not False:
+        failures.append("部分通过的 completion_boundary 必须阻止机器收口")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

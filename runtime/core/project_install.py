@@ -19,6 +19,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 CONTRACT = REPO_ROOT / "assets" / "contracts" / "project-installation.json"
+PRODUCTION_READINESS_CONTRACT = REPO_ROOT / "assets" / "contracts" / "project-install-production-readiness.json"
 HOOK_TEMPLATE = REPO_ROOT / "assets" / "contracts" / "codex-hooks.template.json"
 PACKAGE_ROOT = ".redcap"
 EXCLUDED_PARTS = {".git", "__pycache__", "assets/evidence"}
@@ -27,7 +28,15 @@ EXCLUDED_PREFIXES = {
 }
 FORBIDDEN_ZIP_PARTS = {".git", "__pycache__", "assets/evidence"}
 FORBIDDEN_ZIP_NAMES = {"AGENTS.md", ".DS_Store"}
+TRANSIENT_SELF_CHECK_PREFIXES = (
+    ".redcap-forge-self-check-",
+)
 TEXT_SCAN_SUFFIXES = {".json", ".md", ".py", ".sh", ".txt", ".toml", ".yaml", ".yml"}
+TEXT_SCAN_PATH_PREFIXES = (
+    f"{PACKAGE_ROOT}/runtime/bin/",
+    f"{PACKAGE_ROOT}/runtime/prism/bin/",
+    f"{PACKAGE_ROOT}/runtime/host-adapters/examples/",
+)
 
 
 def iso_now() -> str:
@@ -60,6 +69,10 @@ def should_exclude(path: pathlib.Path) -> bool:
     return any(part in EXCLUDED_PARTS for part in path.parts)
 
 
+def is_transient_self_check_file(path: pathlib.Path) -> bool:
+    return any(path.name.startswith(prefix) for prefix in TRANSIENT_SELF_CHECK_PREFIXES)
+
+
 def sha256_file(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -79,7 +92,7 @@ def iter_package_files(contract: dict[str, Any]) -> list[pathlib.Path]:
                 files.append(root)
             continue
         for path in root.rglob("*"):
-            if path.is_file() and not should_exclude(path):
+            if path.is_file() and not should_exclude(path) and not is_transient_self_check_file(path):
                 files.append(path)
     return sorted(set(files))
 
@@ -180,21 +193,39 @@ def package_to(output: pathlib.Path) -> dict[str, Any]:
     output.parent.mkdir(parents=True, exist_ok=True)
     files = iter_package_files(contract)
     manifest_files: list[dict[str, Any]] = []
+    failures: list[str] = []
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path in files:
             rel = path.relative_to(REPO_ROOT).as_posix()
-            archive.write(path, f"{PACKAGE_ROOT}/{rel}")
+            try:
+                size = path.stat().st_size
+                digest = sha256_file(path)
+                archive.write(path, f"{PACKAGE_ROOT}/{rel}")
+            except FileNotFoundError:
+                if is_transient_self_check_file(path):
+                    continue
+                failures.append(f"打包过程中源文件消失：{rel}")
+                continue
             manifest_files.append({
                 "path": f"{PACKAGE_ROOT}/{rel}",
-                "size": path.stat().st_size,
-                "sha256": sha256_file(path),
+                "size": size,
+                "sha256": digest,
             })
+        if failures:
+            return {
+                "schema_id": "redcap-project-package",
+                "ok": False,
+                "out": str(output.resolve()),
+                "package_root": PACKAGE_ROOT,
+                "file_count": len(manifest_files),
+                "failures": failures,
+            }
         install_manifest = {
             "schema_id": "redcap-package-manifest",
             "schema_version": 1,
             "created_at": iso_now(),
             "package_root": PACKAGE_ROOT,
-            "file_count": len(files),
+            "file_count": len(manifest_files),
             "files": manifest_files,
             "init_command": contract.get("init_command"),
         }
@@ -204,9 +235,35 @@ def package_to(output: pathlib.Path) -> dict[str, Any]:
         "ok": True,
         "out": str(output.resolve()),
         "package_root": PACKAGE_ROOT,
-        "file_count": len(files),
+        "file_count": len(manifest_files),
         "failures": [],
     }
+
+
+def transient_self_check_exclusion_probe() -> dict[str, Any]:
+    arsenal_dir = REPO_ROOT / "assets" / "knowledge" / "arsenal"
+    transient = arsenal_dir / f"{TRANSIENT_SELF_CHECK_PREFIXES[0]}package-probe-{os.getpid()}.md"
+    transient.write_text("RedCap transient package exclusion probe.\n", encoding="utf-8")
+    try:
+        with tempfile.TemporaryDirectory(prefix="redcap-project-transient-package-") as raw_tmp:
+            package_path = pathlib.Path(raw_tmp) / "redcap.zip"
+            package_result = package_to(package_path)
+            if package_result.get("ok") is not True:
+                return {
+                    "ok": False,
+                    "failures": [f"临时自检文件排除探针打包失败：{package_result.get('failures')}"],
+                }
+            with zipfile.ZipFile(package_path) as archive:
+                names = set(archive.namelist())
+            packaged_name = f"{PACKAGE_ROOT}/{transient.relative_to(REPO_ROOT).as_posix()}"
+            if packaged_name in names:
+                return {
+                    "ok": False,
+                    "failures": [f"临时自检文件不应进入发布包：{packaged_name}"],
+                }
+            return {"ok": True, "failures": []}
+    finally:
+        transient.unlink(missing_ok=True)
 
 
 def entry_has_forbidden_part(name: str) -> str | None:
@@ -263,7 +320,8 @@ def audit_package(package_path: pathlib.Path) -> dict[str, Any]:
             leaked_current_root: list[str] = []
             for info in archive.infolist():
                 suffix = pathlib.PurePosixPath(info.filename).suffix
-                if suffix not in TEXT_SCAN_SUFFIXES or info.file_size > 2_000_000:
+                scan_text = suffix in TEXT_SCAN_SUFFIXES or any(info.filename.startswith(prefix) for prefix in TEXT_SCAN_PATH_PREFIXES)
+                if not scan_text or info.file_size > 2_000_000:
                     continue
                 try:
                     text = archive.read(info).decode("utf-8")
@@ -353,6 +411,161 @@ def run_release_init(project: pathlib.Path, runtime_bin: pathlib.Path) -> dict[s
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
+
+
+def run_smoke_command(argv: list[str], cwd: pathlib.Path, timeout_seconds: int = 60) -> dict[str, Any]:
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=str(cwd),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+        return {
+            "argv": argv,
+            "cwd": str(cwd),
+            "timeout_seconds": timeout_seconds,
+            "exit_code": completed.returncode,
+            "ok": completed.returncode == 0,
+            "stdout_tail": completed.stdout[-4000:],
+            "stderr_tail": completed.stderr[-4000:],
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "argv": argv,
+            "cwd": str(cwd),
+            "timeout_seconds": timeout_seconds,
+            "exit_code": None,
+            "ok": False,
+            "stdout_tail": (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else "",
+            "stderr_tail": (exc.stderr or "")[-4000:] if isinstance(exc.stderr, str) else "",
+            "failures": ["命令超时"],
+        }
+
+
+def installed_runtime_smoke_check() -> dict[str, Any]:
+    failures: list[str] = []
+    commands: list[dict[str, Any]] = []
+    with tempfile.TemporaryDirectory(prefix="redcap-project-runtime-smoke-") as raw_tmp:
+        tmp = pathlib.Path(raw_tmp)
+        package_path = tmp / "redcap.zip"
+        package_result = package_to(package_path)
+        audit_result = audit_package(package_path) if package_result.get("ok") is True else {"ok": False, "failures": ["打包失败"]}
+        project = tmp / "external-project"
+        project.mkdir()
+        if package_result.get("ok") is not True:
+            failures.append(f"打包失败：{package_result.get('failures')}")
+        elif audit_result.get("ok") is not True:
+            failures.append(f"包审计失败：{audit_result.get('failures')}")
+        else:
+            with zipfile.ZipFile(package_path) as archive:
+                archive.extractall(project)
+            package_root = project / PACKAGE_ROOT
+            init_result = init_project(project, package_root)
+            if init_result.get("ok") is not True:
+                failures.append(f"外部项目初始化失败：{init_result.get('failures')}")
+            runtime_bin = package_root / "runtime" / "bin" / "redcap"
+            for argv in [
+                ["bash", str(runtime_bin), "project-install", "check"],
+                ["bash", str(runtime_bin), "cli-surface", "check"],
+                ["bash", str(runtime_bin), "gate", "--task", "外部项目安装后 runtime smoke", "--risk-level", "low"],
+            ]:
+                command = run_smoke_command(argv, project)
+                commands.append(command)
+                if command.get("ok") is not True:
+                    failures.append(f"安装后运行时冒烟命令失败：{' '.join(argv[:4])}")
+            hook_text = (project / ".codex" / "hooks.json").read_text(encoding="utf-8", errors="replace") if (project / ".codex" / "hooks.json").exists() else ""
+            install_text = (package_root / "install.json").read_text(encoding="utf-8", errors="replace") if (package_root / "install.json").exists() else ""
+            if str(package_root) not in hook_text:
+                failures.append("安装后 hooks 未指向项目级 .redcap")
+            if str(REPO_ROOT) in hook_text or str(REPO_ROOT) in install_text:
+                failures.append("安装后项目配置泄漏 RedCap 源仓库绝对路径")
+            gitignore = package_root / ".gitignore"
+            if not gitignore.exists() or gitignore.read_text(encoding="utf-8", errors="replace") != "*\n!.gitignore\n":
+                failures.append(".redcap/.gitignore 不符合运行时产物隔离规则")
+    return {
+        "schema_id": "redcap-installed-runtime-smoke-check",
+        "ok": not failures,
+        "commands": commands,
+        "failures": failures,
+    }
+
+
+def source_path_leak_negative_probe() -> dict[str, Any]:
+    with tempfile.TemporaryDirectory(prefix="redcap-project-bad-package-") as raw_tmp:
+        bad_package = pathlib.Path(raw_tmp) / "bad-source-leak.zip"
+        with zipfile.ZipFile(bad_package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(f"{PACKAGE_ROOT}/runtime/bin/redcap", f"#!/usr/bin/env bash\n# leak {REPO_ROOT}\n")
+            archive.writestr(f"{PACKAGE_ROOT}/assets/contracts/codex-hooks.template.json", "{}\n")
+            archive.writestr(f"{PACKAGE_ROOT}/install-manifest.json", json.dumps({
+                "schema_id": "redcap-package-manifest",
+                "schema_version": 1,
+                "files": [{"path": f"{PACKAGE_ROOT}/runtime/bin/redcap"}],
+            }, ensure_ascii=False))
+            archive.writestr(f"{PACKAGE_ROOT}/README.md", "fixture\n")
+        audit = audit_package(bad_package)
+    detected = audit.get("ok") is False and any("绝对路径" in item for item in audit.get("failures", []))
+    return {
+        "schema_id": "redcap-source-path-leak-negative-probe",
+        "ok": detected,
+        "audit": audit,
+        "failures": [] if detected else ["包含源仓库绝对路径的坏发布包没有被 audit-package 拒绝"],
+    }
+
+
+def validate_production_readiness_contract(contract: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if contract.get("schema_id") != "redcap-project-install-production-readiness-contract":
+        failures.append("项目安装生产就绪合同 schema_id 错误")
+    command = str(contract.get("command", ""))
+    if "project-install production-readiness-check" not in command:
+        failures.append("项目安装生产就绪合同缺少命令声明")
+    required = "\n".join(str(item) for item in contract.get("technical_acceptance", []))
+    for marker in ["release-check", "matrix-check", "安装后运行时冒烟", "源仓库绝对路径"]:
+        if marker not in required:
+            failures.append(f"项目安装生产就绪合同缺少验收点：{marker}")
+    boundary = str(contract.get("completion_boundary", ""))
+    if "不等同于公开发布授权" not in boundary:
+        failures.append("项目安装生产就绪合同必须声明不等同于公开发布授权")
+    return failures
+
+
+def production_readiness_check(out: pathlib.Path | None = None) -> dict[str, Any]:
+    failures: list[str] = []
+    contract = load_json(PRODUCTION_READINESS_CONTRACT)
+    contract_failures = validate_production_readiness_contract(contract)
+    failures.extend(contract_failures)
+    install_check = check()
+    release_result = release_check()
+    matrix_result = project_install_matrix_check()
+    smoke_result = installed_runtime_smoke_check()
+    leak_probe = source_path_leak_negative_probe()
+    checks = [
+        {"id": "contract", "ok": not contract_failures, "failures": contract_failures},
+        {"id": "project-install-check", "ok": install_check.get("ok") is True, "result": install_check},
+        {"id": "release-check", "ok": release_result.get("ok") is True, "result": release_result},
+        {"id": "matrix-check", "ok": matrix_result.get("ok") is True, "result": matrix_result},
+        {"id": "installed-runtime-smoke", "ok": smoke_result.get("ok") is True, "result": smoke_result},
+        {"id": "source-path-leak-negative-probe", "ok": leak_probe.get("ok") is True, "result": leak_probe},
+    ]
+    for check_item in checks:
+        if check_item.get("ok") is not True:
+            failures.append(f"{check_item.get('id')} 未通过")
+    result = {
+        "schema_id": "redcap-project-install-production-readiness-check",
+        "ok": not failures,
+        "state": "technical_ready_for_human_release_review" if not failures else "failed",
+        "contract": str(PRODUCTION_READINESS_CONTRACT.relative_to(REPO_ROOT)),
+        "checks": checks,
+        "human_release_authorization_required": True,
+        "completion_boundary": contract.get("completion_boundary"),
+        "failures": failures,
+    }
+    if out is not None:
+        write_json(out, result)
+    return result
 
 
 def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str, Any]:
@@ -654,8 +867,21 @@ def cmd_matrix_check(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_production_readiness_check(args: argparse.Namespace) -> int:
+    out = pathlib.Path(args.out).resolve() if args.out else None
+    result = production_readiness_check(out)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_PROJECT_INSTALL_PRODUCTION_READINESS_OK")
+        return 0
+    return 1
+
+
 def cmd_self_check(_: argparse.Namespace) -> int:
     failures: list[str] = []
+    transient_probe = transient_self_check_exclusion_probe()
+    if transient_probe.get("ok") is not True:
+        failures.extend(transient_probe.get("failures") or ["临时自检文件排除探针失败"])
     release_result = release_check()
     if not release_result.get("ok"):
         failures.append(f"发布链路自检失败：{release_result.get('failures')}")
@@ -768,6 +994,9 @@ def build_parser() -> argparse.ArgumentParser:
     matrix = sub.add_parser("matrix-check")
     matrix.add_argument("--out")
     matrix.set_defaults(func=cmd_matrix_check)
+    production = sub.add_parser("production-readiness-check")
+    production.add_argument("--out")
+    production.set_defaults(func=cmd_production_readiness_check)
     sub.add_parser("self-check").set_defaults(func=cmd_self_check)
     return parser
 

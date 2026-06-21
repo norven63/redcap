@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check-profiles",
+    "decide",
+    "--task",
+    "关闭 redcap-complete-revival",
+    "--changed-file",
+    "assets/contracts/terminal-goals.json"
+  ],
+  "command": "runtime/bin/redcap check-profiles decide --task 关闭 redcap-complete-revival --changed-file assets/contracts/terminal-goals.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.044,
+  "executed_at": "2026-06-21T14:14:39Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-004-check-profile-decide-terminal",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profile-decide-terminal.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1095,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profile-decide-terminal.stdout.txt",
+  "stdout_sha256": "ffc404ef428cbcbce980827cab724009cfbdcc2e7de9ce1842752488eb935fb3"
+}

@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "python3",
+    "runtime/core/complete_revival_check.py",
+    "self-check"
+  ],
+  "command": "python3 runtime/core/complete_revival_check.py self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.21,
+  "executed_at": "2026-06-21T13:57:12Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "complete-revival-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/complete-revival-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 73,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/complete-revival-self-check.stdout.txt",
+  "stdout_sha256": "656c33344321cdbc21dd0af44b88abf7a07005bd0b70a9a3b2fdba07a7f677bf"
+}

@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "knowledge-gateway",
+    "impact-check"
+  ],
+  "command": "runtime/bin/redcap knowledge-gateway impact-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.563,
+  "executed_at": "2026-06-21T14:05:39Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-001-knowledge-gateway-impact-direct-after-events-fix",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-001-knowledge-gateway-impact-direct-after-events-fix.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 17065,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-001-knowledge-gateway-impact-direct-after-events-fix.stdout.txt",
+  "stdout_sha256": "ae880e4d6f06fcb0576322572ad4ad04e50b22a1edda63128eb44d909adbf2c5"
+}

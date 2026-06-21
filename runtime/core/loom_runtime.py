@@ -17,6 +17,8 @@ from typing import Any
 
 
 SCHEMA_ID = "redcap-loom-runtime-session-manifest"
+E2E_ROLE_SESSION_SCHEMA_ID = "redcap-e2e-loom-role-session-manifest"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
 DEFAULT_REQUIRED_ROLES = [
     "product_manager",
@@ -33,6 +35,7 @@ FAILURE_ROUTE_EVENT_SCHEMA_ID = "redcap-loom-runtime-failure-route-event"
 ALLOWED_ROUTE_STATUSES = {"open", "accepted", "completed", "rejected", "escalated"}
 ALLOWED_ROOT_CAUSES = {"code", "design", "requirement", "change", "test", "review", "unknown"}
 DEFAULT_ESCALATION_THRESHOLD = 3
+DEFAULT_REAL_SAMPLE_CONTRACT = REPO_ROOT / "assets" / "contracts" / "loom-real-project-sample-gate.json"
 PHASE_TO_ROLE = {
     "idea_intake": "product_manager",
     "change_intake": "product_manager",
@@ -92,6 +95,10 @@ def read_json(path: pathlib.Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def read_contract(path: pathlib.Path) -> dict[str, Any]:
+    return read_json(path)
+
+
 def append_jsonl(path: pathlib.Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
@@ -142,11 +149,20 @@ def resolve_project_reference(project_root: pathlib.Path, reference: str) -> pat
     candidates = [
         project_root / raw,
         evidence_dir(project_root) / raw,
+        project_root / ".redcap" / "evidence" / "e2e" / raw,
     ]
     for candidate in candidates:
         if candidate.exists():
             return candidate
     return candidates[-1]
+
+
+def is_under(path: pathlib.Path, parent: pathlib.Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+    except ValueError:
+        return False
+    return True
 
 
 def role_attestation_signature(record: dict[str, Any]) -> str:
@@ -1006,6 +1022,557 @@ def session_check_payload(project_root: pathlib.Path | None, task_id: str | None
     }
 
 
+def evidence_refs(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if isinstance(item, str) and item.strip()]
+
+
+def refs_exist(project_root: pathlib.Path, refs: list[str]) -> list[str]:
+    missing: list[str] = []
+    for reference in refs:
+        if not resolve_project_reference(project_root, reference).exists():
+            missing.append(reference)
+    return missing
+
+
+def e2e_role_path_failures(project_root: pathlib.Path, records: list[Any], *, role: str, field: str) -> list[str]:
+    failures: list[str] = []
+    for index, item in enumerate(records, start=1):
+        if not isinstance(item, dict):
+            failures.append(f"E2E 角色 {role} 的 {field}[{index}] 必须是对象")
+            continue
+        if item.get("exists") is False:
+            failures.append(f"E2E 角色 {role} 的 {field}[{index}] 标记为不存在")
+        raw_path = item.get("path") or item.get("relative_path")
+        if isinstance(raw_path, str) and raw_path.strip():
+            if not resolve_project_reference(project_root, raw_path).exists():
+                failures.append(f"E2E 角色 {role} 的 {field}[{index}] 文件不存在：{raw_path}")
+    return failures
+
+
+def validate_e2e_role_session_manifest(
+    manifest: dict[str, Any],
+    *,
+    project_root: pathlib.Path,
+    task_id: str,
+) -> list[str]:
+    failures: list[str] = []
+    if manifest.get("schema_id") != E2E_ROLE_SESSION_SCHEMA_ID:
+        failures.append("E2E 角色会话清单 schema_id 错误")
+    if manifest.get("task_id") != task_id:
+        failures.append("E2E 角色会话清单 task_id 不匹配")
+    roles = manifest.get("roles")
+    if not isinstance(roles, list) or not roles:
+        return failures + ["E2E 角色会话清单 roles 必须是非空数组"]
+    by_role: dict[str, list[dict[str, Any]]] = {}
+    for item in roles:
+        if not isinstance(item, dict):
+            failures.append("E2E 角色会话记录必须是对象")
+            continue
+        by_role.setdefault(str(item.get("role") or ""), []).append(item)
+
+    sessions: dict[str, str] = {}
+    for role in ROLE_CHAIN_ORDER:
+        records = by_role.get(role, [])
+        if not records:
+            failures.append(f"E2E 角色缺少会话记录：{role}")
+            continue
+        if len(records) > 1:
+            failures.append(f"E2E 角色存在重复记录：{role}")
+        record = records[-1]
+        session_id = str(record.get("session_id") or "")
+        if not SESSION_RE.fullmatch(session_id):
+            failures.append(f"E2E 角色 session_id 非法或缺失：{role}")
+        if session_id and session_id in sessions and sessions[session_id] != role:
+            failures.append(f"E2E 不同角色不能复用 session_id：{sessions[session_id]} 与 {role}")
+        elif session_id:
+            sessions[session_id] = role
+        if record.get("provider") != "codex-cli":
+            failures.append(f"E2E 角色 provider 必须是 codex-cli：{role}")
+        if record.get("context_state") != "complete":
+            failures.append(f"E2E 角色 context_state 必须是 complete：{role}")
+        if record.get("role_execution_ok") is not True:
+            failures.append(f"E2E 角色执行未通过：{role}")
+        if record.get("role_workflow_ok") is not True:
+            failures.append(f"E2E 角色工作流未通过：{role}")
+        observed = list_value(record.get("observed_session_ids"))
+        if observed != [session_id]:
+            failures.append(f"E2E 角色 observed_session_ids 必须只包含当前 session_id：{role}")
+        if list_value(record.get("retry_session_ids")):
+            failures.append(f"E2E 角色存在重试 session，需要人工确认上下文连续性：{role}")
+        for key in ["started_at", "last_seen_at"]:
+            if not isinstance(record.get(key), str) or not record[key].strip():
+                failures.append(f"E2E 角色缺少 {key}：{role}")
+        for key in ["handoff_inputs", "handoff_outputs"]:
+            if not isinstance(record.get(key), list) or not record[key]:
+                failures.append(f"E2E 角色 {key} 必须是非空列表：{role}")
+        evidence_files = list_value(record.get("evidence_files"))
+        if not evidence_files:
+            failures.append(f"E2E 角色缺少 evidence_files：{role}")
+        missing_evidence = refs_exist(project_root, evidence_files)
+        if missing_evidence:
+            failures.append(f"E2E 角色证据文件不存在：{role} {missing_evidence}")
+        for field in ["handoff_input_paths", "handoff_output_paths"]:
+            values = record.get(field)
+            if isinstance(values, list):
+                failures.extend(e2e_role_path_failures(project_root, values, role=role, field=field))
+
+    alarms = manifest.get("session_loss_alarms")
+    if isinstance(alarms, list):
+        if alarms:
+            failures.append(f"E2E 角色会话清单存在 session_loss_alarms：{len(alarms)}")
+    else:
+        failures.append("E2E 角色会话清单 session_loss_alarms 必须是列表")
+    return failures
+
+
+def real_sample_minimum(contract: dict[str, Any], key: str, default: Any) -> Any:
+    minimum = contract.get("minimum")
+    if not isinstance(minimum, dict):
+        return default
+    return minimum.get(key, default)
+
+
+def latest_completed_routes(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        event
+        for event in latest_route_events(events).values()
+        if isinstance(event, dict) and event.get("status") == "completed"
+    ]
+
+
+def validate_real_sample_payload(sample: dict[str, Any], contract: dict[str, Any], *, require_independent: bool = False) -> dict[str, Any]:
+    failures: list[str] = []
+    warnings: list[str] = []
+    checks: list[dict[str, Any]] = []
+    if sample.get("schema_id") != "redcap-loom-real-project-sample":
+        failures.append("真实样本清单 schema_id 必须是 redcap-loom-real-project-sample")
+    raw_root = sample.get("project_workspace") or sample.get("project_root")
+    if not isinstance(raw_root, str) or not raw_root.strip():
+        failures.append("真实样本清单缺少 project_workspace")
+        project_root = pathlib.Path("/")
+    else:
+        project_root = pathlib.Path(raw_root).expanduser().resolve()
+        if not project_root.exists():
+            failures.append(f"真实样本项目目录不存在：{project_root}")
+        if is_under(project_root, REPO_ROOT):
+            failures.append("真实样本项目目录不能位于当前 RedCap 源码仓库内")
+    task_id = str(sample.get("task_id") or "").strip()
+    if not task_id:
+        failures.append("真实样本清单缺少 task_id")
+    origin = sample.get("sample_origin")
+    sample_origin_type = ""
+    independent_external_verified = False
+    if isinstance(origin, dict):
+        sample_origin_type = str(origin.get("type") or "").strip()
+    if require_independent:
+        origin_failures: list[str] = []
+        if sample_origin_type != "independent_external_project":
+            origin_failures.append("独立外部样本必须声明 sample_origin.type=independent_external_project")
+        origin_refs = evidence_refs(origin.get("preexisting_project_evidence_refs") if isinstance(origin, dict) else None)
+        if not origin_refs:
+            origin_failures.append("独立外部样本必须提供 preexisting_project_evidence_refs")
+        else:
+            missing_origin_refs = refs_exist(project_root, origin_refs)
+            if missing_origin_refs:
+                origin_failures.append(f"独立外部样本来源证据不存在：{missing_origin_refs}")
+        task_id_lower = task_id.lower()
+        if any(marker in task_id_lower for marker in ["fixture", "generated", "synthetic"]):
+            origin_failures.append("独立外部样本 task_id 不能包含 fixture、generated 或 synthetic 这类生成夹具标记")
+        checks.append({
+            "id": "independent-external-origin",
+            "ok": not origin_failures,
+            "origin_type": sample_origin_type,
+            "failures": origin_failures,
+        })
+        failures.extend(origin_failures)
+        independent_external_verified = not origin_failures
+
+    manifest_ref = sample.get("loom_session_manifest") or sample.get("e2e_role_session_manifest")
+    if isinstance(manifest_ref, str) and manifest_ref.strip():
+        manifest_file = resolve_project_reference(project_root, manifest_ref)
+    else:
+        manifest_file = manifest_path(project_root)
+    manifest = read_json(manifest_file)
+    manifest_schema = str(manifest.get("schema_id") or "")
+    if manifest_schema == E2E_ROLE_SESSION_SCHEMA_ID:
+        e2e_failures = (
+            validate_e2e_role_session_manifest(manifest, project_root=project_root, task_id=task_id)
+            if task_id
+            else ["缺少 task_id，无法验证 E2E 角色会话清单"]
+        )
+        role_failures = e2e_failures
+        session_failures: list[str] = []
+        checks.append({
+            "id": "external-e2e-role-chain",
+            "ok": not role_failures,
+            "manifest": str(manifest_file),
+            "failures": role_failures,
+        })
+        checks.append({
+            "id": "external-e2e-session-continuity",
+            "ok": not e2e_failures,
+            "manifest": str(manifest_file),
+            "failures": e2e_failures,
+        })
+    else:
+        role_failures = validate_role_chain(manifest, project_root=project_root, task_id=task_id) if task_id else ["缺少 task_id，无法验证角色链"]
+        session_failures = (
+            validate_session_continuity(manifest, project_root=project_root, task_id=task_id)
+            if task_id
+            else ["缺少 task_id，无法验证会话连续性"]
+        )
+        checks.append({"id": "role-chain", "ok": not role_failures, "manifest": str(manifest_file), "failures": role_failures})
+        checks.append({"id": "session-continuity", "ok": not session_failures, "manifest": str(manifest_file), "failures": session_failures})
+    failures.extend(role_failures)
+    failures.extend(session_failures)
+
+    min_iterations = int(real_sample_minimum(contract, "iterations", 2) or 2)
+    iterations = sample.get("iterations")
+    if not isinstance(iterations, list) or len(iterations) < min_iterations:
+        failures.append(f"真实样本至少需要 {min_iterations} 轮迭代记录")
+    else:
+        missing_iteration_refs: list[str] = []
+        for index, iteration in enumerate(iterations, start=1):
+            if not isinstance(iteration, dict):
+                failures.append(f"iterations[{index}] 必须是对象")
+                continue
+            missing_iteration_refs.extend(refs_exist(project_root, evidence_refs(iteration.get("evidence_refs"))))
+        if missing_iteration_refs:
+            failures.append(f"迭代证据不存在：{missing_iteration_refs}")
+    checks.append({"id": "iterations", "ok": isinstance(iterations, list) and len(iterations) >= min_iterations})
+
+    target_delivery = sample.get("target_delivery")
+    if not isinstance(target_delivery, dict):
+        failures.append("真实样本缺少 target_delivery")
+    else:
+        status = str(target_delivery.get("status") or "")
+        if status not in {"delivered", "accepted", "verified"}:
+            failures.append("target_delivery.status 必须是 delivered、accepted 或 verified")
+        missing_target_refs = refs_exist(project_root, evidence_refs(target_delivery.get("evidence_refs")))
+        if missing_target_refs:
+            failures.append(f"交付证据不存在：{missing_target_refs}")
+    checks.append({"id": "target-delivery", "ok": isinstance(target_delivery, dict)})
+
+    change_intake = sample.get("change_intake")
+    if not isinstance(change_intake, dict):
+        failures.append("真实样本缺少 change_intake")
+    else:
+        missing_change_refs = refs_exist(project_root, evidence_refs(change_intake.get("evidence_refs")))
+        if missing_change_refs:
+            failures.append(f"变更接入证据不存在：{missing_change_refs}")
+    checks.append({"id": "change-intake", "ok": isinstance(change_intake, dict)})
+
+    route_config = sample.get("failure_routes")
+    route_ledger = failure_routes_path(project_root)
+    if isinstance(route_config, dict) and isinstance(route_config.get("ledger"), str) and route_config["ledger"].strip():
+        route_ledger = resolve_project_reference(project_root, route_config["ledger"])
+    events = read_jsonl(route_ledger)
+    route_failures = validate_failure_route_events(events, require_no_open=True)
+    completed_routes = latest_completed_routes(events)
+    if not completed_routes:
+        route_failures.append("真实样本必须至少包含一条已完成的失败回流路由")
+    checks.append({
+        "id": "failure-route-consumption",
+        "ok": not route_failures,
+        "ledger": str(route_ledger),
+        "completed_routes": [item.get("route_id") for item in completed_routes],
+        "failures": route_failures,
+    })
+    failures.extend(route_failures)
+
+    required_improvements = set(real_sample_minimum(contract, "required_capability_improvements", []))
+    improvements = set(evidence_refs(sample.get("redcap_capability_improvements")))
+    missing_improvements = sorted(required_improvements - improvements)
+    if missing_improvements:
+        failures.append(f"真实样本缺少 RedCap 能力改进证明：{missing_improvements}")
+    checks.append({"id": "redcap-capability-improvements", "ok": not missing_improvements})
+
+    sample_refs = evidence_refs(sample.get("evidence_refs"))
+    missing_refs = refs_exist(project_root, sample_refs)
+    if missing_refs:
+        failures.append(f"样本总证据不存在：{missing_refs}")
+    if not sample_refs:
+        warnings.append("真实样本清单没有 evidence_refs 总索引，建议补齐便于人工验收")
+    checks.append({"id": "sample-evidence-refs", "ok": not missing_refs and bool(sample_refs)})
+
+    return {
+        "ok": not failures,
+        "state": "verified" if not failures else "failed",
+        "project_workspace": str(project_root),
+        "task_id": task_id,
+        "sample_origin_type": sample_origin_type or "unspecified",
+        "independent_external_verified": require_independent and independent_external_verified and not failures,
+        "checks": checks,
+        "warnings": warnings,
+        "failures": failures,
+    }
+
+
+def real_sample_check_payload(
+    manifest_file: pathlib.Path | None,
+    *,
+    contract_path: pathlib.Path,
+    require_verified: bool,
+    require_independent: bool = False,
+) -> dict[str, Any]:
+    contract = read_contract(contract_path)
+    failures: list[str] = []
+    if contract.get("schema_id") != "redcap-loom-real-project-sample-gate-contract":
+        failures.append("真实样本门禁合同 schema_id 错误")
+    if manifest_file is None:
+        pending_failure = "缺少真实外部项目样本清单；LS-006 不能关闭"
+        failures.extend([pending_failure] if require_verified else [])
+        return {
+            "schema_id": "redcap-loom-real-project-sample-gate-check",
+            "ok": not require_verified and not failures,
+            "state": "pending",
+            "independent_external_required": require_independent,
+            "independent_external_verified": False,
+            "contract": str(contract_path.relative_to(REPO_ROOT) if is_under(contract_path, REPO_ROOT) else contract_path),
+            "manifest": None,
+            "checks": [],
+            "warnings": [pending_failure],
+            "failures": failures,
+            "completion_boundary": "pending 只表示门禁机制存在；不能证明真实外部长期项目样本已通过。",
+        }
+    sample = read_json(manifest_file)
+    validation = validate_real_sample_payload(sample, contract, require_independent=require_independent)
+    validation["failures"] = failures + validation["failures"]
+    validation["ok"] = not validation["failures"]
+    validation["state"] = "verified" if validation["ok"] else "failed"
+    payload = {
+        "schema_id": "redcap-loom-real-project-sample-gate-check",
+        "ok": validation["ok"],
+        "state": validation["state"],
+        "independent_external_required": require_independent,
+        "independent_external_verified": validation.get("independent_external_verified") is True,
+        "sample_origin_type": validation.get("sample_origin_type"),
+        "contract": str(contract_path.relative_to(REPO_ROOT) if is_under(contract_path, REPO_ROOT) else contract_path),
+        "manifest": str(manifest_file),
+        "checks": validation["checks"],
+        "warnings": validation["warnings"],
+        "failures": validation["failures"],
+        "completion_boundary": "只有 state=verified 且 --require-independent 同时通过时，才能把 LS-006 的真实独立外部项目样本证明视为通过；生成样本只能证明门禁机制。",
+    }
+    if require_verified and payload["state"] != "verified" and not payload["failures"]:
+        payload["failures"].append("require-verified 要求 state=verified")
+        payload["ok"] = False
+    return payload
+
+
+def write_real_sample_fixture(project_root: pathlib.Path, *, sample_id: str = "fixture-real-project-sample") -> pathlib.Path:
+    project_id, task_id = populate_fixture_project(project_root, mode="positive")
+    sample_dir = evidence_dir(project_root) / "real-sample"
+    write_json(sample_dir / "iteration-1.json", {"schema_id": "fixture-iteration", "iteration": 1, "status": "completed"})
+    write_json(sample_dir / "iteration-2.json", {"schema_id": "fixture-iteration", "iteration": 2, "status": "completed"})
+    write_json(sample_dir / "change-intake.json", {"schema_id": "fixture-change-intake", "status": "accepted"})
+    write_json(sample_dir / "target-delivery.json", {"schema_id": "fixture-target-delivery", "status": "delivered"})
+    route = build_failure_route_event(
+        project_root=project_root,
+        project_id=project_id,
+        task_id=task_id,
+        source_role="tester",
+        source_phase="quality_assurance",
+        target_role="developer",
+        target_phase="implementation",
+        restart_from_phase="implementation",
+        root_cause="code",
+        summary="真实样本夹具中的失败回流验证",
+        evidence_files=["role-artifacts/tester.json"],
+        previous_route_id=None,
+        escalation_threshold=3,
+    )
+    append_jsonl(failure_routes_path(project_root), route)
+    accepted = transition_failure_route_event(
+        project_root=project_root,
+        route_id=route["route_id"],
+        status="accepted",
+        role="developer",
+        evidence_files=["role-artifacts/developer.json"],
+    )
+    append_jsonl(failure_routes_path(project_root), accepted)
+    completed = transition_failure_route_event(
+        project_root=project_root,
+        route_id=route["route_id"],
+        status="completed",
+        role="developer",
+        evidence_files=["real-sample/iteration-2.json"],
+    )
+    append_jsonl(failure_routes_path(project_root), completed)
+    sample = {
+        "schema_id": "redcap-loom-real-project-sample",
+        "sample_id": sample_id,
+        "project_workspace": str(project_root),
+        "project_id": project_id,
+        "task_id": task_id,
+        "sample_origin": {
+            "type": "generated_fixture",
+            "generated_by": "runtime/bin/redcap loom real-sample-generate",
+            "closure_allowed_for_ls006": False,
+            "reason": "该样本由 RedCap 运行机即时生成，只能证明门禁机制，不能证明独立外部长期项目成熟度。"
+        },
+        "iterations": [
+            {"id": "iteration-1", "evidence_refs": ["real-sample/iteration-1.json"]},
+            {"id": "iteration-2", "evidence_refs": ["real-sample/iteration-2.json"]},
+        ],
+        "target_delivery": {
+            "status": "delivered",
+            "evidence_refs": ["real-sample/target-delivery.json"],
+        },
+        "change_intake": {
+            "status": "accepted",
+            "evidence_refs": ["real-sample/change-intake.json"],
+        },
+        "failure_routes": {
+            "ledger": str(failure_routes_path(project_root)),
+            "completed_route_ids": [route["route_id"]],
+        },
+        "redcap_capability_improvements": [
+            "loom_role_boundary_recorded",
+            "loom_failure_route_consumed",
+            "redcap_capability_feedback_recorded",
+        ],
+        "evidence_refs": [
+            "real-sample/iteration-1.json",
+            "real-sample/iteration-2.json",
+            "real-sample/change-intake.json",
+            "real-sample/target-delivery.json",
+        ],
+    }
+    sample_path = project_root / ".redcap" / "evidence" / "loom-real-project-sample.json"
+    write_json(sample_path, sample)
+    return sample_path
+
+
+def cmd_real_sample_generate(args: argparse.Namespace) -> int:
+    project_root = pathlib.Path(args.project_root).expanduser().resolve()
+    if is_under(project_root, REPO_ROOT):
+        print(json.dumps({
+            "ok": False,
+            "failures": ["real-sample-generate 不能写入 RedCap 源码仓库内部"],
+        }, ensure_ascii=False, indent=2))
+        return 1
+    project_root.mkdir(parents=True, exist_ok=True)
+    manifest = write_real_sample_fixture(project_root, sample_id=args.sample_id)
+    payload = real_sample_check_payload(
+        manifest,
+        contract_path=pathlib.Path(args.contract).expanduser().resolve(),
+        require_verified=True,
+    )
+    result = {
+        "schema_id": "redcap-loom-real-sample-generate-result",
+        "ok": payload.get("ok") is True,
+        "project_root": str(project_root),
+        "manifest": str(manifest),
+        "validation": payload,
+        "closure_allowed_for_ls006": False,
+        "completion_boundary": "生成的外部样本只能证明 Loom 样本门禁机制可运行；不能关闭 LS-006 的真实独立外部项目样本缺口，不替代完整 E2E，也不声明 RedCap 完整复活。",
+    }
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["ok"]:
+        print("REDCAP_LOOM_REAL_SAMPLE_GENERATE_OK")
+        return 0
+    return 1
+
+
+def real_sample_self_check() -> dict[str, Any]:
+    failures: list[str] = []
+    checks: list[dict[str, Any]] = []
+    with tempfile.TemporaryDirectory(prefix="redcap-loom-real-sample-") as raw:
+        root = pathlib.Path(raw)
+        positive_project = root / "positive-project"
+        positive_project.mkdir()
+        positive_manifest = write_real_sample_fixture(positive_project)
+        positive = real_sample_check_payload(
+            positive_manifest,
+            contract_path=DEFAULT_REAL_SAMPLE_CONTRACT,
+            require_verified=True,
+        )
+        checks.append({"id": "positive-real-sample", "ok": positive["ok"], "failures": positive["failures"]})
+        if not positive["ok"]:
+            failures.append(f"真实样本正向夹具不应失败：{positive['failures']}")
+        generated_independent = real_sample_check_payload(
+            positive_manifest,
+            contract_path=DEFAULT_REAL_SAMPLE_CONTRACT,
+            require_verified=True,
+            require_independent=True,
+        )
+        checks.append({
+            "id": "generated-sample-not-independent-negative",
+            "ok": not generated_independent["ok"],
+            "failures": generated_independent["failures"],
+        })
+        if generated_independent["ok"] or not any("独立外部样本" in item for item in generated_independent["failures"]):
+            failures.append("自生成样本在 --require-independent 下没有失败")
+
+        forged_independent_manifest = read_json(positive_manifest)
+        forged_independent_manifest["task_id"] = "independent-external-task"
+        forged_independent_manifest["sample_origin"] = {
+            "type": "independent_external_project",
+            "preexisting_project_evidence_refs": ["real-sample/iteration-1.json"],
+        }
+        forged_independent_path = root / "forged-independent-sample.json"
+        write_json(forged_independent_path, forged_independent_manifest)
+        forged_independent = real_sample_check_payload(
+            forged_independent_path,
+            contract_path=DEFAULT_REAL_SAMPLE_CONTRACT,
+            require_verified=True,
+            require_independent=True,
+        )
+        checks.append({
+            "id": "forged-independent-origin-negative",
+            "ok": not forged_independent["ok"],
+            "failures": forged_independent["failures"],
+        })
+        if forged_independent["ok"]:
+            failures.append("伪造 independent_external_project 标签和来源证据的样本没有失败")
+
+        pending = real_sample_check_payload(None, contract_path=DEFAULT_REAL_SAMPLE_CONTRACT, require_verified=True)
+        checks.append({"id": "missing-manifest-negative", "ok": not pending["ok"], "failures": pending["failures"]})
+        if pending["ok"]:
+            failures.append("require-verified 缺少样本清单时没有失败")
+
+        inside_manifest = read_json(positive_manifest)
+        inside_manifest["project_workspace"] = str(REPO_ROOT)
+        inside_path = root / "inside-repo-sample.json"
+        write_json(inside_path, inside_manifest)
+        inside = real_sample_check_payload(inside_path, contract_path=DEFAULT_REAL_SAMPLE_CONTRACT, require_verified=True)
+        checks.append({"id": "inside-repo-negative", "ok": not inside["ok"], "failures": inside["failures"]})
+        if not any("源码仓库内" in item for item in inside["failures"]):
+            failures.append("真实样本位于 RedCap 源码仓库内的负向夹具没有失败")
+
+        one_iteration_manifest = read_json(positive_manifest)
+        one_iteration_manifest["iterations"] = one_iteration_manifest["iterations"][:1]
+        one_iteration_path = root / "one-iteration-sample.json"
+        write_json(one_iteration_path, one_iteration_manifest)
+        one_iteration = real_sample_check_payload(
+            one_iteration_path,
+            contract_path=DEFAULT_REAL_SAMPLE_CONTRACT,
+            require_verified=True,
+        )
+        checks.append({"id": "one-iteration-negative", "ok": not one_iteration["ok"], "failures": one_iteration["failures"]})
+        if not any("至少需要" in item for item in one_iteration["failures"]):
+            failures.append("单轮迭代真实样本负向夹具没有失败")
+
+        missing_improvement_manifest = read_json(positive_manifest)
+        missing_improvement_manifest["redcap_capability_improvements"] = ["loom_role_boundary_recorded"]
+        missing_improvement_path = root / "missing-improvement-sample.json"
+        write_json(missing_improvement_path, missing_improvement_manifest)
+        missing_improvement = real_sample_check_payload(
+            missing_improvement_path,
+            contract_path=DEFAULT_REAL_SAMPLE_CONTRACT,
+            require_verified=True,
+        )
+        checks.append({"id": "missing-improvement-negative", "ok": not missing_improvement["ok"], "failures": missing_improvement["failures"]})
+        if not any("能力改进证明" in item for item in missing_improvement["failures"]):
+            failures.append("缺少 RedCap 能力反馈的负向夹具没有失败")
+    return {"ok": not failures, "checks": checks, "failures": failures}
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     project_root = project_root_arg(args.project_root)
     manifest = new_manifest(project_root, args.project_id, args.task_id)
@@ -1163,6 +1730,34 @@ def cmd_session_check(args: argparse.Namespace) -> int:
     if not payload["ok"]:
         return 1
     print("REDCAP_LOOM_SESSION_CONTINUITY_OK")
+    return 0
+
+
+def cmd_real_sample_check(args: argparse.Namespace) -> int:
+    if args.self_check:
+        payload = real_sample_self_check()
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        if not payload["ok"]:
+            return 1
+        print("REDCAP_LOOM_REAL_SAMPLE_SELF_CHECK_OK")
+        return 0
+    manifest_file = pathlib.Path(args.manifest).expanduser().resolve() if args.manifest else None
+    contract_path = pathlib.Path(args.contract).expanduser().resolve()
+    payload = real_sample_check_payload(
+        manifest_file,
+        contract_path=contract_path,
+        require_verified=args.require_verified,
+        require_independent=args.require_independent,
+    )
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), payload)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    if not payload["ok"]:
+        return 1
+    if payload["state"] == "verified":
+        print("REDCAP_LOOM_REAL_SAMPLE_GATE_OK")
+    else:
+        print("REDCAP_LOOM_REAL_SAMPLE_GATE_PENDING")
     return 0
 
 
@@ -1329,6 +1924,9 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         session_chain = session_check_payload(None, None, fixture=True)
         if not session_chain.get("ok"):
             failures.append(f"session fixture 检查不应失败：{session_chain.get('failures')}")
+        real_sample = real_sample_self_check()
+        if not real_sample.get("ok"):
+            failures.append(f"真实外部项目样本门禁自检不应失败：{real_sample.get('failures')}")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1
@@ -1414,6 +2012,22 @@ def build_parser() -> argparse.ArgumentParser:
     session_check.add_argument("--fixture", action="store_true")
     session_check.add_argument("--out")
     session_check.set_defaults(func=cmd_session_check)
+
+    real_sample = sub.add_parser("real-sample-check")
+    real_sample.add_argument("--manifest")
+    real_sample.add_argument("--contract", default=str(DEFAULT_REAL_SAMPLE_CONTRACT))
+    real_sample.add_argument("--require-verified", action="store_true")
+    real_sample.add_argument("--require-independent", action="store_true")
+    real_sample.add_argument("--self-check", action="store_true")
+    real_sample.add_argument("--out")
+    real_sample.set_defaults(func=cmd_real_sample_check)
+
+    real_sample_generate = sub.add_parser("real-sample-generate")
+    real_sample_generate.add_argument("--project-root", required=True)
+    real_sample_generate.add_argument("--sample-id", default="external-loop-ledger-real-project-sample")
+    real_sample_generate.add_argument("--contract", default=str(DEFAULT_REAL_SAMPLE_CONTRACT))
+    real_sample_generate.add_argument("--out")
+    real_sample_generate.set_defaults(func=cmd_real_sample_generate)
 
     sub.add_parser("self-check").set_defaults(func=cmd_self_check)
     return parser

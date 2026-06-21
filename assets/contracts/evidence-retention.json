@@ -1,0 +1,90 @@
+{
+  "schema_id": "redcap-evidence-retention-contract",
+  "schema_version": 1,
+  "purpose": "控制 RedCap 证据目录、宿主事件流、棱镜账本、检查回执和外部 E2E 缓存持续膨胀，同时不破坏历史回归、审计和知识影响链路。",
+  "mode": {
+    "default_action": "observe_and_plan",
+    "destructive_cleanup_allowed_by_default": false,
+    "cleanup_plan_must_be_dry_run_first": true,
+    "materialized_plan_command": "runtime/bin/redcap evidence-retention plan --materialize --out assets/evidence/retention/latest-retention-plan.json",
+    "deletion_requires_human_authorization": true
+  },
+  "thresholds": {
+    "assets_evidence_total": {
+      "warning_bytes": 209715200,
+      "critical_bytes": 1073741824
+    },
+    "assets_evidence_file_count": {
+      "warning_count": 4000,
+      "critical_count": 50000
+    },
+    "host_hook_events_jsonl": {
+      "warning_bytes": 67108864,
+      "critical_bytes": 536870912
+    },
+    "tracked_prism_task_ledger": {
+      "warning_bytes": 33554432,
+      "critical_bytes": 134217728
+    },
+    "project_runtime_evidence": {
+      "warning_bytes": 104857600,
+      "critical_bytes": 1073741824
+    },
+    "external_e2e_cache": {
+      "warning_bytes": 1073741824,
+      "critical_bytes": 21474836480,
+      "warning_count": 10000,
+      "critical_count": 100000
+    }
+  },
+  "retention_rules": [
+    {
+      "id": "host-hooks-events",
+      "target": "assets/evidence/host-hooks/codex/events.jsonl",
+      "classification": "hot-runtime-log",
+      "git_policy": "ignored",
+      "allowed_plan": "summarize_then_rotate",
+      "hard_constraints": [
+        "轮转前必须保留最新 UserPromptSubmit、PreToolUse、PostToolUse 和 Stop 标记文件",
+        "轮转前必须生成结构化摘要和哈希索引",
+        "摘要索引至少记录原文件 sha256、行数、首行哈希和末行哈希",
+        "不得删除生命周期历史样本仍引用的事件窗口"
+      ]
+    },
+    {
+      "id": "prism-task-ledger",
+      "target": "assets/evidence/prism/task-ledger.jsonl",
+      "classification": "tracked-health-ledger",
+      "git_policy": "tracked",
+      "allowed_plan": "summarize_index_before_archive",
+      "hard_constraints": [
+        "不得直接截断已跟踪账本",
+        "归档前必须保留可查询摘要索引",
+        "摘要索引至少记录原文件 sha256、行数、首行哈希和末行哈希",
+        "棱镜健康趋势和 provider 结果统计不能丢失"
+      ]
+    },
+    {
+      "id": "check-receipts",
+      "target": "assets/evidence/check-receipts",
+      "classification": "verification-receipts",
+      "git_policy": "mixed",
+      "allowed_plan": "keep_recent_and_release_receipts",
+      "hard_constraints": [
+        "保留最近验证和 release/terminal 相关回执",
+        "冷归档前必须写入命令、退出码、哈希和路径索引"
+      ]
+    },
+    {
+      "id": "external-e2e-cache",
+      "target": "/Users/norven/workspace/redcap-e2e-runs",
+      "classification": "external-runtime-cache",
+      "git_policy": "external",
+      "allowed_plan": "reuse_complete_revival_e2e_prune",
+      "hard_constraints": [
+        "只能通过 complete-revival-e2e prune-runs 或等价受控入口清理",
+        "unknown 目录只允许分类和 dry-run，不能静默删除"
+      ]
+    }
+  ]
+}

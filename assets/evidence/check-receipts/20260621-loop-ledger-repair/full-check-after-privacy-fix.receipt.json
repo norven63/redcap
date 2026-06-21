@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check"
+  ],
+  "command": "runtime/bin/redcap check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 125.031,
+  "executed_at": "2026-06-21T12:23:05Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "loop-ledger-repair-full-check-after-privacy-fix",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/full-check-after-privacy-fix.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 15285,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/full-check-after-privacy-fix.stdout.txt",
+  "stdout_sha256": "f0214cb79cb845c6099d5d62ce9681f877b4071cc33d48b7d27d87d5531bfb44"
+}

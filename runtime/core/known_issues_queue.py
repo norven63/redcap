@@ -89,12 +89,9 @@ def validate_queue(payload: dict[str, Any], *, require_1_to_4_verified: bool) ->
             if terminal_closed:
                 if item.get("status") != "verified":
                     failures.append(f"终局关闭时第 {index} 项必须已验证：{item_id}")
-            elif item.get("status") != "deferred_user_supervised":
-                failures.append(f"第 {index} 项必须保持用户督导前暂缓：{item_id}")
-            if not terminal_closed and (
-                not isinstance(item.get("deferred_until"), str) or "Norven" not in item["deferred_until"]
-            ):
-                failures.append(f"{item_id} 必须写明由 Norven 督导后再开展")
+            elif item.get("status") == "deferred_user_supervised":
+                if not isinstance(item.get("deferred_until"), str) or "Norven" not in item["deferred_until"]:
+                    failures.append(f"{item_id} 暂缓时必须写明由 Norven 督导后再开展")
     if ordered_ids != EXPECTED_IDS:
         failures.append("队列顺序不符合遗留问题执行顺序合同")
     return failures
@@ -147,11 +144,16 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         item["status"] = "verified"
         item.pop("deferred_until", None)
     failures.extend(validate_queue(closed, require_1_to_4_verified=True))
-    bad_early = json.loads(json.dumps(fixture, ensure_ascii=False))
-    bad_early["items"][4]["status"] = "verified"
-    bad_early_failures = validate_queue(bad_early, require_1_to_4_verified=True)
-    if not any("用户督导前暂缓" in failure for failure in bad_early_failures):
-        failures.append("未能拦截第 5 项提前验证")
+    open_verified = json.loads(json.dumps(fixture, ensure_ascii=False))
+    for item in open_verified["items"]:
+        item["status"] = "verified"
+        item.pop("deferred_until", None)
+    failures.extend(validate_queue(open_verified, require_1_to_4_verified=True))
+    bad_deferred = json.loads(json.dumps(fixture, ensure_ascii=False))
+    bad_deferred["items"][4].pop("deferred_until", None)
+    bad_deferred_failures = validate_queue(bad_deferred, require_1_to_4_verified=True)
+    if not any("暂缓时必须写明" in failure for failure in bad_deferred_failures):
+        failures.append("未能拦截第 5 项暂缓但缺少 Norven 督导说明")
     bad_closed = json.loads(json.dumps(fixture, ensure_ascii=False))
     bad_closed["terminal_goal"]["state"] = "closed"
     bad_closed_failures = validate_queue(bad_closed, require_1_to_4_verified=True)

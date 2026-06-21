@@ -47,6 +47,10 @@ STEPS: tuple[Step, ...] = (
     Step("scan-conclusion-self-check", redcap("scan-conclusion", "self-check")),
     Step("known-issues-order-check", redcap("known-issues-order", "check")),
     Step("known-issues-queue-check", redcap("known-issues-queue", "check", "--require-1-4-verified")),
+    Step("evidence-retention-self-check", redcap("evidence-retention", "self-check")),
+    Step("evidence-retention-check", redcap("evidence-retention", "check", "--include-plan")),
+    Step("check-profiles-self-check", redcap("check-profiles", "self-check")),
+    Step("check-profiles-check", redcap("check-profiles", "check")),
     Step("long-task-contract-self-check", redcap("long-task", "self-check")),
     Step("long-task-contract-check", redcap("long-task", "check", "--packet", "assets/contracts/long-task-contract.json", "--require-integration")),
     Step("long-task-loop-boundary-check", redcap("long-task", "boundary-check")),
@@ -115,6 +119,7 @@ STEPS: tuple[Step, ...] = (
     Step("loom-runtime-self-check", redcap("loom-runtime", "self-check")),
     Step("loom-role-chain-e2e-check", redcap("loom", "role-chain-check", "--fixture")),
     Step("loom-session-continuity-check", redcap("loom", "session-check", "--fixture")),
+    Step("loom-real-sample-gate-self-check", redcap("loom", "real-sample-check", "--self-check")),
     Step("forge-self-check", redcap("forge", "self-check")),
     Step("forge-boundary-check", redcap("forge", "boundary-check")),
     Step("forge-check", redcap("forge", "check")),
@@ -123,6 +128,7 @@ STEPS: tuple[Step, ...] = (
     Step("project-install-self-check", redcap("project-install", "self-check")),
     Step("project-install-check", redcap("project-install", "check")),
     Step("project-install-matrix-check", redcap("project-install", "matrix-check")),
+    Step("project-install-production-readiness-check", redcap("project-install", "production-readiness-check")),
     Step("knowledge-gateway-check", redcap("knowledge-gateway", "check")),
     Step("knowledge-gateway-self-check", redcap("knowledge-gateway", "self-check")),
     Step("knowledge-impact-trace-check", redcap("knowledge-gateway", "impact-check")),
@@ -131,6 +137,8 @@ STEPS: tuple[Step, ...] = (
     Step("self-purification-check", redcap("self-purification", "check")),
     Step("self-purification-loop-check", redcap("self-purification", "loop-check")),
     Step("self-purification-self-check", redcap("self-purification", "self-check")),
+    Step("persona-observation-self-check", redcap("persona-observation", "self-check")),
+    Step("persona-observation-check", redcap("persona-observation", "check")),
     Step("revival-loop-check", python("runtime/core/revival_loop.py", "check")),
     Step("revival-loop-self-check", python("runtime/core/revival_loop.py", "self-check")),
     Step("soul-load-check", redcap("soul-load", "check")),
@@ -138,6 +146,43 @@ STEPS: tuple[Step, ...] = (
     Step("soul-load-self-check", redcap("soul-load", "self-check")),
     Step("layout-check", redcap("layout-check")),
 )
+
+PROFILE_STEPS: dict[str, tuple[str, ...] | None] = {
+    "fast": (
+        "human-output-self-check",
+        "evidence-retention-check",
+        "check-profiles-check",
+    ),
+    "standard": (
+        "human-output-self-check",
+        "evidence-retention-check",
+        "check-profiles-self-check",
+        "check-profiles-check",
+        "lifecycle-self-check",
+        "cli-surface-compat-check",
+        "boundary-check",
+        "knowledge-impact-trace-check",
+        "persona-observation-check",
+        "runtime-health-check",
+    ),
+    "release": (
+        "human-output-self-check",
+        "evidence-retention-check",
+        "check-profiles-check",
+        "cli-surface-compat-check",
+        "boundary-check",
+        "persona-observation-check",
+        "project-install-release-check",
+        "project-install-self-check",
+        "project-install-check",
+        "project-install-matrix-check",
+        "project-install-production-readiness-check",
+        "e2e-cache-prune-check",
+        "e2e-human-report-check",
+        "e2e-contract-mapping-check",
+    ),
+    "terminal": None,
+}
 
 
 def tail(value: str) -> str:
@@ -197,7 +242,18 @@ def run_step(step: Step, *, timeout_override: int | None = None) -> dict[str, ob
 
 
 def cmd_check(args: argparse.Namespace) -> int:
+    if args.only and args.profile:
+        print(json.dumps({
+            "schema_id": "redcap-check-summary",
+            "ok": False,
+            "failures": ["--only 与 --profile 不能同时使用"],
+        }, ensure_ascii=False, indent=2))
+        return 1
     selected = {args.only} if args.only else None
+    profile = args.profile
+    if profile:
+        selected_names = PROFILE_STEPS.get(profile)
+        selected = set(selected_names) if selected_names is not None else None
     results: list[dict[str, object]] = []
     for step in STEPS:
         if selected is not None and step.name not in selected:
@@ -208,14 +264,16 @@ def cmd_check(args: argparse.Namespace) -> int:
             print(json.dumps({
                 "schema_id": "redcap-check-summary",
                 "ok": False,
+                "profile": profile,
                 "failed_step": result["name"],
                 "completed_steps": len(results) - 1,
-                "total_steps": len(STEPS) if selected is None else 1,
+                "total_steps": len(STEPS) if selected is None else len(selected),
             }, ensure_ascii=False, indent=2))
             return 1
     print(json.dumps({
         "schema_id": "redcap-check-summary",
         "ok": True,
+        "profile": profile,
         "completed_steps": len(results),
         "total_steps": len(STEPS) if selected is None else len(results),
     }, ensure_ascii=False, indent=2))
@@ -243,6 +301,19 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     names = [step.name for step in STEPS]
     if len(names) != len(set(names)):
         failures.append("check step names must be unique")
+    step_set = set(names)
+    for profile, selected in PROFILE_STEPS.items():
+        if selected is None:
+            continue
+        missing = [name for name in selected if name not in step_set]
+        if missing:
+            failures.append(f"{profile} profile references missing steps: {missing}")
+    if PROFILE_STEPS.get("terminal") is not None:
+        failures.append("terminal profile must run the full aggregate check")
+    if "project-install-production-readiness-check" not in (PROFILE_STEPS.get("release") or ()):
+        failures.append("release profile must include project-install-production-readiness-check")
+    if "complete-revival-self-check" in (PROFILE_STEPS.get("fast") or ()):
+        failures.append("fast profile must not include terminal checks")
     if not any(step.name == "prism-check" and step.timeout_seconds > 0 for step in STEPS):
         failures.append("prism-check must have a positive bounded timeout")
     fake_ok = Step("fixture-ok", ("python3", "-c", "print('fixture ok')"), 5)
@@ -269,6 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     check = subparsers.add_parser("check")
     check.add_argument("--only", choices=[step.name for step in STEPS])
+    check.add_argument("--profile", choices=list(PROFILE_STEPS))
     check.add_argument("--step-timeout-seconds", type=int)
     subparsers.add_parser("list")
     subparsers.add_parser("self-check")

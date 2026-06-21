@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "loom",
+    "role-chain-check",
+    "--project-root",
+    "/Users/norven/workspace/redcap-e2e-runs/ls-006-loom-real-sample-20260621",
+    "--task-id",
+    "fixture-task"
+  ],
+  "command": "runtime/bin/redcap loom role-chain-check --project-root /Users/norven/workspace/redcap-e2e-runs/ls-006-loom-real-sample-20260621 --task-id fixture-task",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.058,
+  "executed_at": "2026-06-21T14:24:13Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-006-loom-real-project-role-chain-correct-task",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-project-role-chain-correct-task.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 1032,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-project-role-chain-correct-task.receipt.stdout.txt",
+  "stdout_sha256": "204b91702144b1c62436cf2db3c44748f7cd25d32bff44747a91fc152cca8dce"
+}

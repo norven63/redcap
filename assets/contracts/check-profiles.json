@@ -1,0 +1,86 @@
+{
+  "schema_id": "redcap-check-profiles-contract",
+  "schema_version": 1,
+  "purpose": "为 RedCap 开发和验收建立 fast、standard、release、terminal 四层检查画像，降低小任务成本，同时防止轻量检查替代发布、钩子、生命周期、知识影响和终局验收。",
+  "profiles": [
+    {
+      "id": "fast",
+      "title": "轻量检查",
+      "applies_when": [
+        "只修改文档、说明、非运行合同的文字",
+        "不涉及 runtime、hooks、project-install、release、terminal、lifecycle、knowledge、prism 或 e2e"
+      ],
+      "required_checks": [
+        "runtime/bin/redcap check --profile fast"
+      ],
+      "cannot_replace": [
+        "standard",
+        "release",
+        "terminal"
+      ]
+    },
+    {
+      "id": "standard",
+      "title": "标准运行时检查",
+      "applies_when": [
+        "修改 runtime、contracts、hooks、knowledge、self-purification、prism、loom 或 RedCap 自身逻辑",
+        "不声明发布候选或终局完成"
+      ],
+      "required_checks": [
+        "python3 -m py_compile <changed-runtime-python>",
+        "runtime/bin/redcap check --profile standard",
+        "standard 内必须包含 persona-observation-check，保证 Cap 人格候选和私有泄漏观察在常规运行时检查中触发。"
+      ],
+      "upgrade_to": [
+        "release",
+        "terminal"
+      ]
+    },
+    {
+      "id": "release",
+      "title": "发布候选检查",
+      "applies_when": [
+        "修改项目级安装、打包、发布、证据清理、公开边界或外部 E2E 缓存治理",
+        "准备把 RedCap 发布到外部项目使用"
+      ],
+      "required_checks": [
+        "runtime/bin/redcap check --profile release",
+        "release 内必须包含 persona-observation-check，保证发布候选不会跳过 Cap 人格沉淀私有边界观察。"
+      ],
+      "cannot_be_replaced_by": [
+        "fast",
+        "standard"
+      ]
+    },
+    {
+      "id": "terminal",
+      "title": "终局验收检查",
+      "applies_when": [
+        "声明 RedCap 完整复活、正式生产可用、终局父任务关闭或替代 main",
+        "写入 redcap-complete-revival verified 任务事实"
+      ],
+      "required_checks": [
+        "runtime/bin/redcap check --profile terminal",
+        "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+        "runtime/bin/redcap terminal-goal check",
+        "runtime/bin/redcap check"
+      ],
+      "cannot_be_replaced_by": [
+        "fast",
+        "standard",
+        "release"
+      ]
+    }
+  ],
+  "cache_policy": {
+    "enabled": false,
+    "future_cache_requires": [
+      "输入文件哈希",
+      "命令版本哈希",
+      "host hook 事件窗口哈希",
+      "生命周期包哈希",
+      "失败自动升级到更强画像"
+    ],
+    "reason": "当前先建立画像决策和防替代规则；未实现安全缓存前，不允许用缓存结果跳过 release 或 terminal 检查。"
+  }
+}

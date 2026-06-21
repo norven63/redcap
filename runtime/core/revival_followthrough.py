@@ -103,7 +103,13 @@ REQUIRED_EVIDENCE_CHECKS = {
 }
 SELF_PURIFICATION_ALLOWED_DECISIONS = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
 OPEN_LOOP_CLOSING_STATUSES = {"verified", "runtime-verified", "runtime-verified-manual-boundary"}
-OPEN_LOOP_OPEN_STATUSES = {"open", "runtime-gated-in-progress", "planned", "in-progress"}
+OPEN_LOOP_OPEN_STATUSES = {
+    "open",
+    "runtime-gated-in-progress",
+    "planned",
+    "in-progress",
+    "external-sample-required",
+}
 OPEN_LOOP_REQUIRED_EXIT_MARKERS = ["runtime_checks", "证据文件", "棱镜", "外部项目", "failure_backlog", "P0/P1"]
 OPEN_LOOP_REQUIRED_TRUE_RULES = [
     "new_issue_must_enter_queue",
@@ -291,10 +297,11 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
     payload = load_json(path)
     failures: list[str] = []
     closeout_blockers: list[str] = []
+    terminal_blockers: list[str] = []
     if payload.get("schema_id") != "redcap-open-loop-closure-queue":
         failures.append("open-loop 队列 schema_id 错误")
-    if payload.get("status") not in {"runtime-gated-in-progress", "verified"}:
-        failures.append("open-loop 队列 status 必须是 runtime-gated-in-progress 或 verified")
+    if payload.get("status") not in {"runtime-gated-in-progress", "verified", "verified_with_terminal_open_boundary"}:
+        failures.append("open-loop 队列 status 必须是 runtime-gated-in-progress、verified 或 verified_with_terminal_open_boundary")
     anti_rule = str(payload.get("anti_completion_rule") or "")
     if "不是 RedCap 完整复活完成证据" not in anti_rule:
         failures.append("open-loop 队列必须声明队列自身不是完整复活完成证据")
@@ -333,6 +340,8 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
             values = item.get(key)
             if not isinstance(values, list) or not values or not all(isinstance(value, str) and value.strip() for value in values):
                 failures.append(f"{item_id}: {key} 必须是非空字符串列表")
+        if status not in OPEN_LOOP_CLOSING_STATUSES and status not in OPEN_LOOP_OPEN_STATUSES:
+            failures.append(f"{item_id}: status 不在允许集合内：{status}")
         if status in OPEN_LOOP_CLOSING_STATUSES:
             evidence = item.get("verified_runtime_evidence")
             if not isinstance(evidence, list) or not evidence:
@@ -342,6 +351,8 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
                 closeout_blockers.append(f"{item_id}: P0/P1 关闭前缺少棱镜复核状态")
         elif priority in {"P0", "P1"}:
             closeout_blockers.append(f"{item_id}: {priority} 仍未 verified，当前状态 {status}")
+        if item.get("terminal_blocker") is True and status not in OPEN_LOOP_CLOSING_STATUSES:
+            terminal_blockers.append(f"{item_id}: {status}")
     closeout_allowed = open_loop_closeout_allowed(failures, closeout_blockers)
     return {
         "schema_id": "redcap-open-loop-closure-queue-check",
@@ -350,6 +361,8 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
         "closeout_allowed": closeout_allowed,
         "closeout_blockers": closeout_blockers,
         "open_p0_p1_count": len(closeout_blockers),
+        "terminal_blockers": terminal_blockers,
+        "open_terminal_blocker_count": len(terminal_blockers),
         "failures": failures,
     }
 
@@ -1091,6 +1104,9 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         failures.append("当前 open-loop 队列仍有未闭环 P0/P1，不应允许收口")
     if current_open_p0_p1 == 0 and current_open_loop.get("closeout_allowed") is not True:
         failures.append(f"当前 open-loop 队列 P0/P1 已闭环，应允许收口：{current_open_loop.get('closeout_blockers')}")
+    terminal_blockers = current_open_loop.get("terminal_blockers")
+    if not isinstance(terminal_blockers, list):
+        failures.append("当前 open-loop 队列检查必须暴露 terminal_blockers 列表")
     with tempfile.TemporaryDirectory(prefix="redcap-followthrough-") as raw:
         root = pathlib.Path(raw)
         open_loop_fixture = load_json(DEFAULT_OPEN_LOOP_QUEUE)

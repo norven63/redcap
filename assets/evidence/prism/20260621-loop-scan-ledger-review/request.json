@@ -1,0 +1,267 @@
+{
+  "task": "循环扫描 RedCap 目录结构与设计思路的问题账本评审",
+  "task_id": "20260621-loop-scan-ledger-review",
+  "title": "RedCap 循环扫描账本与解决方案设计评审",
+  "risk_level": "medium",
+  "review_mode": "design_review",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "user_intent": "Norven 授权本轮只写入生命周期包、扫描账本和棱镜评审证据；本轮只做扫描和记录账本，不执行实际修复。",
+  "main_claim": "本轮不声明 RedCap 完整复活，不声明问题已修复。目标是把 Cap 扫描发现的问题、隐患和拟定解决方案交给棱镜评审，待评审通过后写入结构化账本。",
+  "changed_reality": [
+    "本轮新增了扫描账本生命周期包，用于限定只做扫描、账本和棱镜评审证据。",
+    "本轮形成了 8 个候选问题和解决方案设计，等待棱镜评审后才写入最终账本。",
+    "本轮不执行任何修复动作，也不把扫描结果说成 RedCap 完整复活。"
+  ],
+  "target_reality": "形成结构化账本：每个问题包含证据、影响、根因假设、解决方案、不得降级/绕过/破坏整体设计的约束、棱镜评审状态和复扫状态。",
+  "known_non_goals": [
+    "不执行修复代码。",
+    "不迁移目录。",
+    "不删除证据文件。",
+    "不提交完整复活或生产可用声明。",
+    "不读取旧 RedCap 仓库。"
+  ],
+  "scan_evidence": [
+    {
+      "kind": "gate",
+      "reference": "runtime/bin/redcap gate --task '循环扫描 RedCap 目录结构和设计思路，记录问题隐患与解决方案到账本，并由棱镜评审；本轮不执行修复' --risk-level medium",
+      "summary": "门禁要求生命周期包和完整棱镜评审。"
+    },
+    {
+      "kind": "lifecycle",
+      "reference": "assets/evidence/lifecycle/20260621-loop-scan-ledger-review.json",
+      "summary": "生命周期包通过，授权范围为扫描账本和棱镜评审证据，不授权修复或完成声明。"
+    },
+    {
+      "kind": "check",
+      "reference": "runtime/bin/redcap check",
+      "summary": "全量检查失败于 knowledge-impact-trace-check；历史正向生命周期样本因最新 UserPromptSubmit 不匹配而失败。"
+    },
+    {
+      "kind": "check",
+      "reference": "runtime/bin/redcap complete-revival-check --skip-host-hook-audit",
+      "summary": "完整复活前置验收部分通过，但 terminal_completion_authorized=false，宿主钩子审计被跳过。"
+    },
+    {
+      "kind": "check",
+      "reference": "runtime/bin/redcap project-install release-check && runtime/bin/redcap project-install self-check",
+      "summary": "项目级发布安装检查通过。"
+    },
+    {
+      "kind": "check",
+      "reference": "runtime/bin/redcap loom role-chain-check --fixture && runtime/bin/redcap loom session-check --fixture",
+      "summary": "Loom 角色链和会话连续性 fixture 正负向探针通过，但输出明确不声明真实外部长期生产成熟。"
+    },
+    {
+      "kind": "check",
+      "reference": "runtime/bin/redcap self-purification check && runtime/bin/redcap knowledge-quality check",
+      "summary": "自净化和知识质量检查通过；近期证据多为公共知识与 no-persona 决策，未看到私有人格正文写入。"
+    },
+    {
+      "kind": "filesystem",
+      "reference": "du/find assets/evidence",
+      "summary": "assets/evidence 约 242M、4061 个文件；host-hooks/codex/events.jsonl 约 145M，prism/task-ledger.jsonl 约 44M。"
+    }
+  ],
+  "candidate_findings": [
+    {
+      "id": "LS-001",
+      "severity": "P0",
+      "title": "知识影响追踪的历史正向生命周期样本受最新用户提示污染",
+      "evidence": [
+        "runtime/bin/redcap check failed at knowledge-impact-trace-check",
+        "positive_20260621-rsp-10-long-task-loop-boundary expected exit 0 but got prompt_context.source_prompt_excerpt does not match latest UserPromptSubmit prompt",
+        "positive_20260621-rsp-19-cli-surface-compat expected exit 0 but got the same prompt mismatch"
+      ],
+      "impact": "全量检查会随最新用户提示变化而让历史正向样本失败，导致检查不稳定，也会干扰长任务续跑和完成证据判断。",
+      "root_cause_hypothesis": "knowledge-impact-trace-check 在回归历史 lifecycle packet 时复用了当前最新 UserPromptSubmit，而不是使用样本自己的录制提示上下文或固定事件夹具。",
+      "proposed_solution": "为历史生命周期回归引入样本级 prompt fixture 或显式 recorded_events；impact-check 调历史样本时使用样本绑定事件，而不是当前全局最新事件。保留真实当前提示校验能力，只把历史回归从当前提示状态中隔离出来。",
+      "solution_constraints": [
+        "不能关闭 source_prompt_excerpt 校验。",
+        "不能把所有历史样本改成宽松通过。",
+        "不能绕过 self-purification impact check。",
+        "应补正向历史样本和负向当前提示错配样本。"
+      ]
+    },
+    {
+      "id": "LS-002",
+      "severity": "P1",
+      "title": "完整复活前置验收通过但终局授权仍为 false",
+      "evidence": [
+        "complete-revival-check ok=true",
+        "status=partial_pass_with_host_hook_pending",
+        "terminal_completion_authorized=false",
+        "task-facts summary shows redcap-complete-revival status=in_progress"
+      ],
+      "impact": "如果汇报口径不严格，容易把前置验收或阶段基线误写成 RedCap 完整复活。",
+      "root_cause_hypothesis": "前置验收命令可返回 ok=true，同时语义字段表达终局未授权；人类汇报或自动收口若只看 ok 字段会过度声明。",
+      "proposed_solution": "账本和后续收口必须把 ok 与 terminal_completion_authorized 拆开；终局状态只允许由 task-facts verified 加专用终局验收授权共同决定。",
+      "solution_constraints": [
+        "不能降低 complete-revival-check 严格度。",
+        "不能把 partial_pass 改名为 pass。",
+        "不能让阶段验收关闭终局父任务。"
+      ]
+    },
+    {
+      "id": "LS-003",
+      "severity": "P1",
+      "title": "证据目录和运行日志存在持续膨胀风险",
+      "evidence": [
+        "assets/evidence 约 242M",
+        "assets/evidence 下约 4061 个文件",
+        "assets/evidence/host-hooks/codex/events.jsonl 约 145M",
+        "assets/evidence/prism/task-ledger.jsonl 约 44M"
+      ],
+      "impact": "长期运行会拖慢搜索、检查和打包评估，也可能把工作区推向旧 RedCap 的资产膨胀问题。",
+      "root_cause_hypothesis": "Hook 事件和棱镜任务流水采用追加式日志，但缺少明确轮转、摘要、归档和可查询索引边界。",
+      "proposed_solution": "设计证据保留策略：大日志按大小或时间轮转，生成结构化摘要索引；保留最近窗口和关键审计锚点，旧明细转入归档目录或压缩包；检查命令只读摘要索引和必要窗口。",
+      "solution_constraints": [
+        "不能删除关键审计证据。",
+        "不能让清理破坏可追溯性。",
+        "不能让发布包包含本项目自开发历史噪声。",
+        "必须保留按任务追溯的索引。"
+      ]
+    },
+    {
+      "id": "LS-004",
+      "severity": "P1",
+      "title": "全量检查在交互场景中存在重成本热点",
+      "evidence": [
+        "prism-check elapsed_seconds=234.684",
+        "advisory-stop-check elapsed_seconds=96.356",
+        "complete-revival-e2e-self-check elapsed_seconds=120.125",
+        "host-hook-audit elapsed_seconds=64.896",
+        "codex-hook-intent-judge-self-check elapsed_seconds=39.46"
+      ],
+      "impact": "常规扫描或答复前若总是跑全量检查，会拖慢任务、诱发中断，并提高误把中间状态当最终状态的风险。",
+      "root_cause_hypothesis": "全量检查聚合了重型、宿主审计和端到端自检，但缺少按任务风险分层的快速路径和明确缓存有效性策略。",
+      "proposed_solution": "保留全量检查作为发布/终局路径，同时定义扫描账本任务的分层检查包：快速基线、重型审计、终局审计三类；每类记录缓存时间、适用范围和必须重跑条件。",
+      "solution_constraints": [
+        "不能取消全量检查。",
+        "不能用缓存伪造新结果。",
+        "不能把快速检查结果写成终局验收。",
+        "必须在账本中标注检查层级。"
+      ]
+    },
+    {
+      "id": "LS-005",
+      "severity": "P2",
+      "title": "自净化有公共知识沉淀，但私有人格沉淀未见近期写入",
+      "evidence": [
+        "self-purification check ok",
+        "knowledge-quality check ok",
+        "assets/evidence/self-purification 下有近期候选和 persona-distillation-decision",
+        "近 12 小时 /Users/norven/.cap 未发现文件变化",
+        "persona decision 多为 not_persona 或 no_persona_update"
+      ],
+      "impact": "工程经验沉淀可运行，但用户关心的 Cap 私有人格沉淀是否会在合适时触发仍缺真实写入证明。",
+      "root_cause_hypothesis": "当前机制刻意保护私有人格边界，默认不自动写公共仓库；但缺少私有沉淀候选队列、人工确认或私有仓库写入的可观测闭环。",
+      "proposed_solution": "保留不自动写公共仓库的边界；新增私有人格候选账本和人工确认入口，只有明确人格内容且通过私有边界检查后，才写入 /Users/norven/.cap 或记录 no_persona_update。",
+      "solution_constraints": [
+        "不能把私人人格正文写入公共 RedCap 仓库。",
+        "不能自动改写 $CAP_HOME/identity.md。",
+        "不能把所有工程经验误判成人格沉淀。",
+        "必须保留 no_persona 的理由。"
+      ]
+    },
+    {
+      "id": "LS-006",
+      "severity": "P2",
+      "title": "Loom 角色链和会话连续性通过 fixture，但真实外部项目长期样本未证明",
+      "evidence": [
+        "loom role-chain-check --fixture ok",
+        "loom session-check --fixture ok",
+        "输出 scope=当前 fixture/runtime evidence loop；不声明真实外部长期生产成熟"
+      ],
+      "impact": "Loom 机制有机器检查能力，但不能直接证明真实项目开发中多角色独立 AI 长链路已成熟。",
+      "root_cause_hypothesis": "当前验收主要覆盖 fixture 和 runtime evidence loop，缺少长周期真实外部项目部署样本作为成熟度证明。",
+      "proposed_solution": "在后续 E2E 中增加真实项目级 Loom 样本：独立角色、session_id 接续、上下游交付、打回循环和测试收口均由项目 .redcap 记录；本轮只记录为成熟度风险，不执行 E2E。",
+      "solution_constraints": [
+        "不能把 fixture 通过写成真实生产成熟。",
+        "不能改弱 Loom 角色隔离要求。",
+        "不能让 Cap 单体代替 Loom 角色链完成项目开发。"
+      ]
+    },
+    {
+      "id": "LS-007",
+      "severity": "P2",
+      "title": "项目级发布安装检查通过，但生产投放仍依赖非跳过宿主审计和真实项目验收",
+      "evidence": [
+        "project-install release-check ok",
+        "project-install self-check ok",
+        "complete-revival-check 使用 --skip-host-hook-audit 返回 partial_pass_with_host_hook_pending"
+      ],
+      "impact": "发布包结构可用，但不能仅凭 package/init 自检判断可投入工程生产。",
+      "root_cause_hypothesis": "安装包自检验证包结构和 init 行为，生产投放还需要宿主钩子真实生效、项目隔离和 E2E 工作流验收。",
+      "proposed_solution": "发布口径拆为 package_ready、host_hook_verified、project_e2e_verified 三个等级；只有三者都满足，才允许进入生产投放候选。",
+      "solution_constraints": [
+        "不能否定已通过的发布安装检查。",
+        "不能把安装自检扩大解释为生产可用。",
+        "不能跳过宿主钩子真实审计。"
+      ]
+    },
+    {
+      "id": "LS-008",
+      "severity": "P1",
+      "title": "active goal 续跑授权此前没有进入 UserPromptSubmit 判定链路",
+      "evidence": [
+        "连续三轮只看到旧提示 '还有其他问题吗' 且 authorized_scope=answer_only",
+        "用户普通消息授权后 latest UserPromptSubmit 更新为 implementation directive",
+        "生命周期包写入随后成功"
+      ],
+      "impact": "自动续跑 active goal 时，真实目标可能被宿主钩子误判为只回答，导致长任务无法写账本或证据。",
+      "root_cause_hypothesis": "codex_internal_context source=goal 未作为普通用户提示进入 UserPromptSubmit 事件，当前 PreToolUse 只信最新普通提示。",
+      "proposed_solution": "设计 active goal 续跑授权桥接：当目标续跑由 Codex goal 系统触发时，生成只读授权摘要供钩子校验；若无法安全桥接，则明确要求普通用户授权并记录存盘点。",
+      "solution_constraints": [
+        "不能让任意内部上下文获得写权限。",
+        "不能绕过 UserPromptSubmit 的安全边界。",
+        "必须保留人工授权降级路径。",
+        "必须能区分 goal 续跑和模型自发扩权。"
+      ]
+    }
+  ],
+  "questions_for_prism": [
+    "以上 8 个问题是否都是当前扫描账本应记录的问题，还是有不应入账或需要改级别的项？",
+    "每个 proposed_solution 是否满足不降级、不绕过、不破坏 RedCap 整体设计，并且不会引入明显新问题？",
+    "是否还有当前目录结构、设计思路、运行证据中遗漏的问题或隐患，需要新增到账本？",
+    "哪些解决方案必须在后续修复阶段先做，哪些只是成熟度跟踪，不应阻塞当前扫描账本阶段？"
+  ],
+  "required_output_contract": {
+    "schema_id": "prism-review",
+    "required_fields": [
+      "provider",
+      "verdict",
+      "summary",
+      "concerns",
+      "recommendations"
+    ],
+    "allowed_verdicts": [
+      "approve",
+      "approve_with_concerns",
+      "request_changes",
+      "block"
+    ]
+  },
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review current RedCap scan findings and proposed solution designs. Do not implement fixes.",
+    "allowed_paths": [
+      "assets/evidence/lifecycle/20260621-loop-scan-ledger-review.json",
+      "assets/contracts/directory-structure.json",
+      "assets/contracts/process-artifact-placement.json",
+      "assets/contracts/self-purification.json",
+      "assets/contracts/loom-role-chain-e2e.json",
+      "assets/contracts/loom-session-continuity.json",
+      "runtime/core/development_lifecycle.py",
+      "runtime/core/knowledge_gateway.py",
+      "runtime/core/loom_runtime.py",
+      "runtime/core/project_install.py",
+      "runtime/core/check_runner.py"
+    ],
+    "max_files": 12,
+    "max_bytes_per_file": 100000,
+    "max_total_bytes": 420000
+  }
+}

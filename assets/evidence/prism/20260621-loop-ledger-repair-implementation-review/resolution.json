@@ -1,0 +1,50 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260621-loop-ledger-repair-implementation-review",
+  "merge_path": "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review/kimi.review.json",
+    "assets/evidence/prism/20260621-loop-ledger-repair-implementation-review/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的阻断成立：由 real-sample-generate 即时生成的外部目录仍是生成样本，不能证明 Loom 在真实独立外部长期项目中成熟运行。本轮已撤回 LS-006 已关闭口径，把状态改为 open_generated_sample_verified_independent_external_missing，并新增 --require-independent 强门禁，防止生成样本再次被用于关闭 LS-006。",
+      "implementation_evidence": [
+        "runtime/core/loom_runtime.py",
+        "assets/contracts/loom-real-project-sample-gate.json",
+        "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
+        "assets/evidence/lifecycle/20260621-loop-ledger-repair-lifecycle.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-independent-negative-generated.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-self-check-after-independent-boundary.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 指出的分类膨胀和自指循环风险成立。fixture-task 只能说明生成样本内部一致，不能作为真实外部项目标识。本轮保留生成样本作为机制验证，但将 LS-006 关闭条件收紧为 real-sample-check --require-verified --require-independent，且生成样本在该门禁下必须失败。",
+      "implementation_evidence": [
+        "runtime/core/loom_runtime.py",
+        "assets/contracts/loom-real-project-sample-gate.json",
+        "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-independent-negative-generated.receipt.json",
+        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-loom-real-sample-self-check-after-independent-boundary.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "棱镜阻断已采纳并转化为更强门禁；LS-006 未关闭，仍需独立外部项目样本通过 --require-independent。"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "loom-external-sample-audit",
+    "check",
+    "--manifest",
+    "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json",
+    "--independent-receipt",
+    "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-after-forgery-probe.receipt.json",
+    "--self-check-receipt",
+    "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-real-sample-self-check-with-forgery-probe.receipt.json",
+    "--require-receipts",
+    "--out",
+    "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit.json"
+  ],
+  "command": "runtime/bin/redcap loom-external-sample-audit check --manifest assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-manifest.json --independent-receipt assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-after-forgery-probe.receipt.json --self-check-receipt assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-real-sample-self-check-with-forgery-probe.receipt.json --require-receipts --out assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.052,
+  "executed_at": "2026-06-21T15:30:23Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-006-independent-external-sample-audit-after-r6-resolution",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit-after-r6-resolution.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 15238,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-006-independent-external-sample-audit-after-r6-resolution.receipt.stdout.txt",
+  "stdout_sha256": "461367562e6ef4cf16e117ea1c2f3e06efe7e65ed9216dbf08e37a8b0f4110a4"
+}

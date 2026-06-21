@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260621-loop-ledger-repair-implementation-review-r3",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r3",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-21T14:56:19+00:00",
+  "task_started_at": "2026-06-21T14:56:19+00:00",
+  "updated_at": "2026-06-21T14:58:45+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "ba3a0b74-b7a8-48ed-812d-e9417470942f",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r3/review.claude-code.json"
+    },
+    "kimi": {
+      "session_handle": "session_36bf60be-376a-4122-ad42-25c2160832af",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260621-loop-ledger-repair-implementation-review-r3/review.kimi.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

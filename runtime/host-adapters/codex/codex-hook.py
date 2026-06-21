@@ -192,8 +192,21 @@ def utf8_fingerprint_bytes(text: str) -> bytes:
     return text.encode("utf-8", errors="backslashreplace")
 
 
+def public_evidence_replacements() -> dict[str, str]:
+    return {
+        "/" + "/".join(["Users", "norven", ".cap", "identity.md"]): "$CAP_HOME/identity.md",
+    }
+
+
+def redact_public_evidence_text(text: str) -> str:
+    redacted = text
+    for fragment, replacement in public_evidence_replacements().items():
+        redacted = redacted.replace(fragment, replacement)
+    return redacted
+
+
 def safe_text(value: str) -> str:
-    return utf8_fingerprint_bytes(value).decode("utf-8")
+    return redact_public_evidence_text(utf8_fingerprint_bytes(value).decode("utf-8"))
 
 
 def json_safe(value: Any) -> Any:
@@ -1822,11 +1835,15 @@ def cmd_event(args: argparse.Namespace) -> int:
             if not prompt_marker_fresh:
                 same_session_continuation_authorized = prompt_marker_can_authorize_same_session_continuation(prompt_marker, payload)
                 if not same_session_continuation_authorized:
-                    intent_deny_reason = (
-                        "RedCap 最新用户提示标记缺失、过期或不属于当前会话；"
-                        "写入动作需要新鲜 UserPromptSubmit（用户提示提交事件）标记，"
-                        "或同会话已授权实施/完成意图的续跑标记。"
-                    )
+                    goal_continuation_authorization = active_goal_continuation_authorization(payload)
+                    if goal_continuation_authorization.get("authorized") is True:
+                        same_session_continuation_authorized = True
+                    else:
+                        intent_deny_reason = (
+                            "RedCap 最新用户提示标记缺失、过期或不属于当前会话；"
+                            "写入动作需要新鲜 UserPromptSubmit（用户提示提交事件）标记，"
+                            "或同会话已授权实施/完成意图的续跑标记。"
+                        )
             elif not prompt_intent_allows_mutation(prompt_marker):
                 intent = effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else {}
                 scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
@@ -2579,6 +2596,38 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("active goal continuation should not deny ordinary mutation")
         if goal_allow_marker.get("prompt_intent_llm_attempted") is not False:
             failures.append("active goal continuation should not call LLM after explicit goal authorization")
+
+        stale_goal_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        stale_goal_marker["recorded_at"] = "2000-01-01T00:00:00+00:00"
+        write_json_atomic(evidence_dir / "latest-UserPromptSubmit.json", stale_goal_marker)
+        stale_goal_session_marker = evidence_dir / "latest-UserPromptSubmit.goal-session-allow.json"
+        write_json_atomic(stale_goal_session_marker, stale_goal_marker)
+        stale_goal_allow = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "goal-session-allow",
+                "turn_id": "goal-session-stale-tool",
+                "transcript_path": str(goal_transcript),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-goal-stale-allow",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if stale_goal_allow.returncode != 0:
+            failures.append(f"stale goal continuation PreToolUse failed: {stale_goal_allow.stderr or stale_goal_allow.stdout}")
+        stale_goal_marker_result = load_self_check_marker(evidence_dir, "PreToolUse")
+        stale_goal_auth = stale_goal_marker_result.get("active_goal_continuation_authorization")
+        if stale_goal_marker_result.get("latest_prompt_marker_fresh") is not False:
+            failures.append("stale goal continuation fixture should see a stale latest prompt marker")
+        if not (isinstance(stale_goal_auth, dict) and stale_goal_auth.get("authorized") is True):
+            failures.append("stale active goal continuation should authorize implementation objective")
+        if stale_goal_marker_result.get("same_session_continuation_authorized") is not True:
+            failures.append("stale active goal continuation should set same_session_continuation_authorized")
+        if stale_goal_marker_result.get("dangerous_command_denied") is not False:
+            failures.append("stale active goal continuation should not deny ordinary mutation")
 
         ordinary_review_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",

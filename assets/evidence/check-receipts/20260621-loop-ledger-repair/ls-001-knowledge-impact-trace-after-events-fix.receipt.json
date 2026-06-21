@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check",
+    "--only",
+    "knowledge-impact-trace-check"
+  ],
+  "command": "runtime/bin/redcap check --only knowledge-impact-trace-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.598,
+  "executed_at": "2026-06-21T14:05:39Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-001-knowledge-impact-trace-after-events-fix",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-001-knowledge-impact-trace-after-events-fix.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 271,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-001-knowledge-impact-trace-after-events-fix.stdout.txt",
+  "stdout_sha256": "5a8f77c9db3976122a547dd23a48dc985ede895d8f39b442b0a0f3840c35e4da"
+}

@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "check-profiles",
+    "self-check"
+  ],
+  "command": "runtime/bin/redcap check-profiles self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.055,
+  "executed_at": "2026-06-21T14:13:59Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ls-004-check-profiles-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profiles-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 71,
+  "stdout_path": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-004-check-profiles-self-check.stdout.txt",
+  "stdout_sha256": "b347724aad95b0b301ddfe4ba13d4e3fb1cb05e267fd17719b73eaefa21f51dd"
+}

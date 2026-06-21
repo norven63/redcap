@@ -1,10 +1,10 @@
 {
   "schema_id": "redcap-known-issues-queue",
-  "status": "terminal_verified_queue",
+  "status": "verified_queue_terminal_open",
   "terminal_goal": {
     "id": "redcap-complete-revival",
-    "state": "closed",
-    "note": "第 5、6 项已在终局收尾批次执行并验证；终局父任务允许由专用验收检查关闭。"
+    "state": "open",
+    "note": "本队列第 1-6 项已验证，但这只表示旧已知问题批次闭环；RedCap 完整复活终局仍由 terminal-goal、complete-revival-check 和当前开放边界共同决定。"
   },
   "items": [
     {

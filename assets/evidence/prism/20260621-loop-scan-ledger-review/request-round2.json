@@ -1,0 +1,99 @@
+{
+  "task": "循环扫描账本第二轮窄化评审",
+  "task_id": "20260621-loop-scan-ledger-review",
+  "title": "RedCap 扫描账本关键争议复评",
+  "risk_level": "medium",
+  "review_mode": "design_review",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "user_intent": "只做扫描和记录账本，不执行修复。请审查候选问题和解决方案是否应该入账。",
+  "main_claim": "第一轮 Claude Code 评审认为账本草案存在三类问题：LS-005 可能是观察项而非问题，LS-001 与 LS-008 根因应合并或交叉引用，P0/P1 需要源码证据。Cap 已补读 check_runner.py、development_lifecycle.py、knowledge_gateway.py，确认 LS-001 的代码路径确实默认读取全局最新 UserPromptSubmit。",
+  "changed_reality": [
+    "Cap 已补读 runtime/core/check_runner.py，确认全量检查的 knowledge-impact-trace-check 调用 runtime/bin/redcap knowledge-gateway impact-check。",
+    "Cap 已补读 runtime/core/knowledge_gateway.py，确认 run_lifecycle_regression_probes 调用 lifecycle check 时没有传入样本级 events 文件。",
+    "Cap 已补读 runtime/core/development_lifecycle.py，确认 lifecycle check 默认读取 assets/evidence/host-hooks/codex/events.jsonl 中最新 UserPromptSubmit。"
+  ],
+  "target_reality": "请判断修正后的账本原则是否成立：LS-001 和 LS-008 应合并为同根因组；LS-005 应改为观察项；P0/P1 发现必须绑定源码证据；其余发现可以作为问题或成熟度风险入账。",
+  "candidate_decisions_for_review": [
+    {
+      "id": "LS-001+LS-008",
+      "decision": "merge_root_cause_group",
+      "severity": "P0",
+      "reason": "两者都与 UserPromptSubmit 全局最新事件和 active goal/历史样本上下文错配有关；解决方案必须统一设计，避免一边修历史样本、一边破坏续跑授权。"
+    },
+    {
+      "id": "LS-005",
+      "decision": "downgrade_to_observation",
+      "severity": "OBS",
+      "reason": "当前证据显示自净化和知识质量通过，persona decision 多为 not_persona/no_persona_update，符合私有人格边界；缺少旧仓库或触发频率基线，不能直接判为待修复问题。"
+    },
+    {
+      "id": "LS-002",
+      "decision": "keep_as_boundary_risk",
+      "severity": "P1",
+      "reason": "complete-revival-check ok=true 但 terminal_completion_authorized=false，必须防止阶段通过被写成完整复活。"
+    },
+    {
+      "id": "LS-003",
+      "decision": "keep_as_problem",
+      "severity": "P1",
+      "reason": "assets/evidence 存在大日志与大量文件，属于旧 RedCap 资产膨胀风险的当前证据。"
+    },
+    {
+      "id": "LS-004",
+      "decision": "keep_as_operational_risk",
+      "severity": "P1",
+      "reason": "全量检查多个步骤耗时明显，影响交互型循环任务推进；解决方案应是分层检查，不是取消全量检查。"
+    },
+    {
+      "id": "LS-006",
+      "decision": "keep_as_maturity_risk",
+      "severity": "P2",
+      "reason": "Loom fixture 正负向通过，但真实外部长期项目样本未证明。"
+    },
+    {
+      "id": "LS-007",
+      "decision": "keep_as_release_boundary_risk",
+      "severity": "P2",
+      "reason": "发布安装检查通过，但生产投放还需要非跳过宿主审计和项目级 E2E。"
+    }
+  ],
+  "required_output_contract": {
+    "schema_id": "prism-review",
+    "strict_json_only": true,
+    "required_fields": [
+      "provider",
+      "verdict",
+      "confidence",
+      "reality_delta",
+      "main_concern",
+      "top_risks",
+      "missing_evidence",
+      "minimum_fix",
+      "anti_loop_signal",
+      "user_intent_alignment"
+    ],
+    "allowed_verdicts": [
+      "pass",
+      "concern",
+      "block"
+    ]
+  },
+  "output_instruction": "只输出一个合法 JSON 对象，不要使用 Markdown，不要输出解释性前后缀，不要把 JSON 放在代码块中。",
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "Review narrow revised scan-ledger decisions only. Do not implement fixes.",
+    "allowed_paths": [
+      "assets/evidence/prism/20260621-loop-scan-ledger-review/request.json",
+      "assets/evidence/prism/20260621-loop-scan-ledger-review/claude-code.review.json",
+      "runtime/core/check_runner.py",
+      "runtime/core/knowledge_gateway.py",
+      "runtime/core/development_lifecycle.py"
+    ],
+    "max_files": 5,
+    "max_bytes_per_file": 100000,
+    "max_total_bytes": 300000
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schema_id": "redcap-persona-observation-contract",
+  "version": 1,
+  "purpose": "把 LS-005 的保留观察从人工账本备注升级为可执行观察机制：既不误判正常隐私边界，也能在私人人格候选失控、公共泄漏或任务后沉淀证据缺口扩大时升级为问题。",
+  "scope": {
+    "evidence_root": "assets/evidence/self-purification",
+    "public_leak_scan": "runtime/bin/redcap soul-load public-leak-scan",
+    "does_not_read_private_identity_body": true,
+    "does_not_mutate_identity": true
+  },
+  "gap_map": {
+    "covered_by_self_purification_loop": [
+      "单次 run-loop 必须生成知识检索、候选、裁决和人格边界证据。",
+      "负向探针能拦截缺少候选裁决、缺少知识影响、私人人格正文泄漏、缺少历史自然触发样本。",
+      "合同检查能确认 Cap 人格沉淀禁止写入公共知识库。"
+    ],
+    "added_by_persona_observation": [
+      "跨任务扫描 self-purification 证据目录，发现候选文件存在但 persona 边界或 resolution 缺失。",
+      "私人人格候选、persona_signal 候选或 private/cap-private 候选缺少人格裁决时升级为 problem。",
+      "公共候选缺少 persona 边界或 resolution 时标记 warning，进入观察但不阻断全量检查。",
+      "复用公共泄漏扫描，任何私有身份正文或凭据泄漏命中都升级为 problem。"
+    ]
+  },
+  "upgrade_rules": [
+    {
+      "id": "private-candidate-missing-persona-decision",
+      "severity": "problem",
+      "condition": "candidate.privacy_class in ['private', 'cap-private'] or candidate.trigger == 'persona_signal'",
+      "required_evidence": "persona-distillation-decision.json exists and records a non-public decision without private body"
+    },
+    {
+      "id": "persona-private-body-leak",
+      "severity": "problem",
+      "condition": "persona decision says private_body_written is not false or contains forbidden private fields",
+      "required_evidence": "check fails immediately"
+    },
+    {
+      "id": "public-leak-scan-hit",
+      "severity": "problem",
+      "condition": "public leak scan reports any hit",
+      "required_evidence": "check fails immediately"
+    },
+    {
+      "id": "public-candidate-missing-boundary",
+      "severity": "warning",
+      "condition": "public candidate exists but persona boundary or runner resolution is missing",
+      "required_evidence": "record observation without closing LS-005"
+    }
+  ],
+  "exit_policy": {
+    "default_fail_on": "problem",
+    "warning_exit_code": 0,
+    "problem_exit_code": 1
+  }
+}
