@@ -623,6 +623,32 @@
         "workspace_wide_receipt": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-workspace-wide-redcap-evidence-scan.receipt.json",
         "workspace_wide_result": "只发现 /Users/norven/workspace/redcap-e2e-runs 下的 RedCap 自生成 E2E 运行和 LS-006 样本；这些证据可证明短期外部 E2E，但不能替代长期第三方生产项目样本。"
       },
+      "fixed_plan": {
+        "status": "ready_for_preflight",
+        "plan_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+        "contract_path": "assets/contracts/complete-revival-e2e-acceptance-design.json#ol11_trpg_longrun_external_sample",
+        "evidence_schema_path": "assets/contracts/ol11-trpg-longrun-e2e-evidence-schema.json",
+        "demand_provenance_path": "assets/evidence/ol11/trpg-demand-provenance.json",
+        "pre_execution_prism_review": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/merge.json",
+        "pre_execution_prism_resolution": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/resolution.json",
+        "blocked_by_prism": false,
+        "demand_package": "TRPG 社群与活动协作平台；Cap 只向独立开发 AI 提供需求和验收目标，不暴露旧 TRPG 源码或现成答案。",
+        "execution_boundary": "允许在用户明确启动 OL-11 时执行正式预检和完整 OL-11 E2E；完整样本通过前禁止关闭本条，禁止把短演练当成长期样本。",
+        "required_before_execution": [
+          "runtime/bin/redcap ol11 plan-check 通过",
+          "runtime/bin/redcap ol11 self-check 通过",
+          "runtime/bin/redcap ol11 trpg-carrier-dry-run --work-root <外部目录> 通过",
+          "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <外部目录> 通过",
+          "runtime/bin/redcap project-install production-readiness-check 通过",
+          "棱镜阻塞处理记录通过 runtime/prism/bin/prism resolution-check"
+        ],
+        "minimum_fixes_from_prism": [
+          "补齐 R2-01、R2-02、R2-03 的机器验收证据引用，避免把方案完成误当成执行就绪。",
+          "提供 Codex CLI 单会话短承载预检，证明 Hook、session_id 和角色证据采集可用。",
+          "提供 TRPG 固定需求包来源证明和开发 AI 不读旧源码的边界证明。",
+          "定义并验证机器可检查的 OL-11 证据结构合同。"
+        ]
+      },
       "closure_note": {
         "current_state": "本条已入队且已接入终局阻断，但样本本身尚未取得，不能关闭。",
         "not_claimed": [

@@ -58,6 +58,13 @@ IMPLEMENTATION_MARKERS = {
     "做成",
     "编成",
     "编程",
+    "编写",
+    "写入",
+    "写好",
+    "写完",
+    "固化",
+    "落盘",
+    "沉淀",
     "新分支",
     "修改",
     "改掉",
@@ -341,6 +348,13 @@ AWARENESS_CONFIRMATION_ACTION_PATTERNS = [
 ]
 AWARENESS_CONFIRMATION_ACTION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in AWARENESS_CONFIRMATION_ACTION_PATTERNS]
 
+DOCUMENT_WRITE_AUTHORITY_PATTERNS = [
+    r"(?:编写|写入|写好|写完|固化|落盘|沉淀|整理成|设计好).{0,32}(?:方案|文档|合同|工作流|手册|计划|测试方案|需求文档|架构文档)",
+    r"(?:方案|文档|合同|工作流|手册|计划|测试方案|需求文档|架构文档).{0,32}(?:写入|固化|落盘|沉淀|编写|写好|写完)",
+    r"(?:只需要|仅需要|本次只需要).{0,24}(?:编写|写入|写好|写完|固化|落盘|沉淀).{0,32}(?:方案|文档|合同|工作流|手册|计划)",
+]
+DOCUMENT_WRITE_AUTHORITY_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in DOCUMENT_WRITE_AUTHORITY_PATTERNS]
+
 
 def normalize_prompt_text(value: str) -> str:
     return " ".join(value.casefold().split())
@@ -371,7 +385,23 @@ def prompt_is_status_confirmation_question(prompt: str) -> bool:
 def prompt_is_pre_execution_discussion(prompt: str) -> bool:
     if any(pattern.search(prompt) for pattern in EXECUTION_AFTER_DISCUSSION_REGEXES):
         return False
+    if prompt_has_document_write_authority(prompt):
+        return False
     return any(pattern.search(prompt) for pattern in PRE_EXECUTION_DISCUSSION_REGEXES)
+
+
+def prompt_has_document_write_authority(prompt: str) -> bool:
+    """Return true for explicit requests to write design/doc/contract artifacts.
+
+    This is deliberately narrower than generic "discuss a plan" language: it
+    only fires when the user asks for a concrete file-like deliverable. It lets
+    "write the plan, but do not run E2E" authorize document edits without
+    weakening the guard that keeps pure feasibility questions answer-only.
+    """
+    normalized = normalize_prompt_text(prompt)
+    if any(marker in normalized for marker in ["不要修改", "不要改", "不修改", "不改", "只回答", "仅回答"]):
+        return False
+    return any(pattern.search(prompt) for pattern in DOCUMENT_WRITE_AUTHORITY_REGEXES)
 
 
 def prompt_is_meta_clarification_question(prompt: str) -> bool:
@@ -422,6 +452,8 @@ def prompt_has_directive_authority(prompt: str) -> bool:
     question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
     if prompt_is_pre_execution_discussion(prompt):
         return False
+    if prompt_has_document_write_authority(prompt):
+        return True
     if prompt_has_explicit_action_question(prompt):
         return True
     if prompt_is_status_confirmation_question(prompt):

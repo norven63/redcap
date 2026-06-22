@@ -1,0 +1,104 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260622-ol11-longrun-resume-finalization",
+  "fsm_state": "PRISM_REVIEW",
+  "requirement_review": {
+    "user_intent": "继续 active goal，把因需要真实长期外部项目样本而阻塞的问题实际解决；不能用文档、声明或阶段状态替代完成。",
+    "target_reality": "OL-11 E2E 已经执行并生成大量外部项目证据，但最终收口被硬超时截断；本轮要补既有样本续接收口能力，完成客观证据、最终评审、完成标记和账本判断。",
+    "non_goals": [
+      "不重跑完整目标项目开发",
+      "不删除既有 E2E 证据",
+      "不放宽 1800 秒硬超时",
+      "不把工程试用标记说成 RedCap 完整复活",
+      "不让 Cap 直接替 Loom 角色开发目标业务"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "所有源码改动保留在当前工作区；若续接入口验证失败，不更新 OL-11 为 verified，只保留失败证据和待修复问题。",
+    "verification_plan": [
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/host-adapters/codex/codex-hook.py",
+      "runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+      "runtime/bin/redcap complete-revival-e2e finalize-existing --project <OL-11 sample project> --direction-file assets/evidence/ol11/trpg-fixed-demand-package.md --timeout-seconds 900",
+      "runtime/bin/redcap complete-revival-e2e self-check",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified"
+    ]
+  },
+  "prism_review": {
+    "required": true,
+    "scope": "评审既有样本续接收口是否正面解决最终超时截断、交互覆盖不足、受控失败回流边界披露和 active goal 续跑授权问题。",
+    "planned_request": "assets/evidence/prism/20260622-ol11-longrun-resume-finalization/request.json",
+    "planned_session": "assets/evidence/prism/20260622-ol11-longrun-resume-finalization/session.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "继续 active goal：解决 OL-11 因需要真实长期外部项目样本而阻塞的问题，允许写入 RedCap 修复、生命周期包、棱镜评审证据和 E2E 续接收口实现，直至问题真实解决并验证。",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation",
+    "active_goal": "解决真实长期外部项目样本阻塞项"
+  },
+  "task_body": {
+    "requested_outcome": "新增既有 OL-11 样本续接收口能力，补齐最终验收缺口，并用真实样本执行验证。",
+    "primary_deliverable": "finalize-existing 命令、交互状态变更探针、完成标记边界披露、续接运行证据和阻塞项状态判断。",
+    "acceptance_criteria": [
+      "续接入口不得重建或删除外部项目。",
+      "续接入口必须拒绝缺少 codex-run.json 或 Loom 角色证据的项目。",
+      "浏览器状态变更探针必须证明真实点击后文本、DOM 或 localStorage 至少一项发生可解释变化，且无控制台错误和页面错误。",
+      "completion-marker-preview 和 completion-marker 必须披露受控失败回流演练边界。",
+      "最终棱镜必须重新合并两个提供方结果；非 pass 不能写 completion-marker。",
+      "验证失败时必须留下结构化失败原因，不得更新 OL-11 为通过。"
+    ],
+    "status": "planned",
+    "evidence_kind": "code-and-review",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/host-adapters/codex/codex-hook.py",
+      "assets/evidence/prism/20260622-ol11-longrun-resume-finalization/request.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "普通 run 入口每次会 prepare_project 并删除同名项目，不能用于既有样本续接。",
+        "最终收口已有大量可复用证据，重跑完整 E2E 会增加无限循环风险。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "/Users/norven/workspace/redcap-production-samples/ol11-trpg-longrun-sample-run2"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "当前任务仍是 OL-11 阻塞项关闭前的执行阶段，不得声明 RedCap 完整复活。"
+      ],
+      "evidence": [
+        "assets/contracts/open-loop-closure-queue.json#OL-11"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "最终棱镜 concern 必须通过新增客观证据或边界披露处理，不能只补顶层 JSON。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-production-samples/ol11-trpg-longrun-sample-run2/redcap-e2e-ol-11-trpg-固定需求包-开发一个本地可运行的-trpg-社群与/.redcap/evidence/e2e/final-prism-review/kimi.review.json",
+        "/Users/norven/workspace/redcap-production-samples/ol11-trpg-longrun-sample-run2/redcap-e2e-ol-11-trpg-固定需求包-开发一个本地可运行的-trpg-社群与/.redcap/evidence/e2e/final-prism-review/claude-code.review.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "INTAKE",
+    "to": "PRISM_REVIEW",
+    "evidence": [
+      "gate_required_or_optional"
+    ]
+  },
+  "implementation_evidence": [],
+  "verification_evidence": [],
+  "completion_claim": {
+    "present": false
+  }
+}

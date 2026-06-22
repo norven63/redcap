@@ -258,9 +258,11 @@ def build_judge_prompt(user_prompt: str, deterministic: dict[str, str]) -> str:
             "answer_only: user asks for explanation, status, or conceptual answer; no tool action required.",
             "review_only: user asks to inspect, diagnose, audit, quote, or show code; read-only diagnostic evidence may be enough.",
             "implementation: user asks to change code, run a remediation, upgrade, build, fix, commit, push, create, move, or otherwise alter state.",
+            "Writing or updating design documents, plans, contracts, workflow docs, ledgers, or other repository files is implementation because it mutates files.",
             "completion: user explicitly asks to close out or claim done after verification.",
             "Quoted words like `commit`, `push`, or '执行词' do not authorize execution by themselves.",
             "A question about whether a previous or future change takes effect does not authorize a new mutation by itself.",
+            "If the user explicitly asks to write/finalize/solidify a plan or document while forbidding tests or runtime execution, classify as implementation and preserve the no-test boundary.",
             "Hybrid prompts that ask to explain and then fix/commit are implementation.",
             "If uncertain between answer_only and implementation, choose implementation with low confidence.",
         ],
@@ -543,6 +545,33 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     )
     if pre_execution["prompt_intent"].get("authorized_scope") != "answer_only":
         failures.append("pre-execution feasibility discussion should remain answer_only")
+    write_plan_no_e2e = classify_with_policy(
+        "我赞同你把这个测试方案固化下来，而且是作为RedCap自身开发工作流中的重要环节。你可以先设计好这份测试方案，然后再写入到RedCap自身开发的工作流中。最后，本次只需要推进并停留在编写完成方案中，但不要实际执行测试动作。",
+        llm_policy="off",
+        provider=DEFAULT_PROVIDER,
+        fallback_provider=None,
+        timeout_seconds=1,
+    )
+    if write_plan_no_e2e["prompt_intent"].get("authorized_scope") != "implementation":
+        failures.append("writing and solidifying a plan while forbidding E2E execution should authorize document mutation")
+    short_write_plan_no_e2e = classify_with_policy(
+        "本轮只编写并固化测试方案，不实际执行 E2E 测试。",
+        llm_policy="off",
+        provider=DEFAULT_PROVIDER,
+        fallback_provider=None,
+        timeout_seconds=1,
+    )
+    if short_write_plan_no_e2e["prompt_intent"].get("authorized_scope") != "implementation":
+        failures.append("short write-plan-no-e2e prompt should authorize implementation")
+    feasibility_only_no_e2e = classify_with_policy(
+        "你这轮只需要评估这个方案方向是否可行，并且不要实际执行 E2E 测试。",
+        llm_policy="off",
+        provider=DEFAULT_PROVIDER,
+        fallback_provider=None,
+        timeout_seconds=1,
+    )
+    if feasibility_only_no_e2e["prompt_intent"].get("authorized_scope") != "answer_only":
+        failures.append("feasibility-only no-e2e prompt should remain answer_only")
     status_question = classify_with_policy(
         "所以，你有详细的设计方案并去执行落地了吗？",
         llm_policy="off",

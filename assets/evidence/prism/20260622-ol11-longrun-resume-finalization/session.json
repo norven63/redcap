@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260622-ol11-longrun-resume-finalization",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260622-ol11-longrun-resume-finalization",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-22T10:49:38+00:00",
+  "task_started_at": "2026-06-22T10:49:38+00:00",
+  "updated_at": "2026-06-22T10:57:59+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "bdcd795d-e718-4206-924f-677c3389025c",
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "task total timeout exhausted"
+  }
+}

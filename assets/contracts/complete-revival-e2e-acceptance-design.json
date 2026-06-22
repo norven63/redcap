@@ -81,6 +81,60 @@
         ],
         "observer_boundary": "该验证器只读取 prune-runs 结果、真实进程状态和目录存在性，不导入被测运行器模块；运行结果必须记录独立 Python 进程的 pid、ppid、argv、executable 与 ps 快照；它不替代 OL-01 完整外部 E2E，只作为进入 OL-01 前的独立性准入证据。"
     },
+    "ol11_trpg_longrun_external_sample": {
+        "status": "ready_for_preflight",
+        "plan_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+        "evidence_schema_path": "assets/contracts/ol11-trpg-longrun-e2e-evidence-schema.json",
+        "demand_provenance_path": "assets/evidence/ol11/trpg-demand-provenance.json",
+        "pre_execution_prism_review": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/merge.json",
+        "pre_execution_prism_resolution": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/resolution.json",
+        "execution_boundary": "允许在用户明确启动 OL-11 时进入正式执行前预检和完整 OL-11 E2E 运行；完整样本通过前禁止关闭 OL-11，禁止声明 RedCap 完整复活。",
+        "purpose": "把 TRPG 长期外部样本固化为 RedCap 自身开发工作流中的生产级 E2E 方案；它用于证明 RedCap 是工程开发方法和运行机器，而不只是产出一个示例应用。",
+        "fixed_demand_package": {
+            "project_name": "TRPG 社群与活动协作平台",
+            "source_policy": "Cap 可以参考既有 TRPG 项目抽象需求，但不得向开发 AI 暴露旧项目源码路径、旧实现代码或现成答案。",
+            "minimum_scope": [
+                "用户注册登录和角色区分",
+                "社团创建、浏览、加入和成员查看",
+                "活动发布、浏览、详情、状态和人数上限",
+                "活动报名、取消报名、重复报名拦截和人数超限拦截",
+                "关注用户或社团，并查看关注对象近期活动",
+                "基础通知"
+            ],
+            "required_change_round": [
+                "关注统计",
+                "关注动态流",
+                "推荐列表",
+                "报名冲突提示"
+            ]
+        },
+        "actor_boundary": {
+            "cap": "需求方、验收方、RedCap 运行观察者；不得替开发 AI 编写目标项目代码。",
+            "developer_ai": "独立承接方；优先由 Codex CLI 承载，以便项目级 Hook 能真实触发。",
+            "loom_roles": "产品经理、架构师、开发者、测试者和评审者必须记录独立会话、上游输入、下游交付、原始提示和原始输出。"
+        },
+        "session_continuity_rule": "每个 Loom 角色必须记录 session_id；同一角色返工必须复用 session_id；丢失时必须写 session_loss_alarm，并阻止该角色产物直接通过。",
+        "default_external_project_root": "/Users/norven/workspace/redcap-production-samples/trpg-longrun-sample",
+        "evidence_required": [
+            "fixed-demand-package.json",
+            "role-session-manifest.json",
+            "iteration-01-summary.json",
+            "iteration-02-change-summary.json",
+            "failure-backlog.json",
+            "cap-observer-verdict.json",
+            "capability-coverage-matrix.json",
+            "final-prism-review.json",
+            "cache-retention-report.json"
+        ],
+        "anti_cheat_rules": [
+            "开发 AI 不得读取旧 TRPG 源码。",
+            "Cap 不得替开发 AI 实现目标项目。",
+            "只有项目产物、没有 RedCap 过程证据时必须失败。",
+            "短期 fixture 或 LS-006 样本不得替代长期第三方生产项目样本。",
+            "本方案完成不得关闭 OL-11。"
+        ],
+        "capability_matrix_update_rule": "RedCap 后续新增能力时，必须同步更新 OL-11 方案中的能力覆盖矩阵和未来执行证据要求；否则不得进入 OL-11 正式运行。"
+    },
     "ol01_orchestrator_independence": {
         "status": "hard_entry_gate",
         "purpose": "OL-01 外部端到端验收不得由当前 RedCap 修复会话原地自证编排；启动前必须记录编排者身份，证明其与当前开发会话是不同实体。",
@@ -300,6 +354,10 @@
       "purpose": "执行完整 AI 内部 E2E：准备外部项目后启动 Codex CLI 承接方。"
     },
     {
+      "name": "runtime/bin/redcap complete-revival-e2e finalize-existing --project <external-project-dir>",
+      "purpose": "对已经生成完整前置证据但外层执行器超时的长期外部样本执行恢复收口；必须写入恢复来源、证据快照、最终验收和边界披露，不能声称原始长跑自然完成。"
+    },
+    {
       "name": "runtime/bin/redcap complete-revival-e2e harness-timeout-regression-test --work-root <external-dir>",
       "purpose": "轻量验证 E2E 父执行器硬超时、进程组清理和独立看门狗兜底能力。"
     },
@@ -323,12 +381,15 @@
       "architecture-template.md",
       "behavioral-relation-container-crop.png",
       "behavioral-browser-verification-template.json",
+      "browser-state-mutation-probe-template.json",
       "browser-inspection-template.json",
       "completion-marker-boundary-validation-template.json",
+      "completion-marker-prewrite-validation-template.json",
       "completion-marker-preview-template.json",
       "completion-marker-preview-validation-template.json",
       "completion-marker-template.json",
       "convergence-diagnosis-template.json",
+      "failure-reflux-audit-template.json",
       "failure-backlog-template.json",
       "loom-failure-route-plan-template.json",
       "file-browser-inspection-template.json",
@@ -348,6 +409,9 @@
       "package-prism-check-template.json",
       "persona-distillation-decision-template.json",
       "prism-assisted-review-template.json",
+      "recovery-evidence-snapshot-template.json",
+      "recovery-provenance-template.json",
+      "recovery-resolution-map-template.json",
       "requirements.json",
       "review-verdict-template.json",
       "role-gate-clearance-summary-template.json",
@@ -365,15 +429,18 @@
     "required_files_after_run": [
       "behavioral-browser-verification.json",
       "behavioral-relation-container-crop.png",
+      "browser-state-mutation-probe.json",
       "browser-inspection.json",
       "codex-last-message.txt",
       "codex-run.json",
       "completion-marker-boundary-validation.json",
+      "completion-marker-prewrite-validation.json",
       "completion-marker-preview-validation.json",
       "completion-marker-preview.json",
       "completion-marker.json",
       "convergence-diagnosis.json",
       "e2e-acceptance-summary.md",
+      "failure-reflux-audit.json",
       "failure-backlog.json",
       "loom-failure-route-plan.json",
       "file-browser-inspection.json",
@@ -393,6 +460,9 @@
       "package-prism-check.json",
       "persona-distillation-decision.json",
       "prism-assisted-review.json",
+      "recovery-evidence-snapshot.json",
+      "recovery-provenance.json",
+      "recovery-resolution-map.json",
       "revival-followthrough-e2e-check.json",
       "role-gate-clearance-summary.json",
       "runner-character-player-contract-probe.json",
@@ -410,12 +480,15 @@
     "required_evidence": [
       "behavioral-browser-verification.json",
       "behavioral-relation-container-crop.png",
+      "browser-state-mutation-probe.json",
       "browser-inspection.json",
       "completion-marker-boundary-validation.json",
+      "completion-marker-prewrite-validation.json",
       "completion-marker-preview-validation.json",
       "completion-marker-preview.json",
       "completion-marker.json",
       "convergence-diagnosis.json",
+      "failure-reflux-audit.json",
       "failure-backlog.json",
       "loom-failure-route-plan.json",
       "file-browser-inspection.json",
@@ -433,6 +506,9 @@
       "package-prism-check.json",
       "persona-distillation-decision.json",
       "prism-assisted-review.json",
+      "recovery-evidence-snapshot.json",
+      "recovery-provenance.json",
+      "recovery-resolution-map.json",
       "role-gate-clearance-summary.json",
       "runner-character-player-contract-probe.json",
       "runner-negative-contract-probe.json",

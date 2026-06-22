@@ -13,6 +13,7 @@ import os
 import pathlib
 import re
 import shlex
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -1093,6 +1094,8 @@ def download_output_under_protected(tokens: list[str], index: int, cwd: str | No
 
 
 def shell_evidence_write_reason(command: str, cwd: str | None = None) -> str | None:
+    if command.lstrip().startswith("*** Begin Patch"):
+        return None
     tokens = shell_tokens(command)
     if not tokens:
         if re.search(r"(?:>|>>|\btee\s+)\s*" + PROTECTED_EVIDENCE_PATH_PATTERN, command):
@@ -1445,11 +1448,11 @@ def active_goal_continuation_authorization(payload: dict[str, Any]) -> dict[str,
     }
     if not latest_user.get("found"):
         result["reason"] = "no user message found in transcript tail"
-        return result
+        return active_goal_database_authorization(payload, result)
     text = str(latest_user.get("text") or "")
     if not text_is_goal_context(text):
         result["reason"] = "latest transcript user message is not a goal continuation"
-        return result
+        return active_goal_database_authorization(payload, result)
     objective = extract_goal_objective(text)
     result["objective"] = text_evidence(objective)
     if not objective:
@@ -1462,6 +1465,60 @@ def active_goal_continuation_authorization(payload: dict[str, Any]) -> dict[str,
         "latest transcript user message is an active goal continuation with execution authority"
         if result["authorized"]
         else "goal objective does not authorize implementation"
+    )
+    return result
+
+
+def codex_goals_db_path() -> pathlib.Path:
+    raw_home = os.environ.get("CODEX_HOME")
+    home = pathlib.Path(raw_home).expanduser() if raw_home else pathlib.Path.home() / ".codex"
+    return home / "goals_1.sqlite"
+
+
+def active_goal_database_authorization(payload: dict[str, Any], transcript_result: dict[str, Any]) -> dict[str, Any]:
+    thread_id = payload.get("session_id")
+    result = dict(transcript_result)
+    result["database_fallback_attempted"] = True
+    result["database_fallback_authorized"] = False
+    if not isinstance(thread_id, str) or not thread_id.strip():
+        result["reason"] = f"{result.get('reason')}; goal database fallback missing session_id"
+        return result
+    db_path = codex_goals_db_path()
+    result["goal_database_path_sha256"] = hashlib.sha256(str(db_path).encode("utf-8")).hexdigest()
+    if not db_path.exists():
+        result["reason"] = f"{result.get('reason')}; goal database not found"
+        return result
+    try:
+        uri = f"file:{db_path}?mode=ro"
+        with sqlite3.connect(uri, uri=True, timeout=0.5) as conn:
+            row = conn.execute(
+                "select goal_id, objective, status, updated_at_ms from thread_goals where thread_id = ?",
+                (thread_id,),
+            ).fetchone()
+    except sqlite3.Error as exc:
+        result["reason"] = f"{result.get('reason')}; goal database read failed: {exc}"
+        return result
+    if row is None:
+        result["reason"] = f"{result.get('reason')}; no goal record for current session"
+        return result
+    goal_id, objective, status, updated_at_ms = row
+    result["goal_record"] = {
+        "goal_id_sha256": hashlib.sha256(str(goal_id).encode("utf-8")).hexdigest(),
+        "objective": text_evidence(str(objective or "")),
+        "status": status,
+        "updated_at_ms": updated_at_ms,
+    }
+    if status != "active":
+        result["reason"] = f"{result.get('reason')}; current goal status is {status}"
+        return result
+    intent = classify_prompt_intent(str(objective or ""))
+    result["objective_intent"] = intent
+    result["authorized"] = intent.get("authorized_scope") in {"implementation", "completion"}
+    result["database_fallback_authorized"] = result["authorized"]
+    result["reason"] = (
+        "active goal database record authorizes same-session continuation"
+        if result["authorized"]
+        else "active goal objective does not authorize implementation"
     )
     return result
 
@@ -1572,6 +1629,10 @@ def update_latest_marker(event: str, updates: dict[str, Any], base_marker: dict[
         marker = dict(base_marker) if base_marker is not None else json.loads(latest.read_text(encoding="utf-8"))
         marker.update(updates)
         write_json_atomic(latest, marker)
+        if event == "UserPromptSubmit":
+            session_marker = user_prompt_session_marker_path(marker.get("session_id"))
+            if session_marker is not None:
+                write_json_atomic(session_marker, marker)
         with EVENTS_PATH.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(json_safe(marker), ensure_ascii=False, sort_keys=True) + "\n")
     return marker
@@ -2389,6 +2450,8 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         prompt_payload = {
             "prompt": "让这个机制以后自己判断真实意图",
             "cwd": str(PROJECT_ROOT),
+            "session_id": "llm-allow-session",
+            "turn_id": "llm-allow-prompt",
             "source": "codex-hook-intent-self-check",
         }
         first_prompt = run_hook_event_for_self_check("UserPromptSubmit", prompt_payload, evidence_dir=evidence_dir)
@@ -2398,6 +2461,8 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "PreToolUse",
             {
                 "cwd": str(PROJECT_ROOT),
+                "session_id": "llm-allow-session",
+                "turn_id": "llm-allow-prompt",
                 "tool_name": "apply_patch",
                 "tool_use_id": "codex-hook-intent-self-check-allow",
                 "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
@@ -2425,6 +2490,62 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         effective = allow_prompt.get("prompt_intent_effective")
         if not (isinstance(effective, dict) and effective.get("authorized_scope") == "implementation"):
             failures.append("LLM-authorized fixture branch did not write implementation prompt_intent_effective")
+        allow_session_prompt = load_marker_file(evidence_dir / "latest-UserPromptSubmit.llm-allow-session.json")
+        allow_session_effective = allow_session_prompt.get("prompt_intent_effective")
+        if not (
+            isinstance(allow_session_effective, dict)
+            and allow_session_effective.get("authorized_scope") == "implementation"
+        ):
+            failures.append("LLM-authorized fixture branch did not sync implementation intent to session marker")
+
+        write_plan_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": (
+                    "本轮只编写并固化 OL-11 TRPG 长期外部样本 E2E 方案，"
+                    "并写入 RedCap 自身开发工作流；仍禁止实际执行 E2E 测试。"
+                ),
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "write-plan-no-e2e-session",
+                "turn_id": "write-plan-no-e2e-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if write_plan_prompt.returncode != 0:
+            failures.append(f"write-plan UserPromptSubmit failed: {write_plan_prompt.stderr or write_plan_prompt.stdout}")
+        write_plan_allow = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "write-plan-no-e2e-session",
+                "turn_id": "write-plan-no-e2e-prompt",
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-write-plan-allow",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if write_plan_allow.returncode != 0:
+            failures.append(f"write-plan PreToolUse failed: {write_plan_allow.stderr or write_plan_allow.stdout}")
+        write_plan_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if write_plan_marker.get("dangerous_command_denied") is not False:
+            failures.append("write-plan no-E2E prompt should allow document mutation")
+        if write_plan_marker.get("prompt_intent_llm_attempted") is not False:
+            failures.append("write-plan no-E2E prompt should be authorized deterministically without LLM")
+
+        protected_probe_path = "assets/evidence/probe.json"
+        if dangerous_command_reason(f"printf ok > {protected_probe_path}", str(PROJECT_ROOT)) is None:
+            failures.append("real shell redirect into protected evidence path should still be blocked")
+        doc_patch_with_evidence_example = (
+            "*** Begin Patch\n"
+            "*** Add File: assets/docs/evidence-example.md\n"
+            "+<external-project>/.redcap/evidence/e2e/result.json\n"
+            "*** End Patch\n"
+        )
+        if dangerous_command_reason(doc_patch_with_evidence_example, str(PROJECT_ROOT)) is not None:
+            failures.append("documentation patch containing evidence path examples should not be treated as shell write")
 
         reset_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",

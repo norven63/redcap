@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "self-purification",
+    "loop-check"
+  ],
+  "command": "runtime/bin/redcap self-purification loop-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.048,
+  "executed_at": "2026-06-22T06:34:52Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "self-purification-loop-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/self-purification-loop-check.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 8338,
+  "stdout_path": "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/self-purification-loop-check.receipt.stdout.txt",
+  "stdout_sha256": "b7c9ba4005e6388daa71d02d85dcc73be59bbcba2858e31ba95eaf779e4d3d0a"
+}

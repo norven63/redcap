@@ -1,0 +1,163 @@
+{
+  "schema_id": "redcap-ol11-trpg-longrun-e2e-evidence-schema",
+  "schema_version": 1,
+  "purpose": "定义 OL-11 TRPG 长期外部样本 E2E 必须产出的机器可检查证据字段，防止只用叙述性报告关闭长期样本阻塞项。",
+  "status": "pre_execution_contract",
+  "not_claimed": [
+    "本合同不是 OL-11 已执行证据",
+    "本合同不是 RedCap 完整复活完成证据",
+    "本合同不允许用短期 fixture 或自生成样本替代长期外部项目样本"
+  ],
+  "required_top_level_evidence": [
+    "sample_manifest",
+    "demand_provenance",
+    "developer_ai_session",
+    "project_install",
+    "hook_events",
+    "loom_roles",
+    "change_rounds",
+    "failure_routes",
+    "self_purification",
+    "knowledge_impact",
+    "prism_reviews",
+    "cache_retention",
+    "cap_observer_verdict",
+    "old_source_isolation",
+    "real_sample_gate",
+    "external_sample_audit"
+  ],
+  "evidence_requirements": {
+    "sample_manifest": {
+      "schema_id": "redcap-loom-real-project-sample",
+      "must_pass": "runtime/bin/redcap loom real-sample-check --manifest <file> --require-verified --require-independent"
+    },
+    "demand_provenance": {
+      "schema_id": "redcap-ol11-trpg-demand-provenance",
+      "must_prove": [
+        "需求来源是 RedCap 源仓库之外的既有本地项目方向",
+        "来源项目早于 OL-11 执行创建",
+        "开发 AI 不读取旧源码，只接收固定需求包"
+      ]
+    },
+    "developer_ai_session": {
+      "required_fields": [
+        "carrier",
+        "session_id",
+        "resume_command",
+        "session_loss_alarm"
+      ],
+      "failure_rule": "缺少 session_id 或无法续接时，OL-11 必须阻塞。"
+    },
+    "project_install": {
+      "required_fields": [
+        "package_path",
+        "external_project_root",
+        "init_command",
+        "project_hooks_path",
+        "runtime_dirs"
+      ],
+      "must_pass": "runtime/bin/redcap project-install production-readiness-check",
+      "failure_rule": "无法证明 .redcap 已在外部项目级目录安装并初始化时，不得启动 Loom 角色。"
+    },
+    "hook_events": {
+      "required_events": [
+        "SessionStart",
+        "UserPromptSubmit",
+        "PreToolUse",
+        "PostToolUse",
+        "Stop"
+      ],
+      "failure_rule": "项目级 Hook 事件缺失时，不能启动 Loom 角色执行。"
+    },
+    "loom_roles": {
+      "required_roles": [
+        "product_manager",
+        "architect",
+        "developer",
+        "tester",
+        "reviewer"
+      ],
+      "required_role_fields": [
+        "role",
+        "session_id",
+        "upstream_input",
+        "downstream_output",
+        "raw_prompt",
+        "raw_output",
+        "artifact_refs"
+      ]
+    },
+    "change_rounds": {
+      "minimum_rounds": 2,
+      "must_include": [
+        "初始需求轮",
+        "关注统计、关注动态流、推荐列表、报名冲突提示变更轮"
+      ]
+    },
+    "failure_routes": {
+      "minimum_completed_routes": 1,
+      "allowed_targets": [
+        "product_manager",
+        "architect",
+        "developer",
+        "tester"
+      ],
+      "failure_rule": "失败由 Cap 直接修复时必须失败。"
+    },
+    "self_purification": {
+      "required_decisions": [
+        "promote_public",
+        "keep_private",
+        "no_promote",
+        "defer_with_owner"
+      ],
+      "minimum_behavior": "至少出现一个候选和一个明确决策；私有人格内容不得写入公共仓库。"
+    },
+    "knowledge_impact": {
+      "required_effects": [
+        "planning",
+        "implementation",
+        "verification"
+      ],
+      "failure_rule": "只检索不影响决策时不得通过。"
+    },
+    "prism_reviews": {
+      "required_providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "minimum_scope": [
+        "需求或架构评审",
+        "最终证据链评审"
+      ]
+    },
+    "cache_retention": {
+      "required_report": "cache-retention-report.json",
+      "failure_rule": "运行结束后未执行缓存保留检查时不得通过。"
+    },
+    "cap_observer_verdict": {
+      "must_state": [
+        "Cap 未直接开发目标项目",
+        "开发 AI 未读取旧 TRPG 源码",
+        "OL-11 是否可关闭"
+      ]
+    },
+    "old_source_isolation": {
+      "required_attestation": "developer-ai-no-old-source-read.json",
+      "failure_rule": "发现开发 AI 读取 /Users/norven/workspace/trpg-server 或 /Users/norven/workspace/trpg-web 源码时必须失败。"
+    },
+    "real_sample_gate": {
+      "required_command": "runtime/bin/redcap loom real-sample-check --manifest <file> --require-verified --require-independent"
+    },
+    "external_sample_audit": {
+      "required_command": "runtime/bin/redcap loom-external-sample-audit check --manifest <file> --require-receipts"
+    }
+  },
+  "pre_execution_checks": [
+    "runtime/bin/redcap ol11 plan-check",
+    "runtime/bin/redcap ol11 trpg-carrier-dry-run --work-root <external-root>",
+    "runtime/bin/redcap complete-revival-e2e design-check",
+    "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-root>",
+    "runtime/bin/redcap project-install production-readiness-check"
+  ]
+}

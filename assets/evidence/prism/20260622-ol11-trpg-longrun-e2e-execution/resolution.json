@@ -1,0 +1,68 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260622-ol11-trpg-longrun-e2e-execution",
+  "merge_path": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/kimi.review.json",
+    "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 block 成立：不能把 OL-11 方案完成当成执行就绪。本轮把 R2-01、R2-02、R2-03 对应的 Loom、自我净化和知识网关运行检查补成结构化回执；新增 OL-11 专用短演练入口，只验证 TRPG 需求包承接、Hook 触发、session_id 和机器标记，不启动完整项目开发；同时保持 OL-11 终局阻塞状态，不用短演练关闭长期样本。",
+      "implementation_evidence": [
+        "runtime/core/loom_runtime.py",
+        "runtime/core/loom_workflow.py",
+        "runtime/core/self_purification.py",
+        "runtime/core/knowledge_gateway.py",
+        "runtime/core/ol11_longrun_plan.py",
+        "runtime/core/complete_revival_e2e.py",
+        "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+        "assets/contracts/ol11-trpg-longrun-e2e-evidence-schema.json",
+        "assets/evidence/ol11/trpg-demand-provenance.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/loom-runtime-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/loom-workflow-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/self-purification-loop-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/knowledge-gateway-impact-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-trpg-carrier-dry-run.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 成立：自证式方案、合同和队列不能直接证明执行就绪。本轮新增机器可检查证据结构合同、TRPG 来源证明、OL-11 plan/self-check、通用 carrier-probe、TRPG 绑定 carrier dry-run，并修复完成口令误判，要求只有标记文件存在才判定短演练完成。该处理只把 OL-11 推进到执行前可复核状态，不声明长期样本已通过。",
+      "implementation_evidence": [
+        "runtime/core/ol11_longrun_plan.py",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "assets/contracts/cli-surface-compat.json",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/contracts/open-loop-closure-queue.json",
+        "assets/contracts/ol11-trpg-longrun-e2e-evidence-schema.json",
+        "assets/evidence/ol11/trpg-demand-provenance.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-plan-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-carrier-probe.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-trpg-carrier-dry-run.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/project-install-production-readiness-check.receipt.json",
+        "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/release-profile-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "本轮只解决 OL-11 执行前细节和证据链问题。完整 OL-11 长期第三方样本仍未执行，OL-11 条目仍保持 external-sample-required 和 terminal_blocker=true。"
+  }
+}

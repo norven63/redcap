@@ -19,7 +19,8 @@ Usage:
   runtime/bin/redcap phase2-blueprint check|self-check [...]
   runtime/bin/redcap full-revival-amendment check|self-check [...]
   runtime/bin/redcap e2e-trace check|self-check [...]
-  runtime/bin/redcap complete-revival-e2e design-check|codex-isolation-check|prepare|preflight|preflight-regression-test|carrier-probe|convergence-check|convergence-guard-check|prune-runs|prune-check|report-check|external-sample-check|contract-map-check|harness-timeout-regression-test|runner-negative-probe-regression-test|run|self-check [...]
+  runtime/bin/redcap complete-revival-e2e design-check|codex-isolation-check|prepare|preflight|preflight-regression-test|carrier-probe|convergence-check|convergence-guard-check|prune-runs|prune-check|report-check|external-sample-check|contract-map-check|harness-timeout-regression-test|runner-negative-probe-regression-test|run|finalize-existing|self-check [...]
+  runtime/bin/redcap ol11 plan-check|self-check|trpg-carrier-dry-run [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
   runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|failure-route|role-chain-check|session-check|real-sample-check|real-sample-generate|self-check [...]
@@ -98,6 +99,7 @@ Commands:
   e2e-trace     Run the RedCap 1.0 hook/session/FSM/completion trace.
   complete-revival-e2e
                 Run the generic AI-only RedCap E2E methodology and Codex CLI carrier probe.
+  ol11         Verify OL-11 TRPG long-run E2E pre-execution contracts, provenance, evidence schema, and carrier dry run.
   fsm           Run the RedCap workflow FSM kernel.
   loom-workflow Verify the role-based Loom engineering workflow contract.
   loom-runtime  Run the project-level Loom role session manifest and loss alarms.
@@ -233,6 +235,9 @@ case "$cmd" in
     ;;
   complete-revival-e2e)
     exec python3 "$REPO_ROOT/runtime/core/complete_revival_e2e.py" "$@"
+    ;;
+  ol11)
+    exec python3 "$REPO_ROOT/runtime/core/ol11_longrun_plan.py" "$@"
     ;;
   fsm)
     exec python3 "$REPO_ROOT/runtime/core/fsm.py" "$@"

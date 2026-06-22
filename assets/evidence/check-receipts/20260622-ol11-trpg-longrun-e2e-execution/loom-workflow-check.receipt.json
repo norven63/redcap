@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "loom-workflow",
+    "check"
+  ],
+  "command": "runtime/bin/redcap loom-workflow check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 0.033,
+  "executed_at": "2026-06-22T06:34:04Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "loom-workflow-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/loom-workflow-check.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 515,
+  "stdout_path": "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/loom-workflow-check.receipt.stdout.txt",
+  "stdout_sha256": "3153d43201a2cac4043905ce4ff4215586b9039c265b4a8a205d6a7e71624880"
+}

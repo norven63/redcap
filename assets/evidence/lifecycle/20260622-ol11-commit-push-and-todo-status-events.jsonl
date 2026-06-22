@@ -1,0 +1,1 @@
+{"event":"UserPromptSubmit","session_id":"019eefa8-e601-7580-8117-547b1dbd6d45","turn_id":"019eefa8-e69f-79a0-83b8-9685e1ec2cce","prompt":{"normalized_excerpt":"1. 先提交并push\n2. 回顾之前那个todo清单（包含“真实长期外部项目样本”的那个），并标注这些清单现状"},"prompt_intent_effective":{"prompt_kind":"directive","authorized_scope":"completion","action_evidence":"substantive","reason":"用户明确要求先执行 Git 提交和推送，再回顾待办清单现状。"}}

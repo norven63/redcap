@@ -218,13 +218,19 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "browser-inspection.json",
     "file-browser-inspection.json",
     "behavioral-browser-verification.json",
+    "browser-state-mutation-probe.json",
     "independent-browser-verification.json",
     "independent-observer.json",
     "visual-independence-report.json",
     "behavioral-relation-container-crop.png",
+    "failure-reflux-audit.json",
+    "recovery-evidence-snapshot.json",
+    "recovery-provenance.json",
+    "recovery-resolution-map.json",
     "self-referential-boundary.json",
     "completion-marker-preview.json",
     "completion-marker-preview-validation.json",
+    "completion-marker-prewrite-validation.json",
     "convergence-diagnosis.json",
     "loom-failure-route-plan.json",
     "final-evidence-bundle.json",
@@ -233,6 +239,28 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "iteration-verdict.json",
     "completion-marker-boundary-validation.json",
     "completion-marker.json",
+]
+E2E_RECOVERY_REQUIRED_EVIDENCE_FILES = [
+    "codex-run.json",
+    "package-prism-check.json",
+    "hook-events-summary.json",
+    "final-runner-test-results.json",
+    "runner-negative-contract-probe.json",
+    "runner-character-player-contract-probe.json",
+    "browser-inspection.json",
+    "file-browser-inspection.json",
+    "behavioral-browser-verification.json",
+    "independent-browser-verification.json",
+    "final-marker-validation.json",
+    "role-execution-risk.json",
+    "loom-failure-route-runtime-consumption.json",
+    "runner-self-purification-resolution.json",
+    "pre-final-readiness.json",
+    "completion-marker-preview-validation.json",
+    "self-referential-boundary.json",
+    "visual-independence-report.json",
+    "failure-backlog.json",
+    "final-evidence-bundle.json",
 ]
 REVIEWER_RUNNER_OWNED_FOLLOW_UP = [
     "completion-marker.json",
@@ -2098,6 +2126,7 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         "runtime/bin/redcap complete-revival-e2e preflight-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
+        "runtime/bin/redcap complete-revival-e2e finalize-existing --project <external-project-dir>",
         "runtime/bin/redcap complete-revival-e2e harness-timeout-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e runner-negative-probe-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e self-check",
@@ -4581,6 +4610,18 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "browser-state-mutation-probe-template.json", {
+        "schema_id": "redcap-e2e-browser-state-mutation-probe",
+        "producer": "e2e-runner",
+        "screenshot": "browser-state-mutation-probe.png",
+        "required_flows": [
+            "signup-flow",
+            "cancel-signup-flow",
+            "localStorage/text/dom hash diff"
+        ],
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     (evidence / "behavioral-relation-container-crop.png").write_bytes(PLACEHOLDER_PNG_BYTES)
     write_json(evidence / "independent-browser-verification-template.json", {
         "schema_id": "redcap-e2e-independent-browser-verification",
@@ -4673,6 +4714,30 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "routes": [],
         "failure_policy": "失败必须回流到 Loom 目标角色，而不是由 Cap 或 E2E 运行器直接修目标项目。"
     })
+    write_json(evidence / "failure-reflux-audit-template.json", {
+        "schema_id": "redcap-e2e-failure-reflux-audit",
+        "producer": "e2e-runner",
+        "controlled_drill": True,
+        "actual_multi_role_defect_reflux_claimed": False,
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
+    write_json(evidence / "recovery-evidence-snapshot-template.json", {
+        "schema_id": "redcap-e2e-recovery-evidence-snapshot",
+        "producer": "e2e-runner",
+        "record_count": "<integer>",
+        "snapshot_sha256": "<required>",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
+    write_json(evidence / "recovery-provenance-template.json", {
+        "schema_id": "redcap-e2e-recovery-provenance",
+        "producer": "e2e-runner",
+        "mode": "post_timeout_existing_sample_finalization",
+        "recovered_completion_not_claimed_as_uninterrupted": True,
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "final-prism-review-template.json", {
         "schema_id": "redcap-e2e-final-prism-review",
         "producer": "e2e-runner",
@@ -4700,6 +4765,29 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
             "observer_boundary",
             "bootstrap_review_boundary"
         ]
+    })
+    write_json(evidence / "completion-marker-prewrite-validation-template.json", {
+        "schema_id": "redcap-e2e-completion-marker-prewrite-validation",
+        "producer": "e2e-runner",
+        "ok": "<boolean>",
+        "purpose": "最终棱镜通过前预计算将要写入的 completion-marker.json payload 哈希；最终写入前必须重跑项目验证并证明实际 payload 哈希一致。",
+        "requires_final_prism_pass_before_write": True,
+        "requires_final_marker_validation_rerun_before_write": True,
+        "failure_policy": "blocking"
+    })
+    write_json(evidence / "recovery-resolution-map-template.json", {
+        "schema_id": "redcap-e2e-recovery-resolution-map",
+        "producer": "e2e-runner",
+        "ok": "<boolean>",
+        "mode": "post_timeout_existing_sample_finalization",
+        "purpose": "把恢复收口前的旧失败映射到当前证据，证明哪些已解决、哪些只作为边界披露，避免把恢复收口误写成原始长跑自然完成。",
+        "not_claimed": [
+            "不声称原始 E2E 长跑自然完成",
+            "不声称受控失败回流演练等于真实多角色缺陷返工",
+            "不声称同机自动化验收等于人工或跨机器生产认证"
+        ],
+        "resolution_entries": [],
+        "failure_policy": "blocking"
     })
     write_json(evidence / "failure-backlog-template.json", {
         "schema_id": "redcap-e2e-failure-backlog",
@@ -7634,6 +7722,261 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
     return result
 
 
+def browser_local_storage_snapshot(page: Any) -> dict[str, Any]:
+    values = page.evaluate(
+        """() => {
+            const out = {};
+            for (let index = 0; index < window.localStorage.length; index += 1) {
+                const key = window.localStorage.key(index);
+                out[key] = window.localStorage.getItem(key);
+            }
+            return out;
+        }"""
+    )
+    if not isinstance(values, dict):
+        values = {}
+    return {
+        "values": values,
+        "sha256": sha256_text(json.dumps(values, ensure_ascii=False, sort_keys=True)),
+    }
+
+
+def browser_state_snapshot(page: Any, label: str) -> dict[str, Any]:
+    observable = browser_observable_snapshot(page)
+    storage = browser_local_storage_snapshot(page)
+    return {
+        "label": label,
+        "text_hash": observable.get("text_hash"),
+        "dom_summary_hash": observable.get("dom_summary_hash"),
+        "text_length": len(str(observable.get("text") or "")),
+        "local_storage_hash": storage.get("sha256"),
+        "local_storage_keys": sorted((storage.get("values") or {}).keys()),
+    }
+
+
+def browser_snapshot_changed(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
+    text_changed = before.get("text_hash") != after.get("text_hash")
+    dom_changed = before.get("dom_summary_hash") != after.get("dom_summary_hash")
+    storage_changed = before.get("local_storage_hash") != after.get("local_storage_hash")
+    return {
+        "text_changed": text_changed,
+        "dom_changed": dom_changed,
+        "local_storage_changed": storage_changed,
+        "state_changed": bool(text_changed or dom_changed or storage_changed),
+    }
+
+
+def run_browser_state_mutation_probe(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
+    screenshot = evidence / "browser-state-mutation-probe.png"
+    server_process: subprocess.Popen[str] | None = None
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-browser-state-mutation-probe",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target": str(target) if target is not None else None,
+        "target_relative_path": target_rel,
+        "checked_entrypoints": checked_entrypoints,
+        "url": None,
+        "launch_mode": "local-http-server",
+        "actions": [],
+        "coverage_matrix": [],
+        "console_errors": [],
+        "page_errors": [],
+        "network_events": [],
+        "failures": [],
+        "ok": False,
+    }
+    if target is None or target_rel is None:
+        result["failures"].append(f"缺少浏览器入口文件，已检查：{checked_entrypoints}")
+        write_json(evidence / "browser-state-mutation-probe.json", result)
+        return result
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:  # pragma: no cover - 取决于本机运行时
+        result["failures"].append(f"无法导入 Playwright 浏览器自动化库：{type(exc).__name__}: {exc}")
+        write_json(evidence / "browser-state-mutation-probe.json", result)
+        return result
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = int(sock.getsockname()[1])
+    url = f"http://127.0.0.1:{port}/{target_rel}"
+    server_argv = ["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"]
+    console_errors: list[str] = []
+    page_errors: list[str] = []
+    network_events: list[dict[str, Any]] = []
+
+    def record_action(actions: list[dict[str, Any]], name: str, before: dict[str, Any], after: dict[str, Any]) -> None:
+        change = browser_snapshot_changed(before, after)
+        actions.append({
+            "name": name,
+            "before": before,
+            "after": after,
+            **change,
+        })
+
+    try:
+        server_process = subprocess.Popen(
+            server_argv,
+            cwd=str(project),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+        )
+        deadline = time.monotonic() + 5
+        server_ready = False
+        last_error = ""
+        while time.monotonic() < deadline:
+            if server_process.poll() is not None:
+                last_error = f"本地 HTTP 服务提前退出，exit_code={server_process.returncode}"
+                break
+            try:
+                with urllib.request.urlopen(url, timeout=0.5) as response:
+                    if response.status < 500:
+                        server_ready = True
+                        break
+            except Exception as exc:
+                last_error = f"{type(exc).__name__}: {exc}"
+                time.sleep(0.1)
+        result["url"] = url
+        result["server"] = {
+            "argv": server_argv,
+            "cwd": str(project),
+            "ready": server_ready,
+            "url": url,
+            "last_readiness_error": last_error,
+        }
+        if not server_ready:
+            result["failures"].append(f"本地 HTTP 服务没有就绪，无法执行状态变更探针：{last_error}")
+            write_json(evidence / "browser-state-mutation-probe.json", result)
+            return result
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            browser_version = browser.version
+            page = browser.new_page(viewport=BEHAVIORAL_BROWSER_VIEWPORT)
+            page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+            page.on("pageerror", lambda error: page_errors.append(str(error)))
+            page.on("request", lambda request: network_events.append({
+                "type": "request",
+                "method": request.method,
+                "url": request.url,
+                "resource_type": request.resource_type,
+            }) if len(network_events) < 40 else None)
+            page.on("response", lambda response: network_events.append({
+                "type": "response",
+                "status": response.status,
+                "url": response.url,
+            }) if len(network_events) < 40 else None)
+            page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+            page.wait_for_timeout(800)
+            if page.locator("#reset-state").count() > 0:
+                page.locator("#reset-state").click(timeout=5_000)
+                page.wait_for_timeout(300)
+            actions: list[dict[str, Any]] = []
+            targeted_flow_available = page.locator('[data-select="activity-3"]').count() > 0 and page.locator("#signup-button").count() > 0
+            if targeted_flow_available:
+                page.locator('[data-select="activity-3"]').click(timeout=5_000)
+                page.wait_for_timeout(300)
+                before_signup = browser_state_snapshot(page, "before-signup")
+                page.locator("#signup-button").click(timeout=5_000)
+                page.wait_for_timeout(500)
+                after_signup = browser_state_snapshot(page, "after-signup")
+                record_action(actions, "signup-flow", before_signup, after_signup)
+                before_cancel = browser_state_snapshot(page, "before-cancel")
+                page.locator("#cancel-button").click(timeout=5_000)
+                page.wait_for_timeout(500)
+                after_cancel = browser_state_snapshot(page, "after-cancel")
+                record_action(actions, "cancel-signup-flow", before_cancel, after_cancel)
+            else:
+                buttons = page.locator("button:not([disabled]), [role='button']")
+                for index in range(min(buttons.count(), 12)):
+                    button = buttons.nth(index)
+                    label = button.inner_text(timeout=2_000).strip()
+                    if not label or label in {"全部", "All"}:
+                        continue
+                    before = browser_state_snapshot(page, f"before-generic-{index}")
+                    button.click(timeout=5_000)
+                    page.wait_for_timeout(500)
+                    after = browser_state_snapshot(page, f"after-generic-{index}")
+                    record_action(actions, f"generic-button-{index}:{label}", before, after)
+                    if actions[-1].get("state_changed") is True:
+                        break
+            page.screenshot(path=str(screenshot), full_page=True)
+            browser.close()
+            result["actions"] = actions
+            result["targeted_flow_available"] = targeted_flow_available
+            result["browser_context"] = {
+                "process_pid": os.getpid(),
+                "browser_version": browser_version,
+                "viewport": BEHAVIORAL_BROWSER_VIEWPORT,
+                "capture_role": "browser-state-mutation-probe",
+                "screenshot_phase": "after_state_mutation_probe",
+                "server_port": port,
+            }
+            result["coverage_matrix"] = [
+                {
+                    "concern": "浏览器交互覆盖太浅",
+                    "mapped_flow": "signup-flow",
+                    "passed": any(item.get("name") == "signup-flow" and item.get("state_changed") is True for item in actions),
+                },
+                {
+                    "concern": "浏览器交互覆盖太浅",
+                    "mapped_flow": "cancel-signup-flow",
+                    "passed": any(item.get("name") == "cancel-signup-flow" and item.get("state_changed") is True for item in actions),
+                },
+                {
+                    "concern": "状态变更必须可审计",
+                    "mapped_flow": "localStorage/text/dom hash diff",
+                    "passed": any(item.get("state_changed") is True for item in actions),
+                },
+            ]
+            result["screenshot"] = evidence_file_record(screenshot, base=evidence)
+    except Exception as exc:
+        result["failures"].append(f"状态变更探针执行失败：{type(exc).__name__}: {exc}")
+    finally:
+        if server_process is not None:
+            killed = kill_process_group(server_process, grace_seconds=1.0)
+            try:
+                server_stdout, server_stderr = server_process.communicate(timeout=3)
+            except subprocess.TimeoutExpired:
+                server_stdout, server_stderr = "", ""
+            server = result.get("server")
+            if isinstance(server, dict):
+                server.update({
+                    "exit_code_after_cleanup": server_process.returncode,
+                    "process_group_killed": killed,
+                    "stdout_tail": server_stdout[-1000:],
+                    "stderr_tail": server_stderr[-1000:],
+                })
+    result["console_errors"] = console_errors
+    result["page_errors"] = page_errors
+    result["network_events"] = network_events
+    result["network_observation"] = {
+        "records_network_events": True,
+        "state_change_requires_network": False,
+        "reason": "当前 OL-11 样本是本地静态应用，真实业务状态变更通过 localStorage 完成；网络事件用于记录页面加载，不作为状态变更必需条件。",
+    }
+    failures = list(result.get("failures") or [])
+    if console_errors or page_errors:
+        failures.append("状态变更探针出现浏览器控制台错误或页面错误")
+    if not any(item.get("state_changed") is True for item in result.get("actions", [])):
+        failures.append("状态变更探针未观察到文本、DOM 或 localStorage 的可解释变化")
+    if result.get("targeted_flow_available") is True:
+        missing = [item["mapped_flow"] for item in result["coverage_matrix"][:2] if item.get("passed") is not True]
+        if missing:
+            failures.append(f"状态变更探针未覆盖必需报名/取消流程：{missing}")
+    screenshot_record = result.get("screenshot") if isinstance(result.get("screenshot"), dict) else {}
+    if screenshot_record.get("exists") is not True or int(screenshot_record.get("size") or 0) <= 0:
+        failures.append("状态变更探针没有写入有效截图")
+    result["failures"] = failures
+    result["ok"] = not failures
+    write_json(evidence / "browser-state-mutation-probe.json", result)
+    return result
+
+
 def run_independent_browser_verification_process(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     script = r"""
 import json
@@ -7919,11 +8262,16 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
         ("browser-inspection", "browser-inspection.json", "browser-inspection.png"),
         ("file-browser-inspection", "file-browser-inspection.json", "file-browser-inspection.png"),
         ("behavioral-browser-verification", "behavioral-browser-verification.json", "behavioral-browser-verification.png"),
+        ("browser-state-mutation-probe", "browser-state-mutation-probe.json", "browser-state-mutation-probe.png"),
         ("independent-browser-verification", "independent-browser-verification.json", "independent-browser-verification.png"),
     ]
     for source_id, json_name, screenshot_name in source_specs:
         payload = load_optional_json(evidence / json_name) or {}
         record = payload.get("screenshot_record")
+        if not isinstance(record, dict):
+            inline_record = payload.get("screenshot")
+            if isinstance(inline_record, dict):
+                record = inline_record
         if not isinstance(record, dict):
             record = screenshot_record_from_checks(payload, screenshot_name)
         sources.append({
@@ -8294,6 +8642,36 @@ def backlog_open_items(evidence: pathlib.Path) -> list[Any]:
     return open_items
 
 
+def clear_runner_final_failure_backlog(evidence: pathlib.Path) -> dict[str, Any]:
+    backlog = load_optional_json(evidence / "failure-backlog.json")
+    if not isinstance(backlog, dict):
+        return {"changed": False, "reason": "missing-backlog"}
+    open_items = backlog.get("open_items")
+    if not isinstance(open_items, list):
+        return {"changed": False, "reason": "invalid-open-items"}
+    kept = [
+        item
+        for item in open_items
+        if not (isinstance(item, dict) and str(item.get("id") or "").startswith("RUNNER-FINAL-"))
+    ]
+    removed = len(open_items) - len(kept)
+    if not removed:
+        return {"changed": False, "removed_count": 0}
+    backlog["open_items"] = kept
+    backlog["next_round_required"] = bool(kept)
+    cleanup_events = backlog.get("runner_final_cleanup_events")
+    if not isinstance(cleanup_events, list):
+        cleanup_events = []
+    cleanup_events.append({
+        "removed_count": removed,
+        "reason": "retry_finalization_after_runner_fix",
+        "recorded_at": iso_now(),
+    })
+    backlog["runner_final_cleanup_events"] = cleanup_events
+    write_json(evidence / "failure-backlog.json", backlog)
+    return {"changed": True, "removed_count": removed}
+
+
 def write_failure_backlog_with_runner_items(evidence: pathlib.Path, failures: list[str]) -> None:
     backlog = load_optional_json(evidence / "failure-backlog.json") or {}
     open_items = backlog.get("open_items")
@@ -8414,11 +8792,15 @@ def route_from_loom_runtime_event(event: dict[str, Any], consumption: dict[str, 
 def run_loom_failure_route_runtime_drill(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     package_redcap = project / ".redcap" / "runtime" / "bin" / "redcap"
     source_path = evidence / "controlled-failure-route-drill-source.json"
+    drill_nonce = sha256_text(f"{iso_now()}:{os.getpid()}:{project}")[:12]
+    drill_summary = f"受控演练：验证失败路由可以回到 developer 并被关闭，样本 {drill_nonce}"
     write_json(source_path, {
         "schema_id": "redcap-e2e-controlled-failure-route-drill-source",
         "producer": "e2e-runner",
         "created_at": iso_now(),
         "purpose": "受控验证 Loom 失败回流运行机可以创建、目标角色接收、完成并检查无开放路由。",
+        "drill_nonce": drill_nonce,
+        "summary": drill_summary,
         "target_role": "developer",
         "target_phase": "implementation",
     })
@@ -8450,7 +8832,7 @@ def run_loom_failure_route_runtime_drill(project: pathlib.Path, evidence: pathli
             "--root-cause",
             "code",
             "--summary",
-            "受控演练：验证失败路由可以回到 developer 并被关闭",
+            drill_summary,
             "--target-role",
             "developer",
             "--target-phase",
@@ -10387,6 +10769,8 @@ def write_self_referential_boundary(
             "未声称所有 Loom 角色进程都是自然零退出；角色完成依据是产物内容、会话标识和运行器验证",
             "未声称最终棱镜复核是外部第三方认证；它仍属于本轮自举工程验收链的一部分",
             "未声称本轮结果可自动代表其他主机、模型版本、时序条件或真实生产负载",
+            "未声称失败回流是自然多角色缺陷修复闭环；受控演练必须由 failure-reflux-audit.json 单独披露",
+            "若存在 recovery-provenance.json，未声称原始 E2E 运行自然完成；续接收口必须披露为超时后的恢复收口",
             "未声称 RedCap 永久完整复活",
         ],
         "role_process_completion": {
@@ -10419,6 +10803,7 @@ def write_self_referential_boundary(
             "Kimi 与 Claude Code 进行最终棱镜复核",
             "独立观察者由 harness 以 runner 兄弟进程启动",
             "运行器执行 HTTP 浏览器检查、file:// 浏览器检查、行为浏览器验证和独立子进程浏览器验证",
+            "运行器执行真实浏览器状态变更探针并记录文本、DOM 或 localStorage 哈希变化",
             "运行器执行正向验证、负向契约探针、角色玩家负向契约探针和写完成标记前最终验证",
         ],
         "completion_marker_disclosure": {
@@ -10431,6 +10816,10 @@ def write_self_referential_boundary(
             "boundary_file": "self-referential-boundary.json",
             "final_marker_validation": "final-marker-validation.json",
             "file_browser_inspection": "file-browser-inspection.json",
+            "browser_state_mutation_probe": "browser-state-mutation-probe.json",
+            "failure_reflux_audit": "failure-reflux-audit.json",
+            "recovery_provenance": "recovery-provenance.json",
+            "recovery_resolution_map": "recovery-resolution-map.json",
         },
         "failures": [],
     }
@@ -10453,11 +10842,17 @@ def build_completion_marker_payload(
     final_marker_validation: dict[str, Any] | None = None,
     file_browser_inspection: dict[str, Any] | None = None,
     convergence_diagnosis: dict[str, Any] | None = None,
+    created_at: str | None = None,
 ) -> dict[str, Any]:
+    browser_state_mutation = load_optional_json(evidence / "browser-state-mutation-probe.json")
+    failure_reflux_audit = load_optional_json(evidence / "failure-reflux-audit.json")
+    recovery_provenance = load_optional_json(evidence / "recovery-provenance.json")
+    recovery_snapshot = load_optional_json(evidence / "recovery-evidence-snapshot.json")
+    recovery_resolution = load_optional_json(evidence / "recovery-resolution-map.json")
     return {
         "schema_id": "redcap-e2e-completion-marker",
         "producer": "e2e-runner",
-        "created_at": iso_now(),
+        "created_at": created_at or iso_now(),
         "project": str(project),
         "ready_for_engineering_use": True,
         "completion_scope": "single-e2e-run",
@@ -10491,6 +10886,42 @@ def build_completion_marker_payload(
         },
         "browser_inspection": "browser-inspection.json",
         "behavioral_browser_verification": "behavioral-browser-verification.json",
+        "browser_state_mutation_probe": {
+            "path": "browser-state-mutation-probe.json",
+            "ok": browser_state_mutation.get("ok") if isinstance(browser_state_mutation, dict) else None,
+            "coverage_matrix": browser_state_mutation.get("coverage_matrix") if isinstance(browser_state_mutation, dict) else None,
+            "screenshot": "browser-state-mutation-probe.png",
+        },
+        "failure_reflux_audit": {
+            "path": "failure-reflux-audit.json",
+            "ok": failure_reflux_audit.get("ok") if isinstance(failure_reflux_audit, dict) else None,
+            "controlled_drill": failure_reflux_audit.get("controlled_drill") if isinstance(failure_reflux_audit, dict) else None,
+            "actual_multi_role_defect_reflux_claimed": failure_reflux_audit.get("actual_multi_role_defect_reflux_claimed") if isinstance(failure_reflux_audit, dict) else None,
+            "sha256": sha256_file(evidence / "failure-reflux-audit.json") if (evidence / "failure-reflux-audit.json").exists() else None,
+        },
+        "recovery_provenance": {
+            "path": "recovery-provenance.json",
+            "present": isinstance(recovery_provenance, dict),
+            "ok": recovery_provenance.get("ok") if isinstance(recovery_provenance, dict) else None,
+            "mode": recovery_provenance.get("mode") if isinstance(recovery_provenance, dict) else None,
+            "original_timeout_recorded": (recovery_provenance.get("original_run") or {}).get("timeout_recorded") if isinstance(recovery_provenance, dict) and isinstance(recovery_provenance.get("original_run"), dict) else None,
+            "recovered_completion_not_claimed_as_uninterrupted": recovery_provenance.get("recovered_completion_not_claimed_as_uninterrupted") if isinstance(recovery_provenance, dict) else None,
+            "sha256": sha256_file(evidence / "recovery-provenance.json") if (evidence / "recovery-provenance.json").exists() else None,
+        },
+        "recovery_evidence_snapshot": {
+            "path": "recovery-evidence-snapshot.json",
+            "ok": recovery_snapshot.get("ok") if isinstance(recovery_snapshot, dict) else None,
+            "snapshot_sha256": recovery_snapshot.get("snapshot_sha256") if isinstance(recovery_snapshot, dict) else None,
+            "record_count": recovery_snapshot.get("record_count") if isinstance(recovery_snapshot, dict) else None,
+        },
+        "recovery_resolution_map": {
+            "path": "recovery-resolution-map.json",
+            "present": isinstance(recovery_resolution, dict),
+            "ok": recovery_resolution.get("ok") if isinstance(recovery_resolution, dict) else None,
+            "mode": recovery_resolution.get("mode") if isinstance(recovery_resolution, dict) else None,
+            "boundary_flags": recovery_resolution.get("boundary_flags") if isinstance(recovery_resolution, dict) else None,
+            "sha256": sha256_file(evidence / "recovery-resolution-map.json") if (evidence / "recovery-resolution-map.json").exists() else None,
+        },
         "iteration_verdict": "iteration-verdict.json",
         "no_open_failure_backlog": True,
     }
@@ -10516,6 +10947,25 @@ def completion_marker_boundary_validation(
             failures.append(f"completion-marker {field} 未逐字复制 self-referential-boundary")
     if payload.get("completion_scope") != "single-e2e-run":
         failures.append("completion-marker completion_scope 必须是 single-e2e-run")
+    failure_reflux = payload.get("failure_reflux_audit") if isinstance(payload.get("failure_reflux_audit"), dict) else {}
+    if failure_reflux.get("controlled_drill") is True and failure_reflux.get("actual_multi_role_defect_reflux_claimed") is not False:
+        failures.append("completion-marker 必须区分受控失败回流演练与真实多角色缺陷返工")
+    recovery = payload.get("recovery_provenance") if isinstance(payload.get("recovery_provenance"), dict) else {}
+    if recovery.get("present") is True:
+        if recovery.get("mode") != "post_timeout_existing_sample_finalization":
+            failures.append("completion-marker recovery_provenance.mode 不合法")
+        if recovery.get("recovered_completion_not_claimed_as_uninterrupted") is not True:
+            failures.append("completion-marker 必须声明恢复收口不等同原始运行自然完成")
+        resolution = payload.get("recovery_resolution_map") if isinstance(payload.get("recovery_resolution_map"), dict) else {}
+        if resolution.get("present") is not True or resolution.get("ok") is not True:
+            failures.append("completion-marker 必须携带通过的 recovery-resolution-map")
+        flags = resolution.get("boundary_flags") if isinstance(resolution.get("boundary_flags"), dict) else {}
+        if flags.get("uninterrupted_original_run_claimed") is not False:
+            failures.append("completion-marker 必须声明没有把恢复收口写成原始运行自然完成")
+        if flags.get("human_or_cross_machine_verification_claimed") is not False:
+            failures.append("completion-marker 必须声明没有声称人工或跨机器验收")
+        if flags.get("actual_multi_role_defect_reflux_claimed") is not False:
+            failures.append("completion-marker 必须声明没有声称真实多角色自然缺陷返工")
     meaning = str(payload.get("ready_for_engineering_use_means") or "")
     for required_text in ["工程试用", "不等同于跨机器", "人工", "永久生产验收"]:
         if required_text not in meaning:
@@ -10581,6 +11031,62 @@ def write_completion_marker_preview(
     return preview_payload
 
 
+def write_completion_marker_prewrite_validation(
+    evidence: pathlib.Path,
+    project: pathlib.Path,
+    bundle: dict[str, Any],
+    self_referential_boundary: dict[str, Any] | None = None,
+    final_marker_validation: dict[str, Any] | None = None,
+    file_browser_inspection: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    planned_created_at = iso_now()
+    assumed_final_prism = {
+        "strictest_verdict": "pass",
+    }
+    assumed_convergence = {
+        "auto_rerun_allowed": False,
+        "strictest_verdict": "pass",
+    }
+    planned_payload = build_completion_marker_payload(
+        evidence,
+        project,
+        bundle,
+        assumed_final_prism,
+        self_referential_boundary=self_referential_boundary,
+        final_marker_validation=final_marker_validation,
+        file_browser_inspection=file_browser_inspection,
+        convergence_diagnosis=assumed_convergence,
+        created_at=planned_created_at,
+    )
+    boundary_validation = completion_marker_boundary_validation(
+        planned_payload,
+        self_referential_boundary,
+        preview=False,
+    )
+    payload_sha256 = sha256_text(json.dumps(planned_payload, ensure_ascii=False, sort_keys=True))
+    payload = {
+        "schema_id": "redcap-e2e-completion-marker-prewrite-validation",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "ok": boundary_validation.get("ok") is True,
+        "planned_payload_sha256": payload_sha256,
+        "planned_payload_created_at": planned_created_at,
+        "planned_payload": planned_payload,
+        "boundary_validation": boundary_validation,
+        "final_marker_validation_before_review": {
+            "path": "final-marker-validation.json",
+            "ok": final_marker_validation.get("ok") if isinstance(final_marker_validation, dict) else None,
+            "stdout_sha256": final_marker_validation.get("stdout_sha256") if isinstance(final_marker_validation, dict) else None,
+            "exit_code": final_marker_validation.get("exit_code") if isinstance(final_marker_validation, dict) else None,
+        },
+        "requires_final_prism_pass_before_write": True,
+        "requires_final_marker_validation_rerun_before_write": True,
+        "failures": [] if boundary_validation.get("ok") is True else list(boundary_validation.get("failures") or []),
+    }
+    write_json(evidence / "completion-marker-prewrite-validation.json", payload)
+    return payload
+
+
 def write_completion_marker(
     evidence: pathlib.Path,
     project: pathlib.Path,
@@ -10591,6 +11097,13 @@ def write_completion_marker(
     file_browser_inspection: dict[str, Any] | None = None,
     convergence_diagnosis: dict[str, Any] | None = None,
 ) -> None:
+    prewrite = load_optional_json(evidence / "completion-marker-prewrite-validation.json") or {}
+    planned_payload = prewrite.get("planned_payload") if isinstance(prewrite.get("planned_payload"), dict) else None
+    planned_created_at = (
+        str(planned_payload.get("created_at"))
+        if isinstance(planned_payload, dict) and planned_payload.get("created_at")
+        else None
+    )
     payload = build_completion_marker_payload(
         evidence,
         project,
@@ -10600,8 +11113,17 @@ def write_completion_marker(
         final_marker_validation=final_marker_validation,
         file_browser_inspection=file_browser_inspection,
         convergence_diagnosis=convergence_diagnosis,
+        created_at=planned_created_at,
     )
     validation = completion_marker_boundary_validation(payload, self_referential_boundary, preview=False)
+    payload_sha256 = sha256_text(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+    if prewrite.get("ok") is not True:
+        raise RuntimeError(f"completion marker prewrite validation missing or failed: {prewrite.get('failures')}")
+    if prewrite.get("planned_payload_sha256") != payload_sha256:
+        raise RuntimeError(
+            "completion marker payload hash does not match prewrite validation: "
+            f"{prewrite.get('planned_payload_sha256')} != {payload_sha256}"
+        )
     write_json(evidence / "completion-marker-boundary-validation.json", validation)
     if validation.get("ok") is not True:
         raise RuntimeError(f"completion marker boundary validation failed: {validation.get('failures')}")
@@ -10735,6 +11257,471 @@ def write_runner_self_purification_resolution(
     return payload
 
 
+def evidence_snapshot_record(evidence: pathlib.Path, rel: str) -> dict[str, Any]:
+    path = evidence / rel
+    record = evidence_file_record(path, base=evidence)
+    record["required"] = True
+    record["non_empty"] = bool(record.get("exists") and int(record.get("size") or 0) > 0)
+    try:
+        stat = path.stat()
+        record["mtime_epoch"] = stat.st_mtime
+        record["mtime_iso"] = dt.datetime.fromtimestamp(stat.st_mtime, dt.timezone.utc).replace(microsecond=0).isoformat()
+        record["mtime_not_in_future"] = stat.st_mtime <= time.time() + 60
+    except OSError:
+        record["mtime_epoch"] = None
+        record["mtime_iso"] = None
+        record["mtime_not_in_future"] = False
+    return record
+
+
+def write_recovery_evidence_snapshot(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    records: list[dict[str, Any]] = []
+    for rel in E2E_RECOVERY_REQUIRED_EVIDENCE_FILES:
+        records.append(evidence_snapshot_record(evidence, rel))
+    for role in LOOM_EXECUTION_ROLES:
+        for rel in [
+            f"role-artifacts/{role}.json",
+            f"role-runs/{role}.json",
+            f"role-prompts/{role}.md",
+            f"role-messages/{role}.txt",
+        ]:
+            records.append(evidence_snapshot_record(evidence, rel))
+    screenshot_rels = sorted(
+        str(path.relative_to(evidence))
+        for path in evidence.glob("*.png")
+    )
+    for rel in screenshot_rels:
+        records.append(evidence_snapshot_record(evidence, rel))
+    failures = [
+        f"{item['path']} 缺失或为空"
+        for item in records
+        if item.get("required") is True and item.get("non_empty") is not True
+    ]
+    future_mtime = [item["path"] for item in records if item.get("mtime_not_in_future") is not True]
+    if future_mtime:
+        failures.append(f"存在 mtime 超出当前时间窗口的证据文件：{future_mtime[:10]}")
+    codex_run = load_optional_json(evidence / "codex-run.json")
+    if not isinstance(codex_run, dict) or codex_run.get("ok") is not True:
+        failures.append("codex-run.json 必须存在且 ok=true")
+    failure_backlog = load_optional_json(evidence / "failure-backlog.json")
+    if not isinstance(failure_backlog, dict) or failure_backlog.get("open_items"):
+        failures.append("failure-backlog.json 必须存在且 open_items 为空")
+    package_prism = load_optional_json(evidence / "package-prism-check.json")
+    if not isinstance(package_prism, dict) or package_prism.get("ok") is not True:
+        failures.append("package-prism-check.json 必须存在且 ok=true")
+    payload = {
+        "schema_id": "redcap-e2e-recovery-evidence-snapshot",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "project": str(project),
+        "evidence_root": str(evidence),
+        "record_count": len(records),
+        "records": records,
+        "snapshot_sha256": sha256_text(json.dumps(records, ensure_ascii=False, sort_keys=True)),
+        "ok": not failures,
+        "failures": failures,
+    }
+    write_json(evidence / "recovery-evidence-snapshot.json", payload)
+    return payload
+
+
+def write_recovery_provenance(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    work_root: pathlib.Path,
+    snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    run_summary_path = work_root / "redcap-e2e-run-summary.json"
+    harness_summary_path = work_root / "redcap-e2e-harness-summary.json"
+    active_run_path = work_root / "redcap-long-task-active-run.json"
+    run_summary = load_optional_json(run_summary_path) or {}
+    harness_summary = load_optional_json(harness_summary_path) or {}
+    active_run = load_optional_json(active_run_path) or {}
+    run_failures = run_summary.get("failures") if isinstance(run_summary.get("failures"), list) else []
+    timeout_recorded = (
+        any("超时" in str(item) or "timeout" in str(item).casefold() for item in run_failures)
+        or harness_summary.get("worker_timed_out") is True
+        or (isinstance(run_summary.get("harness"), dict) and run_summary["harness"].get("worker_timed_out") is True)
+    )
+    recovered_artifacts = [
+        "final-prism-review.json",
+        "iteration-verdict.json",
+        "completion-marker.json",
+        "run-summary.json",
+        "meaningful-evidence-check.json",
+        "revival-followthrough-e2e-check.json",
+    ]
+    failures: list[str] = []
+    if snapshot.get("ok") is not True:
+        failures.append(f"恢复证据快照未通过：{snapshot.get('failures')}")
+    if not timeout_recorded:
+        failures.append("未在工作根目录摘要中发现原始运行超时证据")
+    if active_run.get("lifecycle_state") != "failed":
+        failures.append(f"原始 active_run.lifecycle_state 必须是 failed：{active_run.get('lifecycle_state')}")
+    payload = {
+        "schema_id": "redcap-e2e-recovery-provenance",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "mode": "post_timeout_existing_sample_finalization",
+        "project": str(project),
+        "work_root": str(work_root),
+        "evidence_root": str(evidence),
+        "original_run": {
+            "summary": str(run_summary_path),
+            "summary_sha256": sha256_file(run_summary_path) if run_summary_path.exists() else None,
+            "harness_summary": str(harness_summary_path),
+            "harness_summary_sha256": sha256_file(harness_summary_path) if harness_summary_path.exists() else None,
+            "active_run": str(active_run_path),
+            "active_run_sha256": sha256_file(active_run_path) if active_run_path.exists() else None,
+            "timeout_recorded": timeout_recorded,
+            "lifecycle_state": active_run.get("lifecycle_state"),
+            "failures": run_failures,
+        },
+        "recovered_artifacts": recovered_artifacts,
+        "recovered_completion_not_claimed_as_uninterrupted": True,
+        "distinguishes_from_normal_run": True,
+        "evidence_snapshot": {
+            "path": "recovery-evidence-snapshot.json",
+            "snapshot_sha256": snapshot.get("snapshot_sha256"),
+            "record_count": snapshot.get("record_count"),
+        },
+        "ok": not failures,
+        "failures": failures,
+    }
+    write_json(evidence / "recovery-provenance.json", payload)
+    return payload
+
+
+def write_failure_reflux_audit(evidence: pathlib.Path) -> dict[str, Any]:
+    runtime = load_optional_json(evidence / "loom-failure-route-runtime-consumption.json") or {}
+    repair_loop = load_optional_json(evidence / "developer-repair-loop.json") or {}
+    source = evidence / "controlled-failure-route-drill-source.json"
+    command_receipts = runtime.get("commands") if isinstance(runtime.get("commands"), dict) else {}
+    command_ok = all(
+        isinstance(receipt, dict) and receipt.get("ok") is True
+        for receipt in command_receipts.values()
+    ) and bool(command_receipts)
+    failures: list[str] = []
+    if runtime.get("ok") is not True:
+        failures.append("loom-failure-route-runtime-consumption.json 必须 ok=true")
+    if not command_ok:
+        failures.append("失败回流受控演练的 create/accept/complete/check 命令必须全部成功")
+    if not source.exists() or source.stat().st_size <= 0:
+        failures.append("缺少 controlled-failure-route-drill-source.json")
+    payload = {
+        "schema_id": "redcap-e2e-failure-reflux-audit",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "controlled_drill": True,
+        "actual_multi_role_defect_reflux_claimed": False,
+        "controlled_drill_scope": "验证项目级 Loom failure-route 命令链 create/accept/complete/check 可执行且无开放路由。",
+        "not_claimed": [
+            "不声称本轮出现了真实 tester 发现缺陷后由 developer 自主修复再 retest 的完整多角色返工。",
+            "不声称受控演练等同于长期生产项目中的自然失败回流。",
+            "不允许自动化系统把 controlled_drill=true 解释成 actual_multi_role_defect_reflux_claimed=true。"
+        ],
+        "runtime_consumption": {
+            "path": "loom-failure-route-runtime-consumption.json",
+            "sha256": sha256_file(evidence / "loom-failure-route-runtime-consumption.json") if (evidence / "loom-failure-route-runtime-consumption.json").exists() else None,
+            "ok": runtime.get("ok"),
+            "command_names": sorted(command_receipts.keys()),
+        },
+        "developer_repair_loop": {
+            "path": "developer-repair-loop.json",
+            "sha256": sha256_file(evidence / "developer-repair-loop.json") if (evidence / "developer-repair-loop.json").exists() else None,
+            "rounds_used": repair_loop.get("rounds_used"),
+            "resolved_failures": repair_loop.get("resolved_failures"),
+        },
+        "controlled_source": {
+            "path": "controlled-failure-route-drill-source.json",
+            "sha256": sha256_file(source) if source.exists() else None,
+        },
+        "ok": not failures,
+        "failures": failures,
+    }
+    write_json(evidence / "failure-reflux-audit.json", payload)
+    return payload
+
+
+def recovery_resolution_source(evidence: pathlib.Path, rel: str) -> dict[str, Any]:
+    path = evidence / rel
+    record = evidence_file_record(path, base=evidence)
+    payload = load_optional_json(path) if path.suffix == ".json" else None
+    if isinstance(payload, dict):
+        record["ok"] = payload.get("ok")
+        record["schema_id"] = payload.get("schema_id")
+    return record
+
+
+def resolution_entry(
+    *,
+    issue_id: str,
+    historical_issue: str,
+    status: str,
+    resolution: str,
+    evidence_refs: list[dict[str, Any]],
+    remaining_boundary: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "issue_id": issue_id,
+        "historical_issue": historical_issue,
+        "status": status,
+        "resolution": resolution,
+        "evidence_refs": evidence_refs,
+        "remaining_boundary": remaining_boundary,
+    }
+
+
+def write_recovery_resolution_map(evidence: pathlib.Path) -> dict[str, Any]:
+    assisted_review = load_optional_json(evidence / "prism-assisted-review.json") or {}
+    prior_final_prism = load_optional_json(evidence / "final-prism-review.json") or {}
+    current_convergence = load_optional_json(evidence / "convergence-diagnosis.json") or {}
+    recovery_provenance = load_optional_json(evidence / "recovery-provenance.json") or {}
+    recovery_snapshot = load_optional_json(evidence / "recovery-evidence-snapshot.json") or {}
+    browser_state = load_optional_json(evidence / "browser-state-mutation-probe.json") or {}
+    failure_reflux = load_optional_json(evidence / "failure-reflux-audit.json") or {}
+    route_runtime = load_optional_json(evidence / "loom-failure-route-runtime-consumption.json") or {}
+    visual_report = load_optional_json(evidence / "visual-independence-report.json") or {}
+    observer_verification = load_optional_json(evidence / "independent-observer-verification.json") or {}
+    self_boundary = load_optional_json(evidence / "self-referential-boundary.json") or {}
+    historical_runner_review = (
+        assisted_review.get("runner_final_review")
+        if isinstance(assisted_review.get("runner_final_review"), dict)
+        else None
+    )
+    historical_failures: list[str] = []
+    original_run = recovery_provenance.get("original_run") if isinstance(recovery_provenance.get("original_run"), dict) else {}
+    if isinstance(original_run.get("failures"), list):
+        historical_failures.extend(str(item) for item in original_run["failures"])
+    if isinstance(historical_runner_review, dict) and isinstance(historical_runner_review.get("failures"), list):
+        historical_failures.extend(str(item) for item in historical_runner_review["failures"])
+    prior_merge = prior_final_prism.get("merge") if isinstance(prior_final_prism.get("merge"), dict) else {}
+    prior_main_concerns = prior_merge.get("main_concerns") if isinstance(prior_merge.get("main_concerns"), list) else []
+    prior_minimum_fixes = prior_merge.get("minimum_fixes") if isinstance(prior_merge.get("minimum_fixes"), list) else []
+    convergence_closed = (
+        current_convergence.get("structural_gap_closed_by") == "recovery-resolution-map.json"
+        and current_convergence.get("structural_gap_closed") is True
+    )
+    entries = [
+        resolution_entry(
+            issue_id="prior-final-prism-findings",
+            historical_issue="上一轮最终棱镜 concern 的具体发现必须被复述、分类并映射到当前恢复证据，不能只用 superseded_by 覆盖。",
+            status="resolved" if prior_main_concerns and convergence_closed else "open",
+            resolution="recovery-resolution-map.json 收录上一轮 final-prism-review.merge.main_concerns 和 minimum_fixes；convergence-diagnosis.json 声明结构缺口已由恢复映射关闭，最终仍等待本轮棱镜复核。",
+            evidence_refs=[
+                recovery_resolution_source(evidence, "final-prism-review.json"),
+                recovery_resolution_source(evidence, "convergence-diagnosis.json"),
+                recovery_resolution_source(evidence, "recovery-resolution-map.json"),
+            ],
+            remaining_boundary="该条只关闭上一轮 concern 的可追踪性缺口；本轮最终棱镜仍拥有放行或继续阻塞的权力。",
+        ),
+        resolution_entry(
+            issue_id="recovery-provenance",
+            historical_issue="原始长期 E2E 运行发生超时或失败，不能被写成自然完成。",
+            status="resolved" if recovery_provenance.get("ok") is True and recovery_snapshot.get("ok") is True else "open",
+            resolution="recovery-provenance.json 记录原始运行摘要、超时证据、failed 生命周期和恢复模式；recovery-evidence-snapshot.json 固化恢复时的证据文件状态。",
+            evidence_refs=[
+                recovery_resolution_source(evidence, "recovery-provenance.json"),
+                recovery_resolution_source(evidence, "recovery-evidence-snapshot.json"),
+            ],
+            remaining_boundary="只能声明 post_timeout_existing_sample_finalization，不能声明原始长跑自然完成。",
+        ),
+        resolution_entry(
+            issue_id="browser-state-mutation",
+            historical_issue="浏览器验证可能只证明页面可见，没有证明真实状态变更。",
+            status="resolved" if browser_state.get("ok") is True else "open",
+            resolution="browser-state-mutation-probe.json 通过 signup/cancel 浏览器流记录文本、DOM 和 localStorage 哈希变化，并保存截图。",
+            evidence_refs=[
+                recovery_resolution_source(evidence, "browser-state-mutation-probe.json"),
+                recovery_resolution_source(evidence, "browser-state-mutation-probe.png"),
+            ],
+            remaining_boundary="这是同机自动化浏览器验证，不是人工验收或真实用户流量。",
+        ),
+        resolution_entry(
+            issue_id="failure-reflux-boundary",
+            historical_issue="失败回流证据容易被误读成真实多角色自然缺陷返工。",
+            status=(
+                "resolved"
+                if failure_reflux.get("ok") is True
+                and failure_reflux.get("controlled_drill") is True
+                and failure_reflux.get("actual_multi_role_defect_reflux_claimed") is False
+                and route_runtime.get("ok") is True
+                else "open"
+            ),
+            resolution="failure-reflux-audit.json 明确 controlled_drill=true 且 actual_multi_role_defect_reflux_claimed=false；loom-failure-route-runtime-consumption.json 证明项目级 failure-route 命令链可执行。",
+            evidence_refs=[
+                recovery_resolution_source(evidence, "failure-reflux-audit.json"),
+                recovery_resolution_source(evidence, "loom-failure-route-runtime-consumption.json"),
+            ],
+            remaining_boundary="受控演练只证明运行机消费失败路由，不等于自然发生的多角色缺陷修复闭环。",
+        ),
+        resolution_entry(
+            issue_id="visual-observer-boundary",
+            historical_issue="视觉证据和观察者边界曾缺少可追踪来源或独立性披露。",
+            status=(
+                "resolved"
+                if visual_report.get("ok") is True
+                and observer_verification.get("ok") is True
+                and self_boundary.get("ok") is True
+                else "open"
+            ),
+            resolution="visual-independence-report.json 纳入所有截图并校验哈希；independent-observer-verification.json 与 self-referential-boundary.json 披露同机兄弟进程观察者边界。",
+            evidence_refs=[
+                recovery_resolution_source(evidence, "visual-independence-report.json"),
+                recovery_resolution_source(evidence, "independent-observer-verification.json"),
+                recovery_resolution_source(evidence, "self-referential-boundary.json"),
+            ],
+            remaining_boundary="观察者是同机 harness 兄弟进程，不是跨机器或人工第三方认证。",
+        ),
+    ]
+    unresolved = [entry for entry in entries if entry.get("status") != "resolved"]
+    payload = {
+        "schema_id": "redcap-e2e-recovery-resolution-map",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "mode": "post_timeout_existing_sample_finalization",
+        "purpose": "把旧失败、当前恢复证据和剩余边界放在同一文件中，避免把恢复收口误写成原始长跑自然完成。",
+        "ok": not unresolved,
+        "historical_blocked_state": {
+            "prism_assisted_review_path": "prism-assisted-review.json",
+            "runner_final_review": historical_runner_review,
+            "prior_final_prism": {
+                "path": "final-prism-review.json",
+                "strictest_verdict": prior_final_prism.get("strictest_verdict"),
+                "ok": prior_final_prism.get("ok"),
+                "main_concerns": prior_main_concerns,
+                "minimum_fixes": prior_minimum_fixes,
+            },
+            "current_convergence": {
+                "path": "convergence-diagnosis.json",
+                "structural_gap_closed": current_convergence.get("structural_gap_closed"),
+                "structural_gap_closed_by": current_convergence.get("structural_gap_closed_by"),
+                "loop_class": current_convergence.get("loop_class"),
+            },
+            "historical_failure_count": len(historical_failures),
+            "historical_failures_excerpt": historical_failures[:8],
+        },
+        "not_claimed": [
+            "不声称原始 E2E 长跑自然完成",
+            "不声称受控失败回流演练等于真实多角色缺陷返工",
+            "不声称同机自动化验收等于人工或跨机器生产认证",
+            "不声称 RedCap 永久完整复活",
+        ],
+        "boundary_flags": {
+            "actual_multi_role_defect_reflux_claimed": False,
+            "controlled_drill": failure_reflux.get("controlled_drill") is True,
+            "human_or_cross_machine_verification_claimed": False,
+            "same_host_automated_engineering_trial": True,
+            "uninterrupted_original_run_claimed": False,
+            "post_timeout_recovery_finalization": True,
+        },
+        "resolution_entries": entries,
+        "unresolved_entries": unresolved,
+        "supersedes_runner_final_review_when_ok": "prism-assisted-review.json.runner_final_review",
+        "failures": [
+            f"{entry['issue_id']} 未解决"
+            for entry in unresolved
+        ],
+    }
+    write_json(evidence / "recovery-resolution-map.json", payload)
+    return payload
+
+
+def mark_prism_assistance_superseded_by_recovery_map(evidence: pathlib.Path, recovery_resolution: dict[str, Any]) -> None:
+    path = evidence / "prism-assisted-review.json"
+    payload = load_optional_json(path) or {}
+    historical_runner_review = payload.get("runner_final_review")
+    if historical_runner_review and "historical_runner_final_review" not in payload:
+        payload["historical_runner_final_review"] = historical_runner_review
+    payload.update({
+        "schema_id": "redcap-e2e-prism-assisted-review",
+        "used": True,
+        "skip_reason": None,
+        "current_state": "superseded_by_recovery_resolution_map_pending_final_prism"
+        if recovery_resolution.get("ok") is True
+        else "recovery_resolution_map_open",
+        "cap_decision": "recovered_pending_final_prism"
+        if recovery_resolution.get("ok") is True
+        else "blocked",
+        "superseded_by": "recovery-resolution-map.json"
+        if recovery_resolution.get("ok") is True
+        else None,
+        "resolution_map": {
+            "path": "recovery-resolution-map.json",
+            "ok": recovery_resolution.get("ok") is True,
+            "sha256": sha256_file(evidence / "recovery-resolution-map.json") if (evidence / "recovery-resolution-map.json").exists() else None,
+            "resolution_entries": [
+                {
+                    "issue_id": entry.get("issue_id"),
+                    "status": entry.get("status"),
+                    "remaining_boundary": entry.get("remaining_boundary"),
+                }
+                for entry in recovery_resolution.get("resolution_entries", [])
+                if isinstance(entry, dict)
+            ],
+        },
+    })
+    write_json(path, payload)
+
+
+def write_recovery_convergence_resolution(evidence: pathlib.Path, recovery_resolution: dict[str, Any]) -> dict[str, Any]:
+    prior_final_prism = load_optional_json(evidence / "final-prism-review.json") or {}
+    prior_merge = prior_final_prism.get("merge") if isinstance(prior_final_prism.get("merge"), dict) else {}
+    prior_main_concerns = prior_merge.get("main_concerns") if isinstance(prior_merge.get("main_concerns"), list) else []
+    unresolved_entries = [
+        item
+        for item in recovery_resolution.get("unresolved_entries", [])
+        if isinstance(item, dict) and item.get("issue_id") != "prior-final-prism-findings"
+    ]
+    structural_gap_closed = bool(recovery_resolution.get("resolution_entries")) and not unresolved_entries
+    payload = {
+        "schema_id": "redcap-e2e-convergence-diagnosis",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "redcap_source": redcap_source_revision(),
+        "final_prism_ok": False,
+        "strictest_verdict": "pending-final-prism",
+        "pending_final_prism": True,
+        "auto_rerun_allowed": False,
+        "loop_class": "recovery_resolution_gap_closed_pending_final_prism"
+        if structural_gap_closed
+        else "recovery_resolution_gap_open",
+        "structural_gap_closed": structural_gap_closed,
+        "structural_gap_closed_by": "recovery-resolution-map.json" if structural_gap_closed else None,
+        "recovery_resolution_map_sha256": sha256_file(evidence / "recovery-resolution-map.json") if (evidence / "recovery-resolution-map.json").exists() else None,
+        "prior_final_prism": {
+            "path": "final-prism-review.json",
+            "ok": prior_final_prism.get("ok"),
+            "strictest_verdict": prior_final_prism.get("strictest_verdict"),
+            "main_concerns": prior_main_concerns,
+            "minimum_fixes": prior_merge.get("minimum_fixes") if isinstance(prior_merge.get("minimum_fixes"), list) else [],
+        },
+        "diagnosis": [
+            {
+                "loop_class": "recovery_resolution_gap_closed_pending_final_prism"
+                if structural_gap_closed
+                else "recovery_resolution_gap_open",
+                "evidence_gap": None if structural_gap_closed else "recovery-resolution-map.json 仍有未解决条目",
+                "required_next_action": (
+                    "继续执行本轮最终棱镜复核；若棱镜通过，运行器才允许写 completion-marker.json。"
+                    if structural_gap_closed
+                    else "先修复 recovery-resolution-map.json 的未解决条目。"
+                ),
+                "auto_rerun_allowed": False,
+                "closed_by": "recovery-resolution-map.json" if structural_gap_closed else None,
+            }
+        ],
+        "summary": (
+            "上一轮结构性缺口已由 recovery-resolution-map.json 关闭；当前仍等待本轮最终棱镜复核，不允许盲目自动重跑。"
+            if structural_gap_closed
+            else "恢复解决映射未通过，禁止进入最终完成声明。"
+        ),
+        "source": "recovery-resolution-map.json",
+    }
+    write_json(evidence / "convergence-diagnosis.json", payload)
+    return payload
+
+
 def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evidence: dict[str, Any] | None = None) -> dict[str, Any]:
     supplemental_evidence = supplemental_evidence or {}
     return {
@@ -10758,7 +11745,11 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
             "completion-marker-preview.json previews the exact boundary-copying payload shape that will become completion-marker.json only if final Prism passes; completion-marker-preview-validation.json proves it copies self-referential-boundary.json disclosures before providers review.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
-            "The runner executed a controlled Loom failure-route drill through the installed project-level .redcap runtime: create, accept, complete, then check --require-no-open. This proves the failure feedback loop is consumed by the Loom runtime instead of remaining only a contract file.",
+        "The runner executed a controlled Loom failure-route drill through the installed project-level .redcap runtime: create, accept, complete, then check --require-no-open. This proves the failure feedback loop is consumed by the Loom runtime instead of remaining only a contract file.",
+            "When finalizing an existing sample after a hard timeout, the runner writes recovery-provenance.json and recovery-evidence-snapshot.json so the recovered artifacts cannot be confused with an uninterrupted original run.",
+            "When finalizing an existing sample after a hard timeout, the runner writes recovery-resolution-map.json and marks the old prism-assisted-review runner_final_review as superseded only if the recovery map links each historical concern to current evidence and keeps remaining boundaries explicit.",
+            "The runner writes browser-state-mutation-probe.json after performing a real signup/cancel browser flow when the OL-11 app exposes that flow, recording pre/post text, DOM and localStorage hashes plus screenshot and browser errors.",
+            "The runner writes failure-reflux-audit.json to disclose that the failure route evidence is a controlled same-run drill and not a claimed natural multi-role defect recovery loop.",
         ],
         "evidence": [
             {
@@ -10807,6 +11798,11 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "summary": supplemental_evidence.get("completion_marker_preview_validation"),
             },
             {
+                "kind": "completion-marker-prewrite-validation",
+                "reference": "completion-marker-prewrite-validation.json",
+                "summary": supplemental_evidence.get("completion_marker_prewrite_validation"),
+            },
+            {
                 "kind": "failure-backlog-full",
                 "reference": "failure-backlog.json",
                 "summary": supplemental_evidence.get("failure_backlog"),
@@ -10830,6 +11826,36 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "kind": "loom-failure-route-runtime-consumption",
                 "reference": "loom-failure-route-runtime-consumption.json",
                 "summary": supplemental_evidence.get("loom_failure_route_runtime_consumption"),
+            },
+            {
+                "kind": "browser-state-mutation-probe",
+                "reference": "browser-state-mutation-probe.json",
+                "summary": supplemental_evidence.get("browser_state_mutation_probe"),
+            },
+            {
+                "kind": "failure-reflux-audit",
+                "reference": "failure-reflux-audit.json",
+                "summary": supplemental_evidence.get("failure_reflux_audit"),
+            },
+            {
+                "kind": "recovery-provenance",
+                "reference": "recovery-provenance.json",
+                "summary": supplemental_evidence.get("recovery_provenance"),
+            },
+            {
+                "kind": "recovery-evidence-snapshot",
+                "reference": "recovery-evidence-snapshot.json",
+                "summary": supplemental_evidence.get("recovery_evidence_snapshot"),
+            },
+            {
+                "kind": "recovery-resolution-map",
+                "reference": "recovery-resolution-map.json",
+                "summary": supplemental_evidence.get("recovery_resolution_map"),
+            },
+            {
+                "kind": "prism-assisted-review-current",
+                "reference": "prism-assisted-review.json",
+                "summary": supplemental_evidence.get("prism_assisted_review"),
             }
         ],
         "review_mode": "completion_review",
@@ -10847,6 +11873,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
             "completion-marker-preview.json is not a completion claim; it is a pre-final payload preview. Providers should evaluate whether its marker_payload copies boundary disclosures, while completion-marker.json remains forbidden until final Prism passes.",
+            "completion-marker-prewrite-validation.json precomputes the exact completion-marker payload hash for final_prism.strictest_verdict=pass and requires the runner to re-run final-marker-validation.json immediately before writing; if the actual payload hash differs, writing completion-marker.json must raise an error.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, completion-marker-preview.json, completion-marker-preview-validation.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, completion-marker-boundary-validation.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
@@ -10854,6 +11881,10 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
             "If this provider review passes, completion-marker.json must copy role_process_completion, observer_boundary, and bootstrap_review_boundary from self-referential-boundary.json.",
             "If the remaining concern is that any same-host automated E2E can never be externally production-certified, treat that as compatible with an engineering-trial marker only when self-referential-boundary.json and completion-marker.json explicitly disclose that limitation.",
+            "If recovery-provenance.json is present, providers must evaluate the completion marker as a post-timeout recovered finalization, not as an uninterrupted original run completion.",
+            "failure-reflux-audit.json must keep controlled_drill=true separate from actual_multi_role_defect_reflux_claimed=false.",
+            "browser-state-mutation-probe.json must prove at least one real state-changing browser interaction with text, DOM, or localStorage hash changes and no browser errors.",
+            "recovery-resolution-map.json must explicitly map historical failures to current evidence and must keep human/cross-machine verification and real multi-role natural defect reflux as not-claimed boundaries. If it is ok=true and prism-assisted-review.json marks the old runner_final_review as superseded_by recovery-resolution-map.json, the old blocked runner_final_review should not be treated as the current state.",
         ],
         "role_execution_profile": {
             "model": CODEX_ROLE_MODEL,
@@ -10981,6 +12012,7 @@ def finalize_e2e_acceptance(
     package_prism: dict[str, Any],
     missing_hooks: list[str],
 ) -> dict[str, Any]:
+    clear_runner_final_failure_backlog(evidence)
     marker = evidence / "completion-marker.json"
     if marker.exists():
         marker.unlink()
@@ -11000,12 +12032,14 @@ def finalize_e2e_acceptance(
     write_json(evidence / "file-browser-inspection.json", file_browser_inspection)
     behavioral_verification = run_behavioral_browser_verification(project, evidence)
     write_json(evidence / "behavioral-browser-verification.json", behavioral_verification)
+    browser_state_mutation_probe = run_browser_state_mutation_probe(project, evidence)
     independent_browser = run_independent_browser_verification_process(project, evidence)
     write_json(evidence / "independent-browser-verification.json", independent_browser)
     final_marker_validation = run_final_marker_validation(project)
     write_json(evidence / "final-marker-validation.json", final_marker_validation)
     role_risk = write_role_execution_risk(evidence)
     route_runtime_drill = run_loom_failure_route_runtime_drill(project, evidence)
+    failure_reflux_audit = write_failure_reflux_audit(evidence)
     pre_purification_failures: list[str] = []
     if role_result.get("ok") is not True:
         pre_purification_failures.append("Loom 角色管线未通过")
@@ -11037,6 +12071,8 @@ def finalize_e2e_acceptance(
         failures.append("运行器 file:// 浏览器检查未通过")
     if behavioral_verification.get("ok") is not True:
         failures.append("运行器行为级浏览器验证未通过")
+    if browser_state_mutation_probe.get("ok") is not True:
+        failures.append(f"运行器浏览器状态变更探针未通过：{browser_state_mutation_probe.get('failures')}")
     if independent_browser.get("ok") is not True:
         failures.append("独立子进程浏览器验证未通过")
     if final_marker_validation.get("ok") is not True:
@@ -11045,6 +12081,8 @@ def finalize_e2e_acceptance(
         failures.append("Loom 角色推理预算风险未被接受")
     if route_runtime_drill.get("ok") is not True:
         failures.append(f"Loom 失败回流运行机演练未通过：{route_runtime_drill.get('failures')}")
+    if failure_reflux_audit.get("ok") is not True:
+        failures.append(f"失败回流审计未通过：{failure_reflux_audit.get('failures')}")
     if runner_purification_resolution.get("resolved") is not True:
         failures.append(f"运行器自我净化裁决未通过：{runner_purification_resolution.get('failures')}")
     backlog_path = evidence / "failure-backlog.json"
@@ -11061,6 +12099,7 @@ def finalize_e2e_acceptance(
         "browser_ok": browser_inspection.get("ok") is True,
         "file_browser_ok": file_browser_inspection.get("ok") is True,
         "behavior_ok": behavioral_verification.get("ok") is True,
+        "browser_state_mutation_ok": browser_state_mutation_probe.get("ok") is True,
         "independent_browser_ok": independent_browser.get("ok") is True,
         "final_marker_validation_ok": final_marker_validation.get("ok") is True,
         "independent_observer_ok": False,
@@ -11091,6 +12130,12 @@ def finalize_e2e_acceptance(
     write_json(evidence / "visual-independence-report.json", visual_independence)
     if visual_independence.get("ok") is not True:
         failures.append(f"视觉三角独立性验证未通过：{visual_independence.get('failures')}")
+    recovery_resolution = write_recovery_resolution_map(evidence)
+    recovery_convergence = write_recovery_convergence_resolution(evidence, recovery_resolution)
+    recovery_resolution = write_recovery_resolution_map(evidence)
+    mark_prism_assistance_superseded_by_recovery_map(evidence, recovery_resolution)
+    if recovery_resolution.get("ok") is not True:
+        failures.append(f"恢复解决映射未通过：{recovery_resolution.get('failures')}")
     pre_final_context["independent_observer_ok"] = independent_observer_verification.get("ok") is True
     pre_final_readiness = write_pre_final_readiness(project, evidence, failures, pre_final_context)
     completion_marker_preview = write_completion_marker_preview(
@@ -11101,6 +12146,18 @@ def finalize_e2e_acceptance(
         final_marker_validation=final_marker_validation,
         file_browser_inspection=file_browser_inspection,
     )
+    completion_marker_prewrite_validation = write_completion_marker_prewrite_validation(
+        evidence,
+        project,
+        bundle,
+        self_referential_boundary=self_referential_boundary,
+        final_marker_validation=final_marker_validation,
+        file_browser_inspection=file_browser_inspection,
+    )
+    if completion_marker_prewrite_validation.get("ok") is not True:
+        failures.append(
+            f"completion-marker 预写校验未通过：{completion_marker_prewrite_validation.get('failures')}"
+        )
     completion_marker_preview_validation = load_optional_json(evidence / "completion-marker-preview-validation.json")
     if not isinstance(completion_marker_preview_validation, dict) or completion_marker_preview_validation.get("ok") is not True:
         failures.append(
@@ -11125,17 +12182,21 @@ def finalize_e2e_acceptance(
             "pre_final_readiness": pre_final_readiness,
             "completion_marker_preview": completion_marker_preview,
             "completion_marker_preview_validation": completion_marker_preview_validation,
+            "completion_marker_prewrite_validation": load_optional_json(evidence / "completion-marker-prewrite-validation.json"),
             "final_marker_validation": load_optional_json(evidence / "final-marker-validation.json"),
             "file_browser_inspection": load_optional_json(evidence / "file-browser-inspection.json"),
+            "browser_state_mutation_probe": load_optional_json(evidence / "browser-state-mutation-probe.json"),
             "self_referential_boundary": load_optional_json(evidence / "self-referential-boundary.json"),
             "failure_backlog": load_optional_json(evidence / "failure-backlog.json"),
             "independent_observer": load_optional_json(evidence / "independent-observer.json"),
             "package_prism_check": load_optional_json(evidence / "package-prism-check.json"),
             "loom_failure_route_runtime_consumption": load_optional_json(evidence / "loom-failure-route-runtime-consumption.json"),
-            "convergence_diagnosis_policy": {
-                "will_write": "convergence-diagnosis.json",
-                "rule": "如果最终棱镜未通过，运行器必须归类 loop_class，并在结构性缺口存在时设置 auto_rerun_allowed=false，禁止继续无意义重跑。",
-            },
+            "failure_reflux_audit": load_optional_json(evidence / "failure-reflux-audit.json"),
+            "recovery_provenance": load_optional_json(evidence / "recovery-provenance.json"),
+            "recovery_evidence_snapshot": load_optional_json(evidence / "recovery-evidence-snapshot.json"),
+            "recovery_resolution_map": load_optional_json(evidence / "recovery-resolution-map.json"),
+            "prism_assisted_review": load_optional_json(evidence / "prism-assisted-review.json"),
+            "convergence_diagnosis_policy": load_optional_json(evidence / "convergence-diagnosis.json"),
         })
         write_runner_prism_assistance(evidence, final_prism)
         convergence = classify_final_prism_convergence(final_prism, failures)
@@ -11175,6 +12236,33 @@ def finalize_e2e_acceptance(
             "loom_failure_route_plan": route_plan,
         })
     else:
+        final_marker_validation = run_final_marker_validation(project)
+        write_json(evidence / "final-marker-validation.json", final_marker_validation)
+        if final_marker_validation.get("ok") is not True:
+            failures.append("最终棱镜通过后、写 completion-marker 前的项目验证重跑未通过")
+            write_failure_backlog_with_runner_items(evidence, failures)
+            route_plan = build_loom_failure_route_plan(
+                evidence=evidence,
+                failure_backlog=load_optional_json(evidence / "failure-backlog.json"),
+                convergence=load_optional_json(evidence / "convergence-diagnosis.json"),
+                final_failures=failures,
+                runtime_consumption=route_runtime_drill,
+            )
+            write_final_iteration_verdict(project, evidence, False, failures, {
+                **pre_final_context,
+                "final_prism_ok": final_prism.get("ok") is True,
+                "loom_failure_route_plan": route_plan,
+            })
+            return {
+                "schema_id": "redcap-e2e-finalization-result",
+                "ok": False,
+                "runner_tests_ok": runner_tests.get("ok") is True,
+                "final_marker_validation_ok": False,
+                "file_browser_ok": file_browser_inspection.get("ok") is True,
+                "final_prism_ok": final_prism.get("ok") is True,
+                "completion_marker_present": False,
+                "failures": failures,
+            }
         convergence = classify_final_prism_convergence(final_prism, failures)
         write_json(evidence / "convergence-diagnosis.json", convergence)
         route_plan = build_loom_failure_route_plan(
@@ -11468,6 +12556,40 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
         disclosure = self_referential_boundary.get("completion_marker_disclosure")
         if not isinstance(disclosure, dict) or disclosure.get("must_copy_this_boundary") is not True:
             failures.append("self-referential-boundary 必须要求 completion-marker 复制边界披露")
+    recovery_resolution = load_optional_json(evidence / "recovery-resolution-map.json")
+    if recovery_resolution is not None:
+        if recovery_resolution.get("ok") is not True:
+            failures.append(f"recovery-resolution-map 必须通过：{recovery_resolution.get('failures')}")
+        if recovery_resolution.get("mode") != "post_timeout_existing_sample_finalization":
+            failures.append("recovery-resolution-map.mode 必须是 post_timeout_existing_sample_finalization")
+        entries = recovery_resolution.get("resolution_entries")
+        if not isinstance(entries, list) or not entries:
+            failures.append("recovery-resolution-map 必须包含 resolution_entries")
+        else:
+            open_entries = [
+                entry.get("issue_id")
+                for entry in entries
+                if isinstance(entry, dict) and entry.get("status") != "resolved"
+            ]
+            if open_entries:
+                failures.append(f"recovery-resolution-map 仍有未解决条目：{open_entries}")
+        flags = recovery_resolution.get("boundary_flags")
+        if not isinstance(flags, dict):
+            failures.append("recovery-resolution-map 必须包含 boundary_flags")
+        else:
+            if flags.get("uninterrupted_original_run_claimed") is not False:
+                failures.append("recovery-resolution-map 禁止声称原始运行自然完成")
+            if flags.get("actual_multi_role_defect_reflux_claimed") is not False:
+                failures.append("recovery-resolution-map 禁止声称真实多角色自然缺陷返工")
+            if flags.get("human_or_cross_machine_verification_claimed") is not False:
+                failures.append("recovery-resolution-map 禁止声称人工或跨机器验收")
+    prism_review_after_recovery = load_optional_json(evidence / "prism-assisted-review.json")
+    if prism_review_after_recovery is not None and (evidence / "recovery-resolution-map.json").exists():
+        if prism_review_after_recovery.get("superseded_by") != "recovery-resolution-map.json":
+            failures.append("prism-assisted-review 必须用 superseded_by 指向 recovery-resolution-map.json")
+        resolution_map = prism_review_after_recovery.get("resolution_map")
+        if not isinstance(resolution_map, dict) or resolution_map.get("ok") is not True:
+            failures.append("prism-assisted-review 必须记录通过的 recovery-resolution-map 摘要")
     completion_marker_preview = load_optional_json(evidence / "completion-marker-preview.json")
     completion_marker_preview_validation = load_optional_json(evidence / "completion-marker-preview-validation.json")
     if completion_marker_preview is not None:
@@ -11480,6 +12602,19 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("completion-marker-preview 必须包含 marker_payload")
     if completion_marker_preview_validation is not None and completion_marker_preview_validation.get("ok") is not True:
         failures.append(f"completion-marker-preview-validation 必须通过：{completion_marker_preview_validation.get('failures')}")
+    completion_marker_prewrite_validation = load_optional_json(evidence / "completion-marker-prewrite-validation.json")
+    if completion_marker_prewrite_validation is not None:
+        if completion_marker_prewrite_validation.get("ok") is not True:
+            failures.append(f"completion-marker-prewrite-validation 必须通过：{completion_marker_prewrite_validation.get('failures')}")
+        if not completion_marker_prewrite_validation.get("planned_payload_sha256"):
+            failures.append("completion-marker-prewrite-validation 必须记录 planned_payload_sha256")
+        planned_payload = completion_marker_prewrite_validation.get("planned_payload")
+        if not isinstance(planned_payload, dict):
+            failures.append("completion-marker-prewrite-validation 必须记录 planned_payload")
+        else:
+            validation = completion_marker_boundary_validation(planned_payload, self_referential_boundary, preview=False)
+            if validation.get("ok") is not True:
+                failures.append(f"completion-marker-prewrite-validation 的 planned_payload 边界校验失败：{validation.get('failures')}")
     role_risk = load_optional_json(evidence / "role-execution-risk.json")
     if role_risk is not None and role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("role-execution-risk 必须说明本轮角色执行风险已被约束")
@@ -11506,6 +12641,8 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 "completion-marker.json",
                 "completion-marker-preview.json",
                 "completion-marker-preview-validation.json",
+                "completion-marker-prewrite-validation.json",
+                "recovery-resolution-map.json",
             }
             for item in files:
                 if not isinstance(item, dict):
@@ -12184,6 +13321,372 @@ def attach_open_loop_e2e_item_results(result: dict[str, Any], work_root: pathlib
         result["ok"] = False
         result["ready_for_engineering_use"] = False
     return result
+
+
+def validate_existing_e2e_project_for_finalization(project: pathlib.Path) -> dict[str, Any]:
+    failures: list[str] = []
+    evidence = project / ".redcap" / "evidence" / "e2e"
+    work_root = project.parent
+    if not project.exists() or not project.is_dir():
+        failures.append(f"既有样本项目不存在：{project}")
+    if not evidence.exists() or not evidence.is_dir():
+        failures.append(f"既有样本缺少 E2E 证据目录：{evidence}")
+    if path_inside(REPO_ROOT, project):
+        failures.append("既有样本项目不能位于 RedCap 源码工作区内")
+    for rel in E2E_RECOVERY_REQUIRED_EVIDENCE_FILES:
+        path = evidence / rel
+        if not path.exists() or path.stat().st_size <= 0:
+            failures.append(f"既有样本缺少续接收口前置证据：{rel}")
+    role_result = load_optional_json(evidence / "codex-run.json")
+    if not isinstance(role_result, dict):
+        failures.append("codex-run.json 不可读取")
+    elif role_result.get("ok") is not True:
+        failures.append("codex-run.json 未证明 Loom 角色管线通过")
+    top_summary = load_optional_json(work_root / "redcap-e2e-run-summary.json")
+    harness = load_optional_json(work_root / "redcap-e2e-harness-summary.json")
+    active_run = load_optional_json(work_root / "redcap-long-task-active-run.json")
+    if not isinstance(top_summary, dict):
+        failures.append("既有样本工作根目录缺少 redcap-e2e-run-summary.json")
+    if not isinstance(harness, dict):
+        failures.append("既有样本工作根目录缺少 redcap-e2e-harness-summary.json")
+    elif harness.get("worker_timed_out") is not True or harness.get("worker_exit_reason") != "timeout":
+        failures.append("续接收口只允许处理明确记录为 timeout 的既有样本")
+    if not isinstance(active_run, dict):
+        failures.append("既有样本工作根目录缺少 redcap-long-task-active-run.json")
+    elif active_run.get("lifecycle_state") != "failed":
+        failures.append("续接收口要求原 active_run.lifecycle_state=failed，避免覆盖已通过样本")
+    return {
+        "schema_id": "redcap-e2e-existing-project-finalization-validation",
+        "ok": not failures,
+        "project": str(project),
+        "work_root": str(work_root),
+        "evidence_root": str(evidence),
+        "failures": failures,
+    }
+
+
+def existing_finalization_summary_text(
+    project: pathlib.Path,
+    role_ok: bool,
+    package_prism_ok: bool,
+    finalization_ok: bool,
+    meaningful_ok: bool,
+    completion_marker_present: bool,
+    recovery_ok: bool,
+) -> str:
+    return (
+        "# RedCap E2E 续接收口摘要\n\n"
+        f"- 项目：{project}\n"
+        "- 模式：既有长期样本超时后的恢复收口，不声明原始长跑自然完成\n"
+        f"- Loom 角色管线：{'通过' if role_ok else '失败'}\n"
+        f"- 包内棱镜自检：{'通过' if package_prism_ok else '失败'}\n"
+        f"- 最终验收：{'通过' if finalization_ok else '失败'}\n"
+        f"- 有意义证据：{'通过' if meaningful_ok else '失败'}\n"
+        f"- 恢复来源披露：{'通过' if recovery_ok else '失败'}\n"
+        f"- 完成标记：{'存在' if completion_marker_present else '不存在'}\n"
+    )
+
+
+def run_e2e_finalize_existing(project: pathlib.Path, direction: str, timeout_seconds: int = 900) -> dict[str, Any]:
+    project = project.expanduser().resolve()
+    evidence = project / ".redcap" / "evidence" / "e2e"
+    work_root = project.parent
+    guard_before = source_workspace_snapshot()
+    failures: list[str] = []
+    if timeout_seconds > E2E_SINGLE_RUN_TIMEOUT_HARD_CAP_SECONDS:
+        failures.append(
+            f"续接收口 timeout-seconds={timeout_seconds} 超过硬上限 {E2E_SINGLE_RUN_TIMEOUT_HARD_CAP_SECONDS} 秒"
+        )
+    validation = validate_existing_e2e_project_for_finalization(project)
+    if validation.get("ok") is not True:
+        failures.extend(str(item) for item in validation.get("failures", []))
+    result: dict[str, Any] = {
+        "schema_id": "redcap-ai-e2e-existing-finalization-result",
+        "ok": False,
+        "ready_for_engineering_use": False,
+        "recovered_existing_sample": True,
+        "project": str(project),
+        "work_root": str(work_root),
+        "evidence_root": str(evidence),
+        "validation": validation,
+        "failures": failures,
+    }
+    if failures:
+        result = attach_source_workspace_guard(result, guard_before)
+        if evidence.exists():
+            write_json(evidence / "run-summary.json", result)
+        write_json(work_root / "redcap-e2e-run-summary.json", result)
+        return result
+
+    work_root.mkdir(parents=True, exist_ok=True)
+    infrastructure_readiness = write_e2e_infrastructure_readiness(work_root, evidence)
+    role_result = load_optional_json(evidence / "codex-run.json") or {}
+    pre_snapshot_cleanup = clear_runner_final_failure_backlog(evidence)
+    snapshot = write_recovery_evidence_snapshot(project, evidence)
+    provenance = write_recovery_provenance(project, evidence, work_root, snapshot)
+    package_prism_result = run_command([
+        ".redcap/runtime/prism/bin/prism",
+        "check",
+    ], cwd=project, timeout_seconds=PACKAGE_PRISM_OUTER_TIMEOUT_SECONDS, env_overrides={
+        "REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS": str(PACKAGE_PRISM_CHILD_TIMEOUT_SECONDS),
+    })
+    package_prism = enforce_package_prism_policy(package_prism_result)
+    write_json(evidence / "package-prism-check.json", package_prism_receipt(package_prism))
+    hook_events = parse_hook_events(project_hook_events_path(project))
+    missing_hooks = [event for event in REQUIRED_HOOK_EVENTS if event not in hook_events]
+    write_json(evidence / "hook-events-summary.json", {
+        "schema_id": "redcap-e2e-hook-events-summary",
+        "events": hook_events,
+        "missing_events": missing_hooks,
+    })
+    finalization = finalize_e2e_acceptance(project, evidence, direction, role_result, package_prism, missing_hooks)
+    meaningful = validate_meaningful_e2e_evidence(evidence)
+    write_json(evidence / "revival-followthrough-e2e-check.json", meaningful["followthrough"])
+    write_json(evidence / "meaningful-evidence-check.json", meaningful)
+    completion_marker = evidence / "completion-marker.json"
+    summary_failures: list[str] = []
+    if role_result.get("ok") is not True:
+        summary_failures.append("既有样本 Loom 角色管线未通过")
+    if package_prism.get("ok") is not True:
+        summary_failures.append("安装包内棱镜自检失败")
+    if missing_hooks:
+        summary_failures.append(f"缺少项目级 hook 事件：{missing_hooks}")
+    if infrastructure_readiness.get("ok") is not True:
+        summary_failures.append(f"E2E 基础设施预检未通过：{infrastructure_readiness.get('failures')}")
+    if snapshot.get("ok") is not True:
+        summary_failures.append(f"恢复证据快照未通过：{snapshot.get('failures')}")
+    if provenance.get("ok") is not True:
+        summary_failures.append(f"恢复来源披露未通过：{provenance.get('failures')}")
+    if finalization.get("ok") is not True:
+        summary_failures.append(f"运行器最终验收未通过：{finalization.get('failures')}")
+    if meaningful.get("ok") is not True:
+        summary_failures.append(f"有意义 E2E 证据不完整：{meaningful.get('failures')}")
+    if meaningful.get("ready_for_engineering_use") is not True:
+        summary_failures.append("iteration-verdict 未证明 ready_for_engineering_use=true")
+    if not completion_marker.exists():
+        summary_failures.append("E2E 运行器没有写入 completion-marker.json；最终验收未通过或被阻塞")
+    summary = {
+        "schema_id": "redcap-ai-e2e-existing-finalization-result",
+        "ok": not summary_failures,
+        "ready_for_engineering_use": bool(meaningful.get("ready_for_engineering_use") is True and not summary_failures),
+        "recovered_existing_sample": True,
+        "recovery_mode": "post_timeout_existing_sample_finalization",
+        "recovered_completion_not_claimed_as_uninterrupted": True,
+        "project": str(project),
+        "work_root": str(work_root),
+        "evidence_root": str(evidence),
+        "codex_cli_ok": role_result.get("ok") is True,
+        "package_prism_ok": package_prism.get("ok") is True,
+        "hook_events_ok": not missing_hooks,
+        "finalization_ok": finalization.get("ok") is True,
+        "infrastructure_readiness_ok": infrastructure_readiness.get("ok") is True,
+        "meaningful_evidence_ok": meaningful.get("ok") is True,
+        "completion_marker_present": completion_marker.exists(),
+        "recovery_evidence_snapshot_ok": snapshot.get("ok") is True,
+        "recovery_provenance_ok": provenance.get("ok") is True,
+        "recovery_evidence_snapshot": str(evidence / "recovery-evidence-snapshot.json"),
+        "recovery_provenance": str(evidence / "recovery-provenance.json"),
+        "pre_snapshot_failure_backlog_cleanup": pre_snapshot_cleanup,
+        "validation": validation,
+        "finalization": finalization,
+        "failures": summary_failures,
+    }
+    summary = attach_source_workspace_guard(summary, guard_before)
+    (evidence / "e2e-acceptance-summary.md").write_text(
+        existing_finalization_summary_text(
+            project,
+            role_result.get("ok") is True,
+            package_prism.get("ok") is True,
+            finalization.get("ok") is True,
+            meaningful.get("ok") is True,
+            completion_marker.exists(),
+            snapshot.get("ok") is True and provenance.get("ok") is True,
+        ),
+        encoding="utf-8",
+    )
+    final_status = "passed" if summary.get("ok") is True else "failed"
+    active_run_final = write_e2e_long_task_active_run(
+        work_root,
+        direction=direction,
+        iteration=1,
+        status=final_status,
+        action_evidence=[
+            "runtime/bin/redcap complete-revival-e2e finalize-existing",
+            str(evidence),
+            str(evidence / "run-summary.json"),
+            str(evidence / "recovery-provenance.json"),
+        ],
+        objective_delta=(
+            "既有长期样本在原始 E2E 超时后完成恢复收口，且恢复来源、最终验收和有意义证据均已记录。"
+            if summary.get("ok") is True
+            else "既有长期样本恢复收口仍存在未通过证据，不能关闭真实长期外部项目样本阻塞项。"
+        ),
+        blocker_signature=sha256_text("\n".join(summary_failures)) if summary_failures else "none",
+        auto_rerun_allowed=summary.get("ok") is not True,
+        failures=summary_failures,
+    )
+    summary["long_task_active_run"] = active_run_final
+    discovery = discover_e2e_long_task_active_run(
+        work_root,
+        expected_lifecycle_state="completed" if summary.get("ok") is True else "failed",
+        require_completion_boundary=True,
+    )
+    summary["long_task_active_run_discovery"] = discovery
+    final_failures = e2e_active_run_final_failures_via_boundary_check(
+        active_run_final,
+        parsed_ok=summary.get("ok") is True,
+        final_status=final_status,
+    )
+    if discovery.get("ok") is not True:
+        final_failures.append("E2E 续接收口未能正确发现或读取 active_run 完成边界。")
+    if final_failures:
+        summary["ok"] = False
+        summary["ready_for_engineering_use"] = False
+        summary.setdefault("failures", [])
+        if isinstance(summary["failures"], list):
+            summary["failures"].extend(final_failures)
+    write_json(evidence / "source-workspace-guard-run.json", summary["source_workspace_guard"])
+    write_json(evidence / "run-summary.json", summary)
+    write_json(work_root / "redcap-e2e-run-summary.json", summary)
+    summary = attach_open_loop_e2e_item_results(summary, work_root)
+    persist_e2e_run_summary_with_retention(summary, work_root)
+    write_json(evidence / "run-summary.json", summary)
+    write_json(work_root / "redcap-e2e-run-summary.json", summary)
+    return summary
+
+
+def run_e2e_finalize_existing_harness(project: pathlib.Path, direction: str, timeout_seconds: int = 900) -> dict[str, Any]:
+    """Run existing-sample finalization through a small harness so observer stays a sibling process."""
+    project = project.expanduser().resolve()
+    evidence = project / ".redcap" / "evidence" / "e2e"
+    work_root = project.parent
+    if os.environ.get("REDCAP_E2E_FINALIZE_EXISTING_WORKER") == "1":
+        return run_e2e_finalize_existing(project, direction, timeout_seconds)
+    if timeout_seconds > E2E_SINGLE_RUN_TIMEOUT_HARD_CAP_SECONDS:
+        return {
+            "schema_id": "redcap-ai-e2e-existing-finalization-result",
+            "ok": False,
+            "ready_for_engineering_use": False,
+            "blocked_before_project_run": True,
+            "project": str(project),
+            "work_root": str(work_root),
+            "evidence_root": str(evidence),
+            "failures": [
+                f"续接收口 timeout-seconds={timeout_seconds} 超过硬上限 {E2E_SINGLE_RUN_TIMEOUT_HARD_CAP_SECONDS} 秒"
+            ],
+        }
+    work_root.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env["REDCAP_E2E_FINALIZE_EXISTING_WORKER"] = "1"
+    env["REDCAP_E2E_OBSERVER_BY_HARNESS"] = "1"
+    env["REDCAP_E2E_HARNESS_PID"] = str(os.getpid())
+    argv = [
+        sys.executable,
+        str(pathlib.Path(__file__).resolve()),
+        "finalize-existing",
+        "--project",
+        str(project),
+        "--direction",
+        direction,
+        "--timeout-seconds",
+        str(timeout_seconds),
+    ]
+    started = iso_now()
+    deadline = time.monotonic() + timeout_seconds
+    worker = subprocess.Popen(
+        argv,
+        cwd=str(REPO_ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+        env=env,
+    )
+    worker_substrings = worker_command_substrings(argv, work_root)
+    worker_identity = process_identity(worker.pid, worker_substrings)
+    observer_requests: set[str] = set()
+    observer_commands: list[dict[str, Any]] = []
+    skipped_observer_requests: list[dict[str, Any]] = []
+    timed_out = False
+    process_group_killed = False
+    while worker.poll() is None:
+        request_path = evidence / "observer-request.json"
+        if request_path.exists():
+            decision = observer_request_routing_decision(request_path.resolve(), worker.pid)
+            request_key = f"{request_path.resolve()}:{decision.get('request_sha256')}"
+            if decision.get("ready") is True and request_key not in observer_requests:
+                observer_requests.add(request_key)
+                observer_commands.append(run_observer_request_as_harness(request_path.resolve(), runner_pid=worker.pid, harness_pid=os.getpid()))
+            elif decision.get("ready") is not True and request_key not in observer_requests:
+                if decision.get("reason") != "output-already-exists":
+                    skipped_observer_requests.append(decision)
+                observer_requests.add(request_key)
+        if time.monotonic() > deadline:
+            timed_out = True
+            process_group_killed = kill_process_group(
+                worker,
+                grace_seconds=2.0,
+                expected_identity=worker_identity,
+                command_substrings=worker_substrings,
+            )
+            break
+        time.sleep(0.25)
+    stdout, stderr, communicate_timed_out = communicate_worker_after_stop(worker, HARNESS_WORKER_COMMUNICATE_TIMEOUT_SECONDS)
+    parsed = parse_leading_json(stdout)
+    if parsed is None:
+        parsed = {
+            "schema_id": "redcap-ai-e2e-existing-finalization-result",
+            "ok": False,
+            "ready_for_engineering_use": False,
+            "recovered_existing_sample": True,
+            "project": str(project),
+            "work_root": str(work_root),
+            "evidence_root": str(evidence),
+            "failures": ["E2E 续接收口 worker 没有返回可解析 JSON"],
+        }
+    harness_failures: list[str] = []
+    if timed_out:
+        harness_failures.append(f"E2E 续接收口 worker 达到硬超时 {timeout_seconds} 秒")
+    if communicate_timed_out:
+        harness_failures.append("E2E 续接收口 worker 停止后收集输出超时")
+    if worker.returncode != 0 and parsed.get("ok") is True:
+        harness_failures.append(f"E2E 续接收口 worker 退出码非 0：{worker.returncode}")
+    if any(command.get("ok") is not True for command in observer_commands):
+        harness_failures.append("至少一个续接收口独立观察者命令失败")
+    if harness_failures:
+        parsed["ok"] = False
+        parsed["ready_for_engineering_use"] = False
+        parsed.setdefault("failures", [])
+        if isinstance(parsed["failures"], list):
+            parsed["failures"].extend(harness_failures)
+    parsed["finalize_existing_harness"] = {
+        "schema_id": "redcap-e2e-existing-finalization-harness-summary",
+        "producer": "e2e-finalize-existing-harness",
+        "started_at": started,
+        "finished_at": iso_now(),
+        "worker_pid": worker.pid,
+        "worker_pgid": worker_identity.get("pgid"),
+        "worker_exit_code": worker.returncode,
+        "worker_timed_out": timed_out,
+        "process_group_killed": process_group_killed,
+        "communicate_timed_out": communicate_timed_out,
+        "timeout_seconds": timeout_seconds,
+        "worker_identity": worker_identity,
+        "observer_commands": observer_commands,
+        "skipped_observer_requests": skipped_observer_requests[-20:],
+        "stdout_tail": stdout[-4000:],
+        "stderr_tail": stderr[-4000:],
+        "failures": harness_failures,
+    }
+    try:
+        write_json(work_root / "redcap-e2e-finalize-existing-harness-summary.json", parsed["finalize_existing_harness"])
+        write_json(work_root / "redcap-e2e-run-summary.json", parsed)
+        if evidence.exists():
+            write_json(evidence / "finalize-existing-harness-summary.json", parsed["finalize_existing_harness"])
+            write_json(evidence / "run-summary.json", parsed)
+    except Exception:
+        pass
+    return parsed
 
 
 def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900) -> dict[str, Any]:
@@ -13890,6 +15393,19 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result.get("ok"):
         print("REDCAP_AI_E2E_RUN_OK")
+        return 0
+    return 1
+
+
+def cmd_finalize_existing(args: argparse.Namespace) -> int:
+    result = run_e2e_finalize_existing_harness(
+        pathlib.Path(args.project),
+        direction_from_args(args),
+        args.timeout_seconds,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok"):
+        print("REDCAP_AI_E2E_FINALIZE_EXISTING_OK")
         return 0
     return 1
 
@@ -15925,6 +17441,7 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             file_record = write_visual_probe("file-browser-inspection.png", b"file-static-render")
             behavioral_record = write_visual_probe("behavioral-browser-verification.png", b"behavioral-render")
             relation_record = write_visual_probe("behavioral-relation-probe.png", b"behavioral-render")
+            state_mutation_record = write_visual_probe("browser-state-mutation-probe.png", b"state-mutation-render")
             independent_record = write_visual_probe("independent-browser-verification.png", b"independent-render")
             observer_record = write_visual_probe("independent-observer.png", b"observer-render")
             common_viewport = {"width": 1280, "height": 900}
@@ -15990,6 +17507,34 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                     "server_port": 1113,
                     "capture_role": "independent-browser-process",
                     "screenshot_phase": "after_interaction",
+                },
+            })
+            write_json(visual_evidence / "browser-state-mutation-probe.json", {
+                "ok": True,
+                "screenshot": state_mutation_record,
+                "coverage_matrix": [
+                    {
+                        "concern": "状态变更必须可审计",
+                        "mapped_flow": "localStorage/text/dom hash diff",
+                        "passed": True,
+                    }
+                ],
+                "actions": [
+                    {
+                        "name": "signup-flow",
+                        "text_changed": True,
+                        "dom_changed": True,
+                        "local_storage_changed": True,
+                        "state_changed": True,
+                    }
+                ],
+                "browser_context": {
+                    "process_pid": 6,
+                    "browser_version": "self-check",
+                    "viewport": {"width": 1280, "height": 900},
+                    "server_port": 1115,
+                    "capture_role": "browser-state-mutation-probe",
+                    "screenshot_phase": "after_state_mutation_probe",
                 },
             })
             write_json(visual_evidence / "independent-observer.json", {
@@ -16452,6 +17997,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--work-root")
     run.add_argument("--timeout-seconds", type=int, default=900)
     run.set_defaults(func=cmd_run)
+    finalize_existing = sub.add_parser("finalize-existing")
+    finalize_existing.add_argument("--project", required=True)
+    finalize_existing.add_argument("--direction")
+    finalize_existing.add_argument("--direction-file")
+    finalize_existing.add_argument("--timeout-seconds", type=int, default=900)
+    finalize_existing.set_defaults(func=cmd_finalize_existing)
     self_check = sub.add_parser("self-check")
     self_check.add_argument("--skip-carrier-probe", action="store_true")
     self_check.add_argument("--timeout-seconds", type=int, default=240)

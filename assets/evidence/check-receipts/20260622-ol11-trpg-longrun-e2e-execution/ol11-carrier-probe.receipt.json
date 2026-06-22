@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "complete-revival-e2e",
+    "carrier-probe",
+    "--work-root",
+    "/Users/norven/workspace/redcap-production-samples/ol11-carrier-preflight-receipt-20260622"
+  ],
+  "command": "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root /Users/norven/workspace/redcap-production-samples/ol11-carrier-preflight-receipt-20260622",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "elapsed_seconds": 37.275,
+  "executed_at": "2026-06-22T06:32:13Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "expected_exit_codes": [
+    0
+  ],
+  "name": "ol11-carrier-probe",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_path": "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-carrier-probe.receipt.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 20380,
+  "stdout_path": "assets/evidence/check-receipts/20260622-ol11-trpg-longrun-e2e-execution/ol11-carrier-probe.receipt.stdout.txt",
+  "stdout_sha256": "c7aea7f12b4729542af3e9e1819bd5d6b9bc374bc56986757478e85773195434"
+}

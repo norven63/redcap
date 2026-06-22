@@ -1,0 +1,106 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260622-ol11-trpg-longrun-e2e-execution",
+  "fsm_state": "PRISM_REVIEW",
+  "requirement_review": {
+    "user_intent": "Norven 确认 OL-11 TRPG 长期外部样本 E2E 方案方向没有问题，并要求技术细节由 Cap 和棱镜作为 AI 把控；只有真实账号、外发发布、不可逆动作、私密人格内容或产品方向裁决才需要人工介入。",
+    "target_reality": "先完成 OL-11 实测前棱镜评审和执行细节收敛，确认执行方、会话接续、项目级 Hook、外部目录、证据矩阵、失败回流和缓存治理均可执行；通过后再启动真实长期外部样本 E2E。",
+    "non_goals": [
+      "不在棱镜评审完成前启动 OL-11 E2E",
+      "不让 Cap 直接开发目标 TRPG 项目",
+      "不读取旧 TRPG 源码作为开发答案",
+      "不接入真实账号、真实外发或公网发布",
+      "不关闭 OL-11、LS-009 或 RedCap 完整复活终局目标"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "本阶段只新增生命周期和棱镜评审证据；若评审发现方案不可执行或风险不可控，保持 OL-11 开放，不启动外部项目。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260622-ol11-trpg-longrun-e2e-execution-lifecycle.json --events assets/evidence/lifecycle/20260622-ol11-trpg-longrun-e2e-execution-lifecycle-events.jsonl",
+      "runtime/bin/redcap gate --task <OL-11 实测前置评审> --risk-level high --lifecycle-packet assets/evidence/lifecycle/20260622-ol11-trpg-longrun-e2e-execution-lifecycle.json --lifecycle-events assets/evidence/lifecycle/20260622-ol11-trpg-longrun-e2e-execution-lifecycle-events.jsonl",
+      "runtime/prism/bin/prism session-init --task-id 20260622-ol11-trpg-longrun-e2e-execution --run-dir assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution",
+      "runtime/bin/redcap prism-dispatch --provider kimi --request assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/request.json",
+      "runtime/bin/redcap prism-dispatch --provider claude-code --request assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/request.json",
+      "runtime/prism/bin/prism merge <provider reviews>",
+      "runtime/prism/bin/prism resolution-check <merge> <resolution>"
+    ]
+  },
+  "prism_review": {
+    "required": true,
+    "scope": "棱镜评审 OL-11 实测方案是否足以作为真实长期外部样本执行路径，重点挑战 AI 细节把控、执行方独立性、会话接续、旧源码隔离、证据矩阵、失败回流、缓存治理和反作弊边界。",
+    "planned_request": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/request.json",
+    "planned_session": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/session.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "我对方案目前没有问题，但是细节方面需要你和棱镜作为AI来把控，因为这块不是人类擅长的领域",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "完成 OL-11 实测前棱镜评审和执行细节收敛，若评审通过则进入真实执行准备。",
+    "primary_deliverable": "生命周期包、棱镜评审请求、双提供方评审、合并结论和执行前修正清单。",
+    "acceptance_criteria": [
+      "棱镜必须同时覆盖 kimi 和 claude-code。",
+      "评审必须明确 Cap、独立开发 AI、Loom 角色和棱镜的职责边界。",
+      "评审必须确认 Codex CLI 会话接续与 Hook 触发是实测前硬门禁。",
+      "评审必须确认旧 TRPG 源码只允许 Cap 抽象需求，不允许开发 AI 开卷读取。",
+      "评审必须确认失败回流、变更接入、自我净化、知识召回、证据保留和缓存治理均有可验收证据。",
+      "若评审给出 block 或 concern，必须先处理或明确升级，不得直接启动 E2E。",
+      "本阶段不得关闭 OL-11 或 RedCap 完整复活终局目标。"
+    ],
+    "status": "planned",
+    "evidence_kind": "review-task",
+    "evidence": [
+      "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+      "assets/contracts/open-loop-closure-queue.json#OL-11",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json#ol11_trpg_longrun_external_sample"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "OL-11 实测必须先评审执行架构，避免把短期生成样本或单轮项目产物误当长期外部项目证明。"
+      ],
+      "evidence": [
+        "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "用户已确认方案方向，但细节把控授权不等于允许跳过棱镜，也不等于允许关闭 OL-11。"
+      ],
+      "evidence": [
+        "assets/contracts/open-loop-closure-queue.json",
+        "assets/evidence/lifecycle/20260622-ol11-trpg-longrun-e2e-execution-lifecycle.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "执行前必须把 OL-11 方案中的能力覆盖矩阵转成未来运行证据要求，不能只检查目标项目能否打开。"
+      ],
+      "evidence": [
+        "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "INTAKE",
+    "to": "PRISM_REVIEW",
+    "evidence": [
+      "gate_required_or_optional"
+    ]
+  },
+  "implementation_evidence": [],
+  "verification_evidence": [],
+  "completion_claim": {
+    "present": false
+  }
+}
