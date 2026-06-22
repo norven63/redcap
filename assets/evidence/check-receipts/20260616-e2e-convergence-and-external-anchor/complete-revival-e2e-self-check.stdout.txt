@@ -1,5 +1,0 @@
-{
-  "ok": true,
-  "failures": []
-}
-REDCAP_AI_E2E_SELF_CHECK_OK

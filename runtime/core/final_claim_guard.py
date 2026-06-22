@@ -13,8 +13,8 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
-DEFAULT_COMPLETION_MARKER = REPO_ROOT / "assets" / "evidence" / "lifecycle" / "latest-completion.json"
+DEFAULT_EVENTS = REPO_ROOT / ".redcap" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
+DEFAULT_COMPLETION_MARKER = REPO_ROOT / ".redcap" / "evidence" / "lifecycle" / "latest-completion.json"
 TASK_BODY_EVIDENCE_KINDS = {"code", "code-and-review", "runtime-change", "runtime_change", "test", "migration"}
 CHINESE_COMPLETION_TERMS = [
     "一切正常",

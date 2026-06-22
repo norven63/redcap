@@ -43,10 +43,11 @@
         "修改项目级安装、打包、发布、证据清理、公开边界或外部 E2E 缓存治理",
         "准备把 RedCap 发布到外部项目使用"
       ],
-      "required_checks": [
-        "runtime/bin/redcap check --profile release",
-        "release 内必须包含 persona-observation-check，保证发布候选不会跳过 Cap 人格沉淀私有边界观察。"
-      ],
+            "required_checks": [
+                "runtime/bin/redcap check --profile release",
+                "runtime/bin/redcap longrun-observer scenario-test",
+                "release 内必须包含 persona-observation-check，保证发布候选不会跳过 Cap 人格沉淀私有边界观察。"
+            ],
       "cannot_be_replaced_by": [
         "fast",
         "standard"

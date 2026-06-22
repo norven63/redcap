@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "python3 -m json.tool assets/contracts/complete-revival-e2e-acceptance-design.json",
-  "executed_at": "2026-06-08T18:24:16Z",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "a0929e43f486349d233c4f6eb5c7ea083dfc1d0d281e699d8a8cdd66e05be478",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

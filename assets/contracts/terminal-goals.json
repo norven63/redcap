@@ -86,7 +86,7 @@
         "minimal FSM kernel",
         "minimum executable kernel"
       ],
-      "open_reason": "当前仍处于基建可用基线与二次 E2E 前置验证阶段；LS-009 长期第三方生产项目样本尚未验证。只有 redcap-complete-revival 任务事实 verified、专用终局验收通过且循环账本无开放边界后，才可把本目标视为关闭。"
+      "open_reason": "当前仍处于基建可用基线与长期外部项目验证阶段；OL-11 长期第三方生产项目样本尚未通过长期观察器和外部样本审计。只有 redcap-complete-revival 任务事实 verified、专用终局验收通过且 open-loop 队列无终局开放边界后，才可把本目标视为关闭。"
     },
     {
       "id": "example-product-launch",

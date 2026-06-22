@@ -16,7 +16,7 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-DEFAULT_EVIDENCE_DIR = REPO_ROOT / "assets" / "evidence" / "soul"
+DEFAULT_EVIDENCE_DIR = REPO_ROOT / ".redcap" / "evidence" / "soul"
 CAP_HOME_ENV = "CAP_HOME"
 
 

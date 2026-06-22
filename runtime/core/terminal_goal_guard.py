@@ -14,8 +14,8 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "terminal-goals.json"
-DEFAULT_TASK_FACTS = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
-DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
+DEFAULT_TASK_FACTS = REPO_ROOT / ".redcap" / "evidence" / "task-facts" / "task-facts.jsonl"
+DEFAULT_EVENTS = REPO_ROOT / ".redcap" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
 OPEN_STATUSES = {"planned", "in_progress", "blocked", "escalated"}
 TERMINAL_TERMS = re.compile(
     r"(?:已完成|完成了|完成|成功|正式完成|完整完成|已经复活|已经完整复活|达到|已达到|可视为|就是|闭环|"
@@ -264,11 +264,11 @@ def check_terminal_goals(
     failures = validate_contract(contract)
     facts = read_task_facts(task_facts_path)
     states = active_goal_states(contract, facts)
-    for state in states:
-        if state.get("domain") == "generic-example":
-            continue
-        if not state.get("task_status"):
-            failures.append(f"terminal goal task fact is missing: {state.get('task_fact_id')}")
+    missing_task_facts = [
+        str(state.get("task_fact_id") or "")
+        for state in states
+        if state.get("domain") != "generic-example" and not state.get("task_status")
+    ]
     combined = f"{prompt}\n{message}"
     triggered: list[str] = []
     for goal in contract.get("terminal_goals", []):
@@ -285,6 +285,7 @@ def check_terminal_goals(
         "ok": not failures,
         "triggered_goals": triggered,
         "terminal_goal_states": states,
+        "missing_task_facts": [item for item in missing_task_facts if item],
         "prompt_time_context": build_prompt_context(contract, facts),
         "failures": failures,
     }
@@ -366,6 +367,22 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         if not phase["ok"]:
             failures.append(f"phase-status report should pass: {phase['failures']}")
+        missing_fact_status = check_terminal_goals(
+            message="当前只是状态回答：RedCap 完整复活仍未关闭。",
+            prompt="所以，你有详细的设计方案并去执行落地了吗？",
+            contract_path=contract,
+            task_facts_path=tmp / "missing-facts.jsonl",
+        )
+        if not missing_fact_status["ok"]:
+            failures.append(f"missing task facts should not block non-terminal status: {missing_fact_status['failures']}")
+        missing_fact_overclaim = check_terminal_goals(
+            message="RedCap 已经完整复活，正式可用。",
+            prompt="请汇报完整复活状态。",
+            contract_path=contract,
+            task_facts_path=tmp / "missing-facts.jsonl",
+        )
+        if missing_fact_overclaim["ok"]:
+            failures.append("missing task facts should still block terminal overclaim")
         review_recovery_status = check_terminal_goals(
             message=(
                 "结果通过，并确认 RedCap 完整复活仍是 in_progress，terminal_verified=false。"

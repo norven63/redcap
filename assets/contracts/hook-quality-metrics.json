@@ -32,7 +32,7 @@
         "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/merge.json",
         "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       ],
-      "negative_probe_summary": "assets/evidence/rsp/rsp-25-negative-probe-summary.json"
+      "negative_probe_summary": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json"
     }
   },
   "thresholds": {
@@ -102,7 +102,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -139,7 +139,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -176,7 +176,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -213,7 +213,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -250,7 +250,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -287,7 +287,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -324,7 +324,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -361,7 +361,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -398,7 +398,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -435,7 +435,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -472,7 +472,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -509,7 +509,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -546,7 +546,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -583,7 +583,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -620,7 +620,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -657,7 +657,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -694,7 +694,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -731,7 +731,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -768,7 +768,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -805,7 +805,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -842,7 +842,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -879,7 +879,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -916,7 +916,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -953,7 +953,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -990,7 +990,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1027,7 +1027,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1064,7 +1064,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1101,7 +1101,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1138,7 +1138,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1175,7 +1175,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1212,7 +1212,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1249,7 +1249,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1286,7 +1286,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1323,7 +1323,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1360,7 +1360,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1397,7 +1397,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1434,7 +1434,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1471,7 +1471,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1508,7 +1508,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"
@@ -1545,7 +1545,7 @@
         ],
         "labeler": "cap-rsp-25-contract-author",
         "independent_review_required": true,
-        "audit_packet": "assets/evidence/rsp/rsp-25-negative-probe-summary.json",
+        "audit_packet": ".redcap/evidence/rsp/rsp-25-negative-probe-summary.json",
         "post_review_reference": "assets/evidence/prism/20260621-rsp-25-hook-quality-metrics/post-merge.json"
       },
       "labeled_at": "2026-06-20T18:30:00+00:00"

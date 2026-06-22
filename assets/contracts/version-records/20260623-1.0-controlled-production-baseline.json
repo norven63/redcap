@@ -1,0 +1,47 @@
+{
+  "schema_id": "redcap-version-record",
+  "version_record_id": "20260623-1.0-controlled-production-baseline",
+  "recorded_at": "2026-06-23T02:38:11+08:00",
+  "status": "controlled_production_baseline_ready",
+  "title": "RedCap 1.0 受控项目使用基线记录",
+  "scope": [
+    "RedCap 可以打包为顶层 .redcap 发布包，并在外部项目中执行 init 初始化。",
+    "发布包包含长期观察器，安装后可在项目级 .redcap 中记录长期样本观察事件并产出评估。",
+    "源码 assets/evidence 只保留边界说明文件，运行证据迁入项目级 .redcap/evidence 或外部项目 .redcap/evidence。",
+    "历史外部 E2E 临时运行目录已清理，不再淤积为默认工程状态。",
+    "当前发布级检查、项目级安装生产就绪检查、OL-11 方案检查、长期观察器自检均通过。"
+  ],
+  "verified_commands": [
+    "runtime/bin/redcap gate --task \"准备新redcap结项：核验观测机制、清理临时产物、发布前1.0全局review和收口状态\" --risk-level medium --lifecycle-packet .redcap/evidence/lifecycle/20260623-closeout-release-readiness.json",
+    "runtime/bin/redcap check --profile release",
+    "runtime/bin/redcap project-install production-readiness-check",
+    "runtime/bin/redcap revival-followthrough open-loop-check",
+    "runtime/bin/redcap evidence-retention check",
+    "runtime/bin/redcap complete-revival-check --require-terminal-verified",
+    "git diff --check",
+    "runtime/bin/redcap evidence-retention check 验证系统临时目录中不存在非受保护 redcap-* 残留；redcap-runtime 被识别为受保护运行时目录",
+    "find . -path './.git' -prune -o -path './.redcap' -prune -o -type f \\( -name '.DS_Store' -o -name '*.tmp' -o -name '*.bak' -o -name '*.orig' -o -name '*.rej' -o -name '*.raw.json' -o -name '*.raw.meta.json' \\) -print"
+  ],
+  "cleanup_performed": [
+    "删除 /private/tmp 下 71 个 redcap-* 临时目录，复扫数量为 0。",
+    "删除当前 TMPDIR 下 19 个 redcap-* 临时目录；保留 redcap-runtime 作为受保护会话归属运行时目录。",
+    "确认 /Users/norven/workspace 下不存在 redcap-e2e-runs* 目录。",
+    "确认源码树中除 .redcap 运行时证据外，不存在 .DS_Store、*.tmp、*.bak、*.orig、*.rej、*.raw.json、*.raw.meta.json 临时文件。",
+    "确认 assets/evidence 仅保留 README.md 与 .gitignore 边界文件。"
+  ],
+  "known_blockers": [
+    "OL-11-long-term-third-party-production-sample 仍为 external-sample-required，完整复活终局不得关闭。",
+    "公开发布、替换 main 分支、许可证和正式分发渠道仍需 Norven 人类授权。"
+  ],
+  "non_completion_shortcuts_rejected": [
+    "不把 1.0 受控项目使用基线写成 RedCap 完整复活。",
+    "不把 ol11 trpg-carrier-dry-run 写成长期外部项目样本通过。",
+    "不把项目级发布安装技术就绪写成公开发布已授权。",
+    "不保留临时 E2E 运行目录作为完成证明。"
+  ],
+  "next_required_for_terminal_revival": [
+    "按 assets/docs/ol11-trpg-longrun-e2e-plan.md 执行真实长期外部项目样本。",
+    "长期观察器 evaluate 返回 eligible_to_close_ol11。",
+    "open-loop 队列移除 OL-11 终局阻断后，重新运行 release 和 terminal 检查画像。"
+  ]
+}

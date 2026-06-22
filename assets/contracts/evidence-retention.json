@@ -1,22 +1,22 @@
 {
   "schema_id": "redcap-evidence-retention-contract",
   "schema_version": 1,
-  "purpose": "控制 RedCap 证据目录、宿主事件流、棱镜账本、检查回执和外部 E2E 缓存持续膨胀，同时不破坏历史回归、审计和知识影响链路。",
+  "purpose": "控制 RedCap 运行证据、宿主事件流、棱镜账本和外部 E2E 缓存持续膨胀，同时确保源码区 assets/evidence 只保留边界说明，不再累积运行产物。",
   "mode": {
     "default_action": "observe_and_plan",
     "destructive_cleanup_allowed_by_default": false,
     "cleanup_plan_must_be_dry_run_first": true,
-    "materialized_plan_command": "runtime/bin/redcap evidence-retention plan --materialize --out assets/evidence/retention/latest-retention-plan.json",
+    "materialized_plan_command": "runtime/bin/redcap evidence-retention plan --materialize --out .redcap/evidence/retention/latest-retention-plan.json",
     "deletion_requires_human_authorization": true
   },
   "thresholds": {
-    "assets_evidence_total": {
-      "warning_bytes": 209715200,
-      "critical_bytes": 1073741824
+    "source_evidence_boundary": {
+      "warning_bytes": 8192,
+      "critical_bytes": 65536
     },
-    "assets_evidence_file_count": {
-      "warning_count": 4000,
-      "critical_count": 50000
+    "source_evidence_boundary_file_count": {
+      "warning_count": 3,
+      "critical_count": 10
     },
     "host_hook_events_jsonl": {
       "warning_bytes": 67108864,
@@ -35,12 +35,29 @@
       "critical_bytes": 21474836480,
       "warning_count": 10000,
       "critical_count": 100000
+    },
+    "system_temp_redcap_artifacts": {
+      "warning_count": 1,
+      "critical_count": 1
     }
+  },
+  "system_temp_artifacts": {
+    "roots": [
+      "/private/tmp",
+      "$TMPDIR"
+    ],
+    "include_globs": [
+      "redcap-*"
+    ],
+    "protected_names": [
+      "redcap-runtime"
+    ],
+    "rule": "除 redcap-runtime 这类运行时会话归属目录外，系统临时目录不得残留 RedCap 开发、E2E、探针或评审临时目录。"
   },
   "retention_rules": [
     {
       "id": "host-hooks-events",
-      "target": "assets/evidence/host-hooks/codex/events.jsonl",
+      "target": ".redcap/evidence/host-hooks/codex/events.jsonl",
       "classification": "hot-runtime-log",
       "git_policy": "ignored",
       "allowed_plan": "summarize_then_rotate",
@@ -53,7 +70,7 @@
     },
     {
       "id": "prism-task-ledger",
-      "target": "assets/evidence/prism/task-ledger.jsonl",
+      "target": ".redcap/evidence/prism/task-ledger.jsonl",
       "classification": "tracked-health-ledger",
       "git_policy": "tracked",
       "allowed_plan": "summarize_index_before_archive",
@@ -65,14 +82,15 @@
       ]
     },
     {
-      "id": "check-receipts",
-      "target": "assets/evidence/check-receipts",
-      "classification": "verification-receipts",
-      "git_policy": "mixed",
-      "allowed_plan": "keep_recent_and_release_receipts",
+      "id": "source-evidence-boundary",
+      "target": "assets/evidence",
+      "classification": "source-boundary-marker",
+      "git_policy": "tracked-boundary-only",
+      "allowed_plan": "delete_runtime_children_keep_readme_and_gitignore",
       "hard_constraints": [
-        "保留最近验证和 release/terminal 相关回执",
-        "冷归档前必须写入命令、退出码、哈希和路径索引"
+        "只允许 README.md 和 .gitignore 作为源码边界文件",
+        "运行证据必须写入 .redcap/evidence 或外部项目 .redcap/evidence",
+        "发布包必须拒绝包含 assets/evidence 运行子目录"
       ]
     },
     {
@@ -84,6 +102,19 @@
       "hard_constraints": [
         "只能通过 complete-revival-e2e prune-runs 或等价受控入口清理",
         "unknown 目录只允许分类和 dry-run，不能静默删除"
+      ]
+    },
+    {
+      "id": "system-temp-redcap-artifacts",
+      "target": "system-temp-redcap-artifacts",
+      "classification": "system-temp-artifact",
+      "git_policy": "external-temp",
+      "allowed_plan": "delete_redcap_temp_children_keep_runtime_base",
+      "hard_constraints": [
+        "必须排除 redcap-runtime，因为它是会话归属运行时目录",
+        "只允许匹配 redcap-* 的系统临时目录进入候选",
+        "发现任何非受保护残留即视为 critical，要求立即清理后复扫",
+        "不得删除项目内 .redcap/evidence、.redcap/state、.redcap/logs 或 .redcap/tmp"
       ]
     }
   ]

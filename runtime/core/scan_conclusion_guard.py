@@ -17,8 +17,8 @@ from typing import Any
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_ACCOUNT = REPO_ROOT / "assets" / "archaeology" / "shards" / "old-redcap-360-scan-account.json"
 DEFAULT_MERGE = REPO_ROOT / "assets" / "archaeology" / "shards" / "old-redcap-360-scan-merge.json"
-DEFAULT_TASK_FACTS = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
-DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
+DEFAULT_TASK_FACTS = REPO_ROOT / ".redcap" / "evidence" / "task-facts" / "task-facts.jsonl"
+DEFAULT_EVENTS = REPO_ROOT / ".redcap" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
 SCAN_TASK_ID = "full-360-old-redcap-scan"
 SCAN_ACCOUNT_TASK_ID = "20260606-old-redcap-360-scan"
 TERMINAL_SHARD_STATUSES = {"verified", "blocked", "no_promote"}
@@ -177,9 +177,19 @@ def build_scan_state(account_path: pathlib.Path, merge_path: pathlib.Path, task_
     verified = [item for item in promotable if item.get("status") == "verified"]
     blocked = [item for item in promotable if item.get("status") == "blocked"]
     open_shards = [item for item in promotable if item.get("status") not in TERMINAL_SHARD_STATUSES]
+    merge_ok = merge_path.exists() and merge_payload_ok(merge_path, account)
+    durable_scan_complete = (
+        account.get("status") == "merged"
+        and merge_ok
+        and bool(promotable)
+        and len(verified) == len(promotable)
+        and not open_shards
+        and not blocked
+    )
     task_fact = read_task_facts(task_facts_path).get(SCAN_TASK_ID, {})
     task_status = task_fact.get("status")
-    merge_ok = merge_path.exists() and merge_payload_ok(merge_path, account)
+    if task_status is None and durable_scan_complete:
+        task_status = "verified"
     scan_complete = (
         task_status == "verified"
         and account.get("status") == "merged"

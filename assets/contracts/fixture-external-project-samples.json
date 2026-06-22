@@ -9,6 +9,6 @@
   "negative_probe": [
     "只交付目标应用、不沉淀 RedCap 能力改进必须失败"
   ],
-  "evidence_file": "assets/evidence/rsp/rsp-18-fixture-external-project-samples.json",
+  "evidence_file": ".redcap/evidence/rsp/rsp-18-fixture-external-project-samples.json",
   "scope_boundary": "本合同只验证 fixture 外部项目样本形态；不能作为真实长期生产项目批次验证。"
 }

@@ -44,7 +44,7 @@ REALITY_CHANGE_TERMS = {
     "runtime/",
     "runtime/bin/redcap",
     "runtime/core/",
-    "assets/evidence/rsp/",
+    ".redcap/evidence/rsp/",
     "check",
     "self-check",
     "测试",
@@ -159,8 +159,8 @@ def parse_plan(path: pathlib.Path) -> tuple[dict[str, Any] | None, list[str]]:
         if not item["negative"].strip():
             failures.append(f"{rsp_id} 缺少负向探针")
     for rsp_id, evidence in sorted(evidence_paths.items()):
-        if not evidence.startswith("assets/evidence/rsp/"):
-            failures.append(f"{rsp_id} 完成证据路径必须位于 assets/evidence/rsp/：{evidence}")
+        if not evidence.startswith(".redcap/evidence/rsp/"):
+            failures.append(f"{rsp_id} 完成证据路径必须位于 .redcap/evidence/rsp/：{evidence}")
 
     return {
         "path": str(path),
@@ -454,7 +454,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
 
     with tempfile.TemporaryDirectory(prefix="redcap-rsp-contract-") as raw:
         root = pathlib.Path(raw)
-        evidence = root / "assets" / "evidence" / "rsp" / "rsp-03-provider-health.json"
+        evidence = root / ".redcap" / "evidence" / "rsp" / "rsp-03-provider-health.json"
         claim = root / "claim.json"
         write_json(evidence, {
             "rsp": "RSP-03",
@@ -485,7 +485,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "rsp": "RSP-03",
             "claim_scope": "current-machine-current-version",
             "completion_level": "sample_passed",
-            "evidence_file": "assets/evidence/rsp/other.json",
+            "evidence_file": ".redcap/evidence/rsp/other.json",
             "new_issues": [],
         })
         mismatch = run_check(plan_path=DEFAULT_PLAN, rsp_id="RSP-03", claim_file=mismatch_claim, evidence_file=evidence)

@@ -85,9 +85,9 @@
         "status": "ready_for_preflight",
         "plan_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md",
         "evidence_schema_path": "assets/contracts/ol11-trpg-longrun-e2e-evidence-schema.json",
-        "demand_provenance_path": "assets/evidence/ol11/trpg-demand-provenance.json",
-        "pre_execution_prism_review": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/merge.json",
-        "pre_execution_prism_resolution": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/resolution.json",
+  "demand_provenance_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md#固定需求包",
+  "pre_execution_prism_review": "must_be_regenerated_for_the_actual_longrun_project",
+  "pre_execution_prism_resolution": "must_be_regenerated_for_the_actual_longrun_project",
         "execution_boundary": "允许在用户明确启动 OL-11 时进入正式执行前预检和完整 OL-11 E2E 运行；完整样本通过前禁止关闭 OL-11，禁止声明 RedCap 完整复活。",
         "purpose": "把 TRPG 长期外部样本固化为 RedCap 自身开发工作流中的生产级 E2E 方案；它用于证明 RedCap 是工程开发方法和运行机器，而不只是产出一个示例应用。",
         "fixed_demand_package": {
@@ -121,11 +121,13 @@
             "iteration-01-summary.json",
             "iteration-02-change-summary.json",
             "failure-backlog.json",
-            "cap-observer-verdict.json",
-            "capability-coverage-matrix.json",
-            "final-prism-review.json",
-            "cache-retention-report.json"
-        ],
+    "cap-observer-verdict.json",
+    "capability-coverage-matrix.json",
+    "final-prism-review.json",
+    "cache-retention-report.json",
+    ".redcap/state/longrun-observer/observations.jsonl",
+    ".redcap/evidence/longrun-observer/evaluation.json"
+  ],
         "anti_cheat_rules": [
             "开发 AI 不得读取旧 TRPG 源码。",
             "Cap 不得替开发 AI 实现目标项目。",

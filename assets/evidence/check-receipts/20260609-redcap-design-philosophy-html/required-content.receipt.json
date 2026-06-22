@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "python3 -c from pathlib import Path; text=Path('assets/visuals/redcap-design-philosophy-map.html').read_text(encoding='utf-8'); required=['RedCap 完整复活：尚未终局完成','migration_usable','Loom（角色化工程工作流）','异构评审助手（棱镜，用于交叉审查主执行结论的工具）','钩子（hook，宿主在特定时机自动运行的本地脚本）','十五项优秀设计覆盖','旧疾禁区','runtime_authority=false']; missing=[x for x in required if x not in text]; print({'ok': not missing, 'missing': missing}); raise SystemExit(1 if missing else 0)",
-  "executed_at": "2026-06-08T17:19:29+00:00",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "16c6e862c2f33b0c33686822f7c4639e1c41bbec2818ccbe36badd381fc4cd91",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

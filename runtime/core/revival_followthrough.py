@@ -197,6 +197,21 @@ def rel_or_abs_exists(base: pathlib.Path, value: Any) -> bool:
     return (base / path).exists() or (REPO_ROOT / path).exists()
 
 
+def evidence_ref_is_valid(value: Any) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    text = value.strip()
+    if text.startswith("runtime/bin/redcap "):
+        return (REPO_ROOT / "runtime" / "bin" / "redcap").is_file()
+    if text.startswith("python3 "):
+        parts = text.split()
+        for part in parts[1:]:
+            if part.endswith(".py"):
+                return rel_or_abs_exists(REPO_ROOT, part)
+        return True
+    return rel_or_abs_exists(REPO_ROOT, text)
+
+
 def validate_queue(path: pathlib.Path = DEFAULT_QUEUE) -> list[str]:
     payload = load_json(path)
     failures: list[str] = []
@@ -346,6 +361,14 @@ def validate_open_loop_queue(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> di
             evidence = item.get("verified_runtime_evidence")
             if not isinstance(evidence, list) or not evidence:
                 failures.append(f"{item_id}: 关闭状态必须包含 verified_runtime_evidence")
+            else:
+                missing_refs = [
+                    str(ref)
+                    for ref in evidence
+                    if isinstance(ref, str) and ref.strip() and not evidence_ref_is_valid(ref)
+                ]
+                if missing_refs:
+                    failures.append(f"{item_id}: verified_runtime_evidence 存在不存在的路径：{missing_refs[:5]}")
             prism_status = item.get("prism_review")
             if priority in {"P0", "P1"} and prism_status not in {"passed", "resolved", "not_required"}:
                 closeout_blockers.append(f"{item_id}: P0/P1 关闭前缺少棱镜复核状态")

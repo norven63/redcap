@@ -1,9 +1,9 @@
 {
   "schema_id": "redcap-continuous-revival-plan",
   "version": 1,
-  "status": "terminal_complete_verified",
+  "status": "release_baseline_ready_terminal_blocked",
   "purpose": "把 Norven 要求的“一气呵成”目标拆成连续推进、分段验收、可回滚的 RedCap 复活总计划：先完成 360 度旧 RedCap 扫描，再制定复活计划，再实施落地，再审计优化，直到新 RedCap 可正式使用。",
-  "non_completion_warning": "历史阶段警示：本合同在终局验收前不得被当成完成证据；当前终局状态以 completion_audit 和任务事实为准。",
+  "non_completion_warning": "本合同只记录连续复活计划和当前发布基线状态；它不能作为 RedCap 完整复活终局完成证据。当前终局状态以 terminal-goals、open-loop-closure-queue 和 complete-revival-check 的实时结果为准。",
   "global_rules": [
     {
       "id": "CR-G01",
@@ -31,7 +31,7 @@
     },
     {
       "id": "CR-G07",
-      "rule": "正式可用的最终声明必须同时满足：全部复活队列项关闭、全量检查通过、复活后审计通过、优化项关闭、版本记录完成。"
+      "rule": "1.0 受控项目使用基线声明必须同时满足：发布级检查通过、项目级安装生产就绪、运行时证据边界清楚、长期观察机制附带在发布包中、完整复活终局阻断边界未被抹掉。RedCap 完整复活终局声明还必须额外满足 OL-11 长期外部项目样本关闭和 complete-revival-check 授权。"
     }
   ],
   "stage_sequence": [
@@ -194,12 +194,12 @@
   ],
   "current_pointer": {
     "stage_id": "CR-S06",
-    "reason": "终局收尾批次已补齐 RedCap Forge、redcap-arsenal、项目级安装发布、已知问题第 5/6 项关闭态、棱镜疑虑闭环和完整复活终局验收；当前进入版本记录和提交推送固化。"
+    "reason": "当前处于 1.0 受控项目使用基线准备状态：项目级安装发布、运行时边界、长期观察器和发布级检查链已进入技术就绪检查；RedCap 完整复活终局仍由 OL-11 长期外部项目样本阻断，不能写成终局完成。"
   },
   "completion_audit": {
-    "audited_at": "2026-06-13T00:00:00+08:00",
-    "state": "terminal_complete_verified",
-    "previous_state": "revival_implementation_in_progress",
+    "audited_at": "2026-06-23T01:35:00+08:00",
+    "state": "release_baseline_ready_terminal_blocked",
+    "previous_state": "terminal_complete_claim_superseded",
     "previous_evidence": [
       "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
       "runtime/bin/redcap revival-queue check",
@@ -209,22 +209,28 @@
       "assets/contracts/version-records/20260607-formal-usable-baseline.json"
     ],
     "current_reality": [
-      "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit 已通过。",
-      "runtime/bin/redcap terminal-goal check --message \"RedCap 完整复活已完成。\" --prompt \"请汇报 RedCap 完整复活状态\" 已通过。",
-      "runtime/bin/redcap status --json --require-scan-complete --fail-on-open 已通过，open_count=0。",
-      "runtime/bin/redcap check 已通过。"
+      "runtime/bin/redcap check --profile release 已通过，证明 1.0 受控项目使用基线的发布级检查链当前可用。",
+      "runtime/bin/redcap project-install production-readiness-check 已通过，证明项目级 .redcap 安装、发布包审计、矩阵检查和安装后运行时冒烟当前技术就绪。",
+      "runtime/bin/redcap longrun-observer self-check 已通过，证明长期观察器自身可运行并随发布包安装。",
+      "runtime/bin/redcap revival-followthrough open-loop-check 已通过但仍报告 OL-11-long-term-third-party-production-sample 为 terminal_blocker。",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit 当前必须失败，因为 OL-11 长期外部项目样本尚未关闭。"
     ],
     "superseding_evidence": [
       "assets/contracts/full-revival-amendment.json",
       "assets/contracts/terminal-goals.json",
-      "assets/contracts/version-records/20260613-terminal-complete-revival.json",
-      "assets/evidence/lifecycle/20260613-redcap-complete-revival-terminal-lifecycle.json",
-      "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json",
-      "assets/evidence/task-facts/task-facts.jsonl"
+      "assets/contracts/open-loop-closure-queue.json",
+      "assets/contracts/project-install-production-readiness.json",
+      "assets/contracts/longrun-observer.json",
+      "assets/docs/ol11-trpg-longrun-e2e-plan.md",
+      ".redcap/evidence/lifecycle/20260623-closeout-release-readiness.json"
     ],
     "known_non_blocking_boundary": [
       "unsupported Codex host events remain explicitly reported by host-hook-audit and are not claimed as available",
       "public release and replacing main remain human-gated decisions"
+    ],
+    "terminal_blocking_boundary": [
+      "OL-11 长期外部项目样本仍为 external-sample-required。",
+      "短承载演练、发布包检查、方案评审和生命周期包都不能替代长期外部项目样本。"
     ]
   },
   "formal_usability_definition": {

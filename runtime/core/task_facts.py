@@ -18,8 +18,8 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
 import runtime_boundary  # noqa: E402
 
-DEFAULT_LEDGER = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
-DEFAULT_HEALTH = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts-summary.json"
+DEFAULT_LEDGER = REPO_ROOT / ".redcap" / "evidence" / "task-facts" / "task-facts.jsonl"
+DEFAULT_HEALTH = REPO_ROOT / ".redcap" / "evidence" / "task-facts" / "task-facts-summary.json"
 STATUSES = {"planned", "in_progress", "verified", "blocked", "escalated", "superseded"}
 OPEN_STATUSES = {"planned", "in_progress", "blocked", "escalated"}
 AUTO_REOPEN_TRIGGERS = [

@@ -192,7 +192,7 @@ def design_maturity_matrix_check(out: pathlib.Path | None = None) -> dict[str, A
         "negative_probe": contract_only_negative,
         "failures": failures,
     }
-    target = out or REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-17-design-maturity-matrix.json"
+    target = out or REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-17-design-maturity-matrix.json"
     write_json(target, payload)
     return payload
 

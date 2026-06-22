@@ -27,7 +27,7 @@ from prompt_intent import (  # noqa: E402
 )
 
 
-DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
+DEFAULT_EVENTS = REPO_ROOT / ".redcap" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
 REQUIRED_REVIEW_FIELDS = {"user_intent", "target_reality", "non_goals", "risk_level"}
 REQUIRED_TECH_FIELDS = {"runtime_boundary_checked", "prism_gate_decision", "rollback_plan", "verification_plan"}
 REQUIRED_TASK_BODY_FIELDS = {"requested_outcome", "primary_deliverable", "acceptance_criteria", "status", "evidence_kind", "evidence"}
@@ -62,7 +62,7 @@ REVIEW_EVIDENCE_KINDS = {"review-task"}
 LEGACY_EVIDENCE_KINDS = {"mixed"}
 EVIDENCE_KINDS = TASK_BODY_EVIDENCE_KINDS | REVIEW_EVIDENCE_KINDS | LEGACY_EVIDENCE_KINDS
 PROOF_ONLY_COMPLETION_KINDS = {"docs", "documentation", "ledger", "receipt", "report", "governance", "prism-review", "gate-check", "checklist", "metadata", "writeup", "spec"}
-COMPLETION_MARKER = REPO_ROOT / "assets" / "evidence" / "lifecycle" / "latest-completion.json"
+COMPLETION_MARKER = REPO_ROOT / ".redcap" / "evidence" / "lifecycle" / "latest-completion.json"
 SELF_PURIFICATION_DECISIONS = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
 SELF_PURIFICATION_FORBIDDEN_PERSONA_KEYS = {"private_identity_body", "raw_persona_body", "secret", "token", "credential"}
 
@@ -248,6 +248,42 @@ def latest_prompt_event(events_path: pathlib.Path) -> dict[str, Any] | None:
     return prompts[-1] if prompts else None
 
 
+def latest_authorized_goal_event(events_path: pathlib.Path) -> dict[str, Any] | None:
+    for event in reversed(load_events(events_path)):
+        auth = event.get("active_goal_continuation_authorization")
+        if not isinstance(auth, dict):
+            continue
+        if auth.get("authorized") is True or auth.get("database_fallback_authorized") is True:
+            return event
+    return None
+
+
+def goal_objective_excerpt(event: dict[str, Any]) -> str | None:
+    auth = event.get("active_goal_continuation_authorization")
+    if not isinstance(auth, dict):
+        return None
+    direct_objective = auth.get("objective")
+    if isinstance(direct_objective, str) and direct_objective.strip():
+        return direct_objective
+    if isinstance(direct_objective, dict):
+        for key in ["normalized_excerpt", "text", "raw", "excerpt"]:
+            value = direct_objective.get(key)
+            if isinstance(value, str) and value.strip():
+                return value
+    goal_record = auth.get("goal_record")
+    if not isinstance(goal_record, dict):
+        return None
+    objective = goal_record.get("objective")
+    if isinstance(objective, str):
+        return objective
+    if isinstance(objective, dict):
+        for key in ["normalized_excerpt", "text", "raw", "excerpt"]:
+            value = objective.get(key)
+            if isinstance(value, str) and value.strip():
+                return value
+    return None
+
+
 def prompt_excerpt_is_meaningful(excerpt: str, actual_prompt: str) -> bool:
     normalized_excerpt = normalize_prompt_text(excerpt)
     normalized_actual = normalize_prompt_text(actual_prompt)
@@ -292,6 +328,44 @@ def continuation_authorization_is_valid(
         return False, "prompt_context.continuation_authorization requires implementation or completion scope"
     if not prompt_has_directive_authority(actual_prompt):
         return False, "prompt_context.continuation_authorization requires a directive base UserPromptSubmit"
+    return True, None
+
+
+def active_goal_authorization_is_valid(
+    prompt_context: dict[str, Any],
+    goal_event: dict[str, Any],
+    authorized_scope: Any,
+) -> tuple[bool, str | None]:
+    auth = prompt_context.get("continuation_authorization")
+    if not isinstance(auth, dict):
+        return False, None
+    if auth.get("mode") != "same_session_authorized_continuation":
+        return False, "prompt_context.continuation_authorization.mode invalid"
+    if auth.get("source") != "codex_goal":
+        return False, "prompt_context.continuation_authorization.source must be codex_goal for active goal fallback"
+    session_id = auth.get("session_id")
+    event_session_id = goal_event.get("session_id")
+    if not (isinstance(session_id, str) and session_id.strip()):
+        return False, "prompt_context.continuation_authorization.session_id is required"
+    if event_session_id and session_id != event_session_id:
+        return False, "prompt_context.continuation_authorization.session_id does not match latest active goal event session"
+    base_excerpt = auth.get("base_prompt_excerpt")
+    if not (isinstance(base_excerpt, str) and base_excerpt.strip()):
+        return False, "prompt_context.continuation_authorization.base_prompt_excerpt is required"
+    objective = goal_objective_excerpt(goal_event)
+    if not (isinstance(objective, str) and objective.strip()):
+        return False, "active goal event has no objective excerpt"
+    if not prompt_excerpt_is_meaningful(base_excerpt, objective):
+        return False, "prompt_context.continuation_authorization.base_prompt_excerpt does not match active goal objective"
+    goal_auth = goal_event.get("active_goal_continuation_authorization")
+    intent = goal_auth.get("objective_intent") if isinstance(goal_auth, dict) else None
+    if isinstance(intent, dict):
+        intent_scope = intent.get("authorized_scope")
+        action_evidence = intent.get("action_evidence")
+        if intent_scope not in {"implementation", "completion"} or action_evidence != "substantive":
+            return False, "active goal objective intent does not authorize implementation"
+    if authorized_scope not in {"implementation", "completion"}:
+        return False, "active goal continuation requires implementation or completion scope"
     return True, None
 
 
@@ -530,7 +604,17 @@ def validate_prompt_context(packet: dict[str, Any], failures: list[str], events_
     if isinstance(excerpt, str) and excerpt.strip():
         prompt_event = latest_prompt_event(events_path)
         if prompt_event is None:
-            failures.append(f"prompt_context.source_prompt_excerpt cannot be verified: no UserPromptSubmit event in {events_path}")
+            goal_event = latest_authorized_goal_event(events_path)
+            if goal_event is None:
+                failures.append(f"prompt_context.source_prompt_excerpt cannot be verified: no UserPromptSubmit event in {events_path}")
+            else:
+                continuation_ok, continuation_failure = active_goal_authorization_is_valid(
+                    prompt_context,
+                    goal_event,
+                    authorized_scope,
+                )
+                if not continuation_ok:
+                    failures.append(continuation_failure or "prompt_context.source_prompt_excerpt cannot be verified by active goal continuation")
         else:
             actual_prompt = prompt_text_from_event(prompt_event)
             if actual_prompt is None:
@@ -543,7 +627,15 @@ def validate_prompt_context(packet: dict[str, Any], failures: list[str], events_
                     authorized_scope,
                 )
                 if not continuation_ok:
-                    failures.append(continuation_failure or "prompt_context.source_prompt_excerpt does not match latest UserPromptSubmit prompt")
+                    goal_event = latest_authorized_goal_event(events_path)
+                    if goal_event is not None:
+                        continuation_ok, continuation_failure = active_goal_authorization_is_valid(
+                            prompt_context,
+                            goal_event,
+                            authorized_scope,
+                        )
+                    if not continuation_ok:
+                        failures.append(continuation_failure or "prompt_context.source_prompt_excerpt does not match latest UserPromptSubmit prompt")
             elif authorized_scope in {"implementation", "completion"} and not (
                 prompt_has_directive_authority(actual_prompt)
                 or prompt_event_authorizes_execution(prompt_event)
@@ -902,6 +994,45 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         missing_event_failures = validate_packet(valid, tmp / "missing-events.jsonl")
         if not any("no UserPromptSubmit event" in item for item in missing_event_failures):
             failures.append("missing UserPromptSubmit event did not fail prompt-context verification")
+        active_goal_events_path = tmp / "active-goal-events.jsonl"
+        active_goal_events_path.write_text(json.dumps({
+            "event": "PreToolUse",
+            "session_id": "fixture-session",
+            "active_goal_continuation_authorization": {
+                "authorized": True,
+                "database_fallback_authorized": True,
+                "goal_record": {
+                    "objective": {
+                        "normalized_excerpt": "准备新redcap结项：建立观测机制，清理临时文件，做发布前全局 review，使 redcap 可以安全生产发布到 1.0 版本。"
+                    },
+                    "status": "active"
+                },
+                "objective_intent": {
+                    "authorized_scope": "implementation",
+                    "action_evidence": "substantive"
+                }
+            }
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        active_goal_packet = copy.deepcopy(valid)
+        active_goal_packet["prompt_context"] = {
+            "source_prompt_excerpt": "继续 active goal，推进 RedCap 结项准备，不声称终局完整复活。",
+            "prompt_kind": "directive",
+            "authorized_scope": "implementation",
+            "continuation_authorization": {
+                "mode": "same_session_authorized_continuation",
+                "source": "codex_goal",
+                "session_id": "fixture-session",
+                "base_prompt_excerpt": "准备新redcap结项：建立观测机制，清理临时文件，做发布前全局 review，使 redcap 可以安全生产发布到 1.0 版本。",
+            },
+        }
+        active_goal_failures = validate_packet(active_goal_packet, active_goal_events_path)
+        if active_goal_failures:
+            failures.append(f"active goal continuation without UserPromptSubmit should pass: {'; '.join(active_goal_failures)}")
+        active_goal_cross_session = copy.deepcopy(active_goal_packet)
+        active_goal_cross_session["prompt_context"]["continuation_authorization"]["session_id"] = "other-session"
+        active_goal_cross_session_failures = validate_packet(active_goal_cross_session, active_goal_events_path)
+        if not any("session" in item for item in active_goal_cross_session_failures):
+            failures.append("cross-session active goal continuation was not rejected")
         question_events_path = tmp / "question-events.jsonl"
         question_events_path.write_text(json.dumps({
             "event": "UserPromptSubmit",

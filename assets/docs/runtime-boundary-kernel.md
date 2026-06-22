@@ -4,7 +4,7 @@
 
 ## 四个物理位置
 
-- RedCap 运行时根目录：当前仓库，只放 RedCap 自身代码、合同、文档和自研证据。
+- RedCap 运行时根目录：当前仓库，只放 RedCap 自身代码、合同、文档和可发布资产。
 - 项目工作区：RedCap 正在帮助用户开发的外部项目。
 - 项目运行目录：外部项目自己的 `<项目工作区>/.redcap/`，只放 RedCap 服务该项目时产生的状态、证据、日志和临时文件。
 - 用户私有状态：默认 `~/.cap/`，只放身份、偏好、私密状态和跨项目个人信息。
@@ -51,7 +51,7 @@
 project_workspace.resolve() == runtime_root.resolve()
 ```
 
-只有这个条件成立，且当前工作目录位于 RedCap 运行时根目录内，才进入 `self-development` 模式。该模式允许 RedCap 把自研证据留在 `assets/evidence/`，但不允许把外部项目伪装成 RedCap 自研任务。
+只有这个条件成立，且当前工作目录位于 RedCap 运行时根目录内，才进入 `self-development` 模式。该模式仍然不允许把外部项目伪装成 RedCap 自研任务；新的运行证据默认写入项目级 `.redcap/evidence/` 或一次性临时目录，`assets/evidence/` 只保留说明和忽略规则，不再作为可累积运行证据区。
 
 ## 旧证据位置
 

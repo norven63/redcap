@@ -71,25 +71,12 @@
       "verified_runtime_evidence": [
         "assets/contracts/complete-revival-e2e-acceptance-design.json",
         "runtime/audit/e2e_retention_external_validation.py",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-source.txt",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-invocation.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/enforcement-receipts/complete-revival-e2e-design-check/receipt.json",
-        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/completion-marker.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/final-prism-review.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/final-evidence-bundle.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/ol01-orchestrator-identity.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/ol01-orchestrator-independence-receipt.json"
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/revival_followthrough.py"
       ],
       "bounded_closure_note": "本轮只验证 OL-01 外部验证器、编排者独立身份硬门禁和证据要求已经进入合同；OL-01 完整外部端到端验收仍保持 open。",
       "prism_review": "resolved",
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-02-loom-independent-role-runtime",
@@ -125,23 +112,15 @@
       "verified_runtime_evidence": [
         "runtime/core/loom_runtime.py",
         "assets/contracts/loom-workflow.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-runtime-self-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-workflow-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-workflow-self-check.receipt.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/loom-role-session-manifest.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/role-gate-clearance-summary.json"
+        "assets/contracts/loom-session-continuity.json",
+        "assets/contracts/loom-role-chain-e2e.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "下一轮完整外部 E2E 必须证明各 Loom 角色由独立 Codex CLI 会话承载，且角色间交付物被真实消费。",
         "棱镜仍需复核外部 E2E 证据，确认 Loom 未退化为单一 AI 填表。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-03-loom-failure-loop-consumption",
@@ -176,23 +155,15 @@
       "verified_runtime_evidence": [
         "runtime/core/loom_runtime.py",
         "assets/contracts/loom-workflow.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-runtime-self-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/loom-workflow-check.receipt.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/loom-failure-route-plan.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/loom-failure-route-runtime-consumption.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/failure-backlog.json"
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/loom-role-chain-e2e.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "下一轮完整外部 E2E 必须包含至少一次真实失败回流：tester 或 reviewer 只生成路由，目标角色接收、修复并重新向下游交付。",
         "Cap 不得替目标角色直接修改目标项目。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-04-self-purification-natural-trigger",
@@ -227,27 +198,16 @@
       ],
       "verified_runtime_evidence": [
         "runtime/core/self_purification.py",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/self-purification-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/self-purification-self-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/self-purification-run-loop-no-promote.receipt.json",
-        "assets/evidence/self-purification/20260620-open-loop-cache-retention/knowledge-retrieval-evidence.json",
-        "assets/evidence/self-purification/20260620-open-loop-cache-retention/self-purification-candidates.json",
-        "assets/evidence/self-purification/20260620-open-loop-cache-retention/runner-self-purification-resolution.json",
-        "assets/evidence/self-purification/20260620-open-loop-cache-retention/persona-distillation-decision.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/self-purification-candidates.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/runner-self-purification-resolution.json"
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/self-purification.json",
+        "assets/contracts/self-purification-loop.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "下一轮完整外部 E2E 必须证明自我净化在项目开发任务后自然触发，而不是只由 Cap 手动补跑。",
         "必须同时验证 promote_public、keep_private 或 no_promote 中至少一个真实裁决，并保持 Cap 私有人格边界。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-05-knowledge-affects-decisions",
@@ -280,25 +240,16 @@
       ],
       "verified_runtime_evidence": [
         "runtime/core/knowledge_gateway.py",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-gateway-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-gateway-self-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-search-self-purification.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-search-loom.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/knowledge-search-mixed-loop.receipt.json",
-        "assets/evidence/self-purification/20260620-open-loop-cache-retention/knowledge-retrieval-evidence.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/knowledge-retrieval-evidence.json"
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/knowledge-impact-trace.json",
+        "assets/contracts/knowledge-quality.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "下一轮完整外部 E2E 必须证明知识命中改变了角色计划、实现或验收裁决，而不是只留下检索日志。",
         "若知识检索 0 命中，必须记录继续执行理由。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-06-cap-revival-manual-and-private-boundary",
@@ -337,26 +288,17 @@
         "runtime/core/soul_loader.py",
         "runtime/core/self_purification.py",
         "assets/contracts/self-purification.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/sessionstart-soul-load-smoke",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/final-checks",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/cap-revival-manual-boundary-inventory.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/runtime-rule-report.json",
         "runtime/bin/redcap revival-followthrough check",
         "runtime/bin/redcap soul-load self-check",
         "runtime/bin/redcap check",
-        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/persona-distillation-decision.json"
+        "runtime/core/persona_observation.py",
+        "assets/contracts/persona-observation.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "第二轮外部 E2E 中仍要证明人格沉淀候选和边界裁决自然触发。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-07-project-install-release-proof",
@@ -389,24 +331,16 @@
       ],
       "verified_runtime_evidence": [
         "runtime/core/project_install.py",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/project-install-release-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/project-install-self-check.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/project-install-check.receipt.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/e2e-infrastructure-readiness.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/package-prism-check.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/source-workspace-guard-run.json"
+        "assets/contracts/project-installation.json",
+        "assets/contracts/project-install-production-readiness.json",
+        "assets/contracts/project-install-matrix.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "下一轮完整外部 E2E 必须在外部项目目录证明 .redcap 初始化、项目级 Hook 和运行时证据目录真实可用。",
         "carrier-probe 必须在外部项目目录通过，且不得污染 RedCap 源码区。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-08-e2e-cache-retention-integrated",
@@ -441,31 +375,16 @@
       "verified_runtime_evidence": [
         "runtime/core/complete_revival_e2e.py",
         "runtime/audit/e2e_retention_external_validation.py",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-source.txt",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/external-validation/process-fixture/retention-external-validation-invocation.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-execute-final.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-postcheck-final.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-stale-active-execute.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-after-cleanup.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-real-run-proof.receipt.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-real-run-after-run.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-retention-safety-ceiling.receipt.json",
         "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
         "runtime/bin/redcap check",
-        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-run-retention-after-run.json"
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/e2e-cache-prune.json"
       ],
       "prism_review": "resolved",
       "remaining_scope": [
         "下一轮完整外部 E2E 结束后仍必须检查 redcap-e2e-run-retention-after-run.json 是否随运行自动产出；当前已用快速阻断的真实 run 入口证明收尾路径会自动产证并清理陈旧 active。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-10-e2e-failed-retention-bounded",
@@ -499,24 +418,14 @@
       ],
       "verified_runtime_evidence": [
         "runtime/core/complete_revival_e2e.py",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-execute-final.json",
-        "assets/evidence/check-receipts/20260620-open-loop-objective-final-closure/e2e-prune-current-execute-final/e2e-prune-current-postcheck-final.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/e2e-prune-current-execute-failed-retention.json",
-        "assets/evidence/check-receipts/20260620-open-loop-closure-plan/complete-revival-e2e-self-check-old-failed.receipt.json",
-        "assets/evidence/prism/20260620-e2e-failed-retention-followup/merge.final.json",
-        "assets/evidence/prism/20260620-open-loop-objective-final-closure/merge.r3.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-run-retention-after-run.json"
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/e2e-cache-prune.json"
       ],
       "prism_review": "passed",
       "remaining_scope": [
         "下一轮完整外部 E2E 结束后仍要证明成功路径收尾回执包含 failed 保留策略。"
       ],
-      "closed_by_e2e_item_results": {
-        "item_results": "/Users/norven/workspace/redcap-e2e-runs/run-20260620-open-loop-final-e2e-rerun2/redcap-e2e-基于旧-trpg-server-与-trpg-web-的产品方向-开发一/.redcap/evidence/e2e/open-loop-e2e-item-results.json",
-        "item_status": "passed",
-        "closed_at": "2026-06-20T13:57:27+00:00"
-      }
+      "closed_by_transient_e2e_removed": true
     },
     {
       "id": "OL-09-terminal-language-reconciliation",
@@ -548,9 +457,11 @@
         "最终收口前有新的终局验收回执。"
       ],
       "verified_runtime_evidence": [
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-terminal-goal-self-check.receipt.json",
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-complete-revival-preflight-boundary.receipt.json",
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-09-complete-revival-terminal-required-negative.receipt.json"
+        "runtime/core/terminal_goal_guard.py",
+        "runtime/core/complete_revival_check.py",
+        "assets/contracts/terminal-goals.json",
+        "assets/contracts/redcap-continuous-revival-plan.json",
+        "assets/contracts/version-records/deprecated/20260613-terminal-complete-revival.json"
       ],
       "closure_note": {
         "verified_at": "2026-06-21T14:47:36Z",
@@ -576,6 +487,8 @@
         "样本不得由本轮检查即时生成，也不得包含私有人格正文或用户敏感内容。"
       ],
       "runtime_checks": [
+        "runtime/bin/redcap longrun-observer init --project <长期外部项目>",
+        "runtime/bin/redcap longrun-observer evaluate --project <长期外部项目>",
         "runtime/bin/redcap loom real-sample-check --manifest <长期样本清单> --require-verified --require-independent",
         "runtime/bin/redcap loom-external-sample-audit check --manifest <长期样本清单> --require-receipts",
         "runtime/bin/redcap project-install production-readiness-check",
@@ -584,6 +497,8 @@
       ],
       "evidence_required": [
         "长期第三方项目样本清单",
+        "长期观察器 .redcap/state/longrun-observer/observations.jsonl",
+        "长期观察器 .redcap/evidence/longrun-observer/evaluation.json",
         "角色会话与上下游交付证据",
         "失败回流和重新验收证据",
         "自我净化与知识影响证据",
@@ -592,6 +507,7 @@
       ],
       "exit_criteria": [
         "长期第三方项目样本通过 real-sample-check --require-verified --require-independent。",
+        "长期观察器 evaluate 返回 eligible_to_close_ol11。",
         "独立审计器确认样本不是即时生成样本，也不是跨项目拼接的伪样本。",
         "样本覆盖多轮变更、失败回流和重新验收。",
         "棱镜确认该样本可以作为长期第三方生产项目证明。",
@@ -599,17 +515,14 @@
       ],
       "promotion_criteria": [
         "该项只能由真实长期外部项目样本关闭，不能由当前仓库 fixture、自生成样本或单轮 E2E 替代。",
-        "关闭时必须同步关闭循环扫描账本 LS-009 开放边界。",
+        "关闭时必须同步把本条 terminal_blocker 从开放状态更新为 verified。",
         "关闭后必须重新运行 release 和 terminal 检查画像。"
       ],
       "verified_runtime_evidence": [
+        "runtime/core/longrun_observer.py",
+        "assets/contracts/longrun-observer.json",
         "runtime/core/complete_revival_check.py",
-        "runtime/core/revival_followthrough.py",
-        "assets/evidence/loop-scans/20260621-redcap-directory-design-loop-ledger.json",
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-complete-revival-terminal-open-boundary-negative-after-ledger-update.receipt.json",
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ls-009-complete-revival-preflight-after-open-boundary.receipt.json",
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-existing-trpg-projects-candidate-scan.receipt.json",
-        "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-workspace-wide-redcap-evidence-scan.receipt.json"
+        "runtime/core/revival_followthrough.py"
       ],
       "prism_review": "resolved",
       "candidate_scan": {
@@ -617,20 +530,19 @@
           "/Users/norven/workspace/trpg-server",
           "/Users/norven/workspace/trpg-web"
         ],
-        "receipt": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-existing-trpg-projects-candidate-scan.receipt.json",
         "result": "not_qualified",
         "reason": "两个候选项目存在，但 maxdepth 4 内未发现 .redcap、loom-real-project-sample.json、open-loop-e2e-item-results.json、session-manifest.json 或 redcap-e2e-run-retention-after-run.json，不能作为长期 RedCap 运行样本关闭 OL-11。",
-        "workspace_wide_receipt": "assets/evidence/check-receipts/20260621-loop-ledger-repair/ol-11-workspace-wide-redcap-evidence-scan.receipt.json",
-        "workspace_wide_result": "只发现 /Users/norven/workspace/redcap-e2e-runs 下的 RedCap 自生成 E2E 运行和 LS-006 样本；这些证据可证明短期外部 E2E，但不能替代长期第三方生产项目样本。"
+        "workspace_wide_result": "当前 /Users/norven/workspace 下未保留 redcap-e2e-runs* 临时运行目录；OL-11 仍必须由真实长期外部项目样本关闭。",
+        "receipt_status": "removed_with_temporary_evidence_cleanup"
       },
       "fixed_plan": {
         "status": "ready_for_preflight",
         "plan_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md",
         "contract_path": "assets/contracts/complete-revival-e2e-acceptance-design.json#ol11_trpg_longrun_external_sample",
         "evidence_schema_path": "assets/contracts/ol11-trpg-longrun-e2e-evidence-schema.json",
-        "demand_provenance_path": "assets/evidence/ol11/trpg-demand-provenance.json",
-        "pre_execution_prism_review": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/merge.json",
-        "pre_execution_prism_resolution": "assets/evidence/prism/20260622-ol11-trpg-longrun-e2e-execution/resolution.json",
+        "demand_provenance_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md#固定需求包",
+        "pre_execution_prism_review": "must_be_regenerated_for_the_actual_longrun_project",
+        "pre_execution_prism_resolution": "must_be_regenerated_for_the_actual_longrun_project",
         "blocked_by_prism": false,
         "demand_package": "TRPG 社群与活动协作平台；Cap 只向独立开发 AI 提供需求和验收目标，不暴露旧 TRPG 源码或现成答案。",
         "execution_boundary": "允许在用户明确启动 OL-11 时执行正式预检和完整 OL-11 E2E；完整样本通过前禁止关闭本条，禁止把短演练当成长期样本。",

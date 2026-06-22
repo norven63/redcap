@@ -20,8 +20,8 @@ import knowledge_gateway
 REPO_ROOT = pathlib.Path(os.environ.get("REDCAP_REPO_ROOT", pathlib.Path(__file__).resolve().parents[2])).resolve()
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "self-purification.json"
 DEFAULT_LOOP_CONTRACT = REPO_ROOT / "assets" / "contracts" / "self-purification-loop.json"
-DEFAULT_LOOP_EVIDENCE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-07-self-purification-loop.json"
-DEFAULT_LOOP_ARTIFACTS = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-07-self-purification-loop-artifacts"
+DEFAULT_LOOP_EVIDENCE = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-07-self-purification-loop.json"
+DEFAULT_LOOP_ARTIFACTS = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-07-self-purification-loop-artifacts"
 DEFAULT_KNOWLEDGE_ROOT = REPO_ROOT
 CURRENT_RSP_07_08_TASK_ID = "20260621-rsp-07-08-self-purification-knowledge"
 DEFAULT_RSP_07_08_START_MARKER = (

@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap complete-revival-e2e convergence-guard-check --work-root /Users/norven/workspace/redcap-e2e-runs/run-20260620-redcap-fourth-e2e",
-  "executed_at": "2026-06-20T08:47:50+00:00",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "63c8bc7c08a707c8557b62d934b016831abc603de9e36cc77fd9027a5b5cfc98",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

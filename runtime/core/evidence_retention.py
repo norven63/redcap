@@ -17,7 +17,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 CONTRACT_PATH = REPO_ROOT / "assets" / "contracts" / "evidence-retention.json"
-DEFAULT_PLAN_OUT = REPO_ROOT / "assets" / "evidence" / "retention" / "latest-retention-plan.json"
+DEFAULT_PLAN_OUT = REPO_ROOT / ".redcap" / "evidence" / "retention" / "latest-retention-plan.json"
 
 
 @dataclass(frozen=True)
@@ -173,13 +173,94 @@ def metric_payload(metric: Metric, *, warning_bytes: int | None = None, critical
     }
 
 
+def dir_size(path: pathlib.Path) -> tuple[int, int]:
+    total = 0
+    files = 0
+    for item in path.rglob("*"):
+        if not item.is_file():
+            continue
+        files += 1
+        try:
+            total += item.stat().st_size
+        except OSError:
+            continue
+    return total, files
+
+
+def collect_system_temp_metric(contract: dict[str, Any]) -> dict[str, Any]:
+    cfg = contract.get("system_temp_artifacts", {})
+    protected = set(cfg.get("protected_names") or [])
+    roots: list[pathlib.Path] = []
+    for raw_root in cfg.get("roots", []):
+        if raw_root == "$TMPDIR":
+            raw_root = os.environ.get("TMPDIR") or "/tmp"
+        root = pathlib.Path(str(raw_root)).expanduser()
+        try:
+            root = root.resolve()
+        except OSError:
+            root = root.absolute()
+        if root not in roots:
+            roots.append(root)
+
+    candidates: list[dict[str, Any]] = []
+    protected_hits: list[dict[str, Any]] = []
+    total_bytes = 0
+    total_files = 0
+    for root in roots:
+        if not root.exists() or not root.is_dir():
+            continue
+        for pattern in cfg.get("include_globs") or ["redcap-*"]:
+            for item in sorted(root.glob(str(pattern))):
+                if not item.is_dir():
+                    continue
+                size, files = dir_size(item)
+                payload = {
+                    "path": str(item),
+                    "name": item.name,
+                    "bytes": size,
+                    "file_count": files,
+                }
+                if item.name in protected:
+                    protected_hits.append(payload)
+                    continue
+                candidates.append(payload)
+                total_bytes += size
+                total_files += files
+
+    thresholds = contract.get("thresholds", {}).get("system_temp_redcap_artifacts", {})
+    count = len(candidates)
+    count_state = classify(count, thresholds.get("warning_count"), thresholds.get("critical_count"))
+    state = count_state
+    return {
+        "id": "system_temp_redcap_artifacts",
+        "path": ", ".join(str(root) for root in roots),
+        "exists": bool(candidates),
+        "bytes": total_bytes,
+        "file_count": total_files,
+        "dir_count": count,
+        "git_policy": "external-temp",
+        "state": state,
+        "size_state": "ok",
+        "file_count_state": count_state,
+        "thresholds": {
+            "warning_bytes": None,
+            "critical_bytes": None,
+            "warning_count": thresholds.get("warning_count"),
+            "critical_count": thresholds.get("critical_count"),
+        },
+        "candidates": candidates,
+        "protected": protected_hits,
+        "rule": cfg.get("rule"),
+    }
+
+
 def collect_metrics(contract: dict[str, Any]) -> list[dict[str, Any]]:
     thresholds = contract.get("thresholds", {})
     metrics: list[dict[str, Any]] = []
-    total_cfg = thresholds.get("assets_evidence_total", {})
-    count_cfg = thresholds.get("assets_evidence_file_count", {})
+    total_cfg = thresholds.get("source_evidence_boundary", {})
+    count_cfg = thresholds.get("source_evidence_boundary_file_count", {})
     metrics.append(metric_payload(
-        measure_path("assets_evidence_total", pathlib.Path("assets/evidence")),
+        measure_path("source_evidence_boundary", pathlib.Path("assets/evidence")),
         warning_bytes=total_cfg.get("warning_bytes"),
         critical_bytes=total_cfg.get("critical_bytes"),
         warning_count=count_cfg.get("warning_count"),
@@ -187,13 +268,13 @@ def collect_metrics(contract: dict[str, Any]) -> list[dict[str, Any]]:
     ))
     host_cfg = thresholds.get("host_hook_events_jsonl", {})
     metrics.append(metric_payload(
-        measure_path("host_hook_events_jsonl", pathlib.Path("assets/evidence/host-hooks/codex/events.jsonl")),
+        measure_path("host_hook_events_jsonl", pathlib.Path(".redcap/evidence/host-hooks/codex/events.jsonl")),
         warning_bytes=host_cfg.get("warning_bytes"),
         critical_bytes=host_cfg.get("critical_bytes"),
     ))
     prism_cfg = thresholds.get("tracked_prism_task_ledger", {})
     metrics.append(metric_payload(
-        measure_path("tracked_prism_task_ledger", pathlib.Path("assets/evidence/prism/task-ledger.jsonl")),
+        measure_path("tracked_prism_task_ledger", pathlib.Path(".redcap/evidence/prism/task-ledger.jsonl")),
         warning_bytes=prism_cfg.get("warning_bytes"),
         critical_bytes=prism_cfg.get("critical_bytes"),
     ))
@@ -211,6 +292,7 @@ def collect_metrics(contract: dict[str, Any]) -> list[dict[str, Any]]:
         warning_count=external_cfg.get("warning_count"),
         critical_count=external_cfg.get("critical_count"),
     ))
+    metrics.append(collect_system_temp_metric(contract))
     return metrics
 
 
@@ -222,14 +304,16 @@ def build_plan(contract: dict[str, Any], metrics: list[dict[str, Any]]) -> dict[
             continue
         target = str(rule.get("target") or "")
         metric = None
-        if target == "assets/evidence/host-hooks/codex/events.jsonl":
+        if target == ".redcap/evidence/host-hooks/codex/events.jsonl":
             metric = by_id.get("host_hook_events_jsonl")
-        elif target == "assets/evidence/prism/task-ledger.jsonl":
+        elif target == ".redcap/evidence/prism/task-ledger.jsonl":
             metric = by_id.get("tracked_prism_task_ledger")
-        elif target == "assets/evidence/check-receipts":
-            metric = metric_payload(measure_path("check_receipts", pathlib.Path(target)))
+        elif target == "assets/evidence":
+            metric = by_id.get("source_evidence_boundary")
         elif target == "/Users/norven/workspace/redcap-e2e-runs":
             metric = by_id.get("external_e2e_cache")
+        elif target == "system-temp-redcap-artifacts":
+            metric = by_id.get("system_temp_redcap_artifacts")
         action_required = bool(metric and metric.get("state") in {"warning", "critical"})
         actions.append({
             "id": rule.get("id"),
@@ -270,8 +354,8 @@ def build_materialized_plan(report: dict[str, Any]) -> dict[str, Any]:
         "failures": report.get("failures", []),
         "dry_run_plan": report.get("dry_run_plan") or {},
         "summary_index": {
-            "host_hook_events_jsonl": summarize_text_file(REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"),
-            "tracked_prism_task_ledger": summarize_text_file(REPO_ROOT / "assets" / "evidence" / "prism" / "task-ledger.jsonl"),
+            "host_hook_events_jsonl": summarize_text_file(REPO_ROOT / ".redcap" / "evidence" / "host-hooks" / "codex" / "events.jsonl"),
+            "tracked_prism_task_ledger": summarize_text_file(REPO_ROOT / ".redcap" / "evidence" / "prism" / "task-ledger.jsonl"),
         },
         "history_window_policy": report.get("history_window_policy", {}),
         "completion_boundary": "本计划只提供膨胀风险治理的可查询 dry-run 依据；未执行删除、轮转或归档。",
@@ -337,10 +421,15 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         failures.append("contract schema_id invalid")
     if not contract.get("mode", {}).get("cleanup_plan_must_be_dry_run_first"):
         failures.append("contract must require dry-run before cleanup")
+    temp_metric = collect_system_temp_metric(contract)
+    if temp_metric.get("id") != "system_temp_redcap_artifacts":
+        failures.append("system temp metric missing")
+    if any(item.get("name") == "redcap-runtime" for item in temp_metric.get("candidates", [])):
+        failures.append("redcap-runtime must be protected from system temp cleanup candidates")
     plan = build_plan(contract, [
         {
             "id": "host_hook_events_jsonl",
-            "path": "assets/evidence/host-hooks/codex/events.jsonl",
+            "path": ".redcap/evidence/host-hooks/codex/events.jsonl",
             "state": "warning",
             "git_policy": "ignored",
         }

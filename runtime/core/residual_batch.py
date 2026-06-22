@@ -14,7 +14,7 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-DEFAULT_OUT = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-09-13-14-17-18-22-batch-integration.json"
+DEFAULT_OUT = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-09-13-14-17-18-22-batch-integration.json"
 PLAN = "assets/docs/residual-todo-final-solution-plan.md"
 TAIL_LIMIT = 4000
 
@@ -29,8 +29,8 @@ RSP_CHECKS: tuple[dict[str, Any], ...] = (
             "kind": "check-id-ok",
             "check_id": "negative-source-pollution-detected",
         },
-        "claim": "assets/evidence/rsp/rsp-09-claim.json",
-        "evidence": "assets/evidence/rsp/rsp-09-project-install-matrix.json",
+        "claim": ".redcap/evidence/rsp/rsp-09-claim.json",
+        "evidence": ".redcap/evidence/rsp/rsp-09-project-install-matrix.json",
     },
     {
         "rsp": "RSP-13",
@@ -41,8 +41,8 @@ RSP_CHECKS: tuple[dict[str, Any], ...] = (
             "kind": "field-ok-false-with-failures",
             "field": "source_workspace_negative_probe",
         },
-        "claim": "assets/evidence/rsp/rsp-13-claim.json",
-        "evidence": "assets/evidence/rsp/rsp-13-e2e-cache-prune.json",
+        "claim": ".redcap/evidence/rsp/rsp-13-claim.json",
+        "evidence": ".redcap/evidence/rsp/rsp-13-e2e-cache-prune.json",
     },
     {
         "rsp": "RSP-14",
@@ -53,8 +53,8 @@ RSP_CHECKS: tuple[dict[str, Any], ...] = (
             "kind": "field-ok-false-with-failures",
             "field": "negative_report",
         },
-        "claim": "assets/evidence/rsp/rsp-14-claim.json",
-        "evidence": "assets/evidence/rsp/rsp-14-e2e-human-report.json",
+        "claim": ".redcap/evidence/rsp/rsp-14-claim.json",
+        "evidence": ".redcap/evidence/rsp/rsp-14-e2e-human-report.json",
     },
     {
         "rsp": "RSP-17",
@@ -64,8 +64,8 @@ RSP_CHECKS: tuple[dict[str, Any], ...] = (
             "description": "contract coverage alone must not be accepted as long-term maturity",
             "kind": "acceptance-negative-pass",
         },
-        "claim": "assets/evidence/rsp/rsp-17-claim.json",
-        "evidence": "assets/evidence/rsp/rsp-17-design-maturity-matrix.json",
+        "claim": ".redcap/evidence/rsp/rsp-17-claim.json",
+        "evidence": ".redcap/evidence/rsp/rsp-17-design-maturity-matrix.json",
     },
     {
         "rsp": "RSP-18",
@@ -76,8 +76,8 @@ RSP_CHECKS: tuple[dict[str, Any], ...] = (
             "kind": "empty-capability-improvement",
             "field": "negative_sample",
         },
-        "claim": "assets/evidence/rsp/rsp-18-claim.json",
-        "evidence": "assets/evidence/rsp/rsp-18-fixture-external-project-samples.json",
+        "claim": ".redcap/evidence/rsp/rsp-18-claim.json",
+        "evidence": ".redcap/evidence/rsp/rsp-18-fixture-external-project-samples.json",
     },
     {
         "rsp": "RSP-22",
@@ -88,8 +88,8 @@ RSP_CHECKS: tuple[dict[str, Any], ...] = (
             "kind": "detected-missing",
             "field": "negative_probe",
         },
-        "claim": "assets/evidence/rsp/rsp-22-claim.json",
-        "evidence": "assets/evidence/rsp/rsp-22-e2e-contract-mapping.json",
+        "claim": ".redcap/evidence/rsp/rsp-22-claim.json",
+        "evidence": ".redcap/evidence/rsp/rsp-22-e2e-contract-mapping.json",
     },
 )
 
@@ -265,7 +265,7 @@ def contract_mapping_ids(payload: dict[str, Any]) -> set[str]:
     }
 
 
-def contract_check(item: dict[str, Any]) -> dict[str, Any]:
+def contract_check(item: dict[str, Any], *, claim_file: pathlib.Path, evidence_file: pathlib.Path) -> dict[str, Any]:
     argv = [
         "runtime/bin/redcap",
         "rsp-contract",
@@ -275,9 +275,9 @@ def contract_check(item: dict[str, Any]) -> dict[str, Any]:
         "--rsp",
         item["rsp"],
         "--claim-file",
-        item["claim"],
+        str(claim_file),
         "--evidence-file",
-        item["evidence"],
+        str(evidence_file),
     ]
     return run(argv, timeout_seconds=180)
 
@@ -320,9 +320,19 @@ def residual_batch_check(out: pathlib.Path | None = None) -> dict[str, Any]:
             if probe["detected"] is not True:
                 failures.append(f"{item['rsp']} 负向探针未检测到目标失败：{probe['description']}")
 
-            contract = contract_check(item)
+            claim_out = tmp / f"{item['rsp'].lower()}-{item['name']}-claim.json"
+            write_json(claim_out, {
+                "rsp": item["rsp"],
+                "claim_scope": "self-check-temporary-evidence",
+                "completion_level": "sample_passed",
+                "evidence_file": str(evidence_out),
+                "new_issues": [],
+            })
+            contract = contract_check(item, claim_file=claim_out, evidence_file=evidence_out)
             contract_checks.append({
                 "rsp": item["rsp"],
+                "claim_out": str(claim_out),
+                "evidence_out": str(evidence_out),
                 **contract,
             })
             if contract["ok"] is not True:
@@ -433,7 +443,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def cmd_mutation_check(args: argparse.Namespace) -> int:
-    out = pathlib.Path(args.out) if args.out else REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-09-13-14-17-18-22-batch-mutation.json"
+    out = pathlib.Path(args.out) if args.out else REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-09-13-14-17-18-22-batch-mutation.json"
     result = residual_batch_mutation_check(out)
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
     if result["ok"]:

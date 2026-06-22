@@ -6,7 +6,7 @@ history.
 | Directory | Unit | Role |
 | --- | --- | --- |
 | `runtime/` | Running unit | Executable and operational RedCap capability |
-| `assets/` | Asset unit | Persistent non-executable contracts, docs, knowledge, evidence, and archaeology |
+| `assets/` | Asset unit | Persistent non-executable contracts, docs, knowledge, and archaeology |
 
 Root keeps only discovery and host-entry files. The closed root set is
 `README.md`, `AGENTS.md`, `.codex/`, `runtime/`, and `assets/`.
@@ -44,7 +44,7 @@ machine policy is deliberately updated.
 | `assets/contracts/` | Schemas, protocols, and machine-readable cross-layer policies |
 | `assets/docs/` | Doctrine, revival map, architecture explanations |
 | `assets/knowledge/` | Reviewed reusable knowledge and private wiki entries |
-| `assets/evidence/` | Bounded verification and formal review artifacts |
+| `assets/evidence/` | Evidence boundary notice and ignore policy; live runtime evidence belongs in project `.redcap/evidence/` |
 | `assets/archaeology/` | Source maps and exact-path extraction from old RedCap |
 
 ## Placement Rules
@@ -64,7 +64,7 @@ machine policy is deliberately updated.
   `runtime/host-adapters/`.
 - Put reusable knowledge in `assets/knowledge/`; keep raw old material in
   `assets/archaeology/` by exact reference only.
-- Put bounded proof in `assets/evidence/`; do not use evidence as task state.
+- Put live runtime proof in the active project `.redcap/evidence/` or a temporary external run directory; do not use source-tree evidence as task state.
 - Put first-read explanation in `assets/docs/`; do not let docs become
   authority over executable contracts.
 - Do not put executable or source-like implementation files under `assets/`;
@@ -126,4 +126,6 @@ policy.
 - No old RedCap directory mirroring.
 - No raw task-report import by default.
 - No root-level dumping ground.
-- No public release layout claim yet.
+- No public release authorization claim yet. The source layout supports a
+  controlled 1.0 project-use baseline, while public release remains
+  human-gated.

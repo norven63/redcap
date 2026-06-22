@@ -91,6 +91,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     release_checks = "\n".join(str(item) for item in release.get("required_checks", []))
     if "runtime/bin/redcap check --profile release" not in release_checks:
         failures.append("release 必须使用 runtime/bin/redcap check --profile release")
+    if "longrun-observer scenario-test" not in release_checks:
+        failures.append("release 合同必须声明 longrun-observer scenario-test")
     standard_checks = "\n".join(str(item) for item in profiles.get("standard", {}).get("required_checks", []))
     if "persona-observation-check" not in standard_checks:
         failures.append("standard 合同必须声明 persona-observation-check")
@@ -101,6 +103,9 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         steps = runner_profiles.get(profile_id)
         if not isinstance(steps, tuple) or "persona-observation-check" not in steps:
             failures.append(f"{profile_id} 实际运行画像必须包含 persona-observation-check")
+    release_steps = runner_profiles.get("release")
+    if not isinstance(release_steps, tuple) or "longrun-observer-scenario-test" not in release_steps:
+        failures.append("release 实际运行画像必须包含 longrun-observer-scenario-test")
     terminal = profiles.get("terminal", {})
     terminal_checks = "\n".join(str(item) for item in terminal.get("required_checks", []))
     if "runtime/bin/redcap check --profile terminal" not in terminal_checks:

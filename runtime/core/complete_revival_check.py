@@ -11,7 +11,7 @@ import sys
 from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-DEFAULT_LOOP_LEDGER = REPO_ROOT / "assets" / "evidence" / "loop-scans" / "20260621-redcap-directory-design-loop-ledger.json"
+DEFAULT_OPEN_LOOP_QUEUE = REPO_ROOT / "assets" / "contracts" / "open-loop-closure-queue.json"
 NO_PROMOTE_RECORDS = [
     "assets/archaeology/no-promote/pathology-report-as-progress-v1.json",
     "assets/archaeology/no-promote/pathology-receipt-as-completion-v1.json",
@@ -148,7 +148,7 @@ def validate_open_loop_queue(payload: dict[str, Any], failures: list[str], *, re
         failures.append(f"open-loop 队列仍有终局开放边界：{terminal_blockers}")
 
 
-def open_loop_scan_boundaries(path: pathlib.Path = DEFAULT_LOOP_LEDGER) -> dict[str, Any]:
+def open_loop_scan_boundaries(path: pathlib.Path = DEFAULT_OPEN_LOOP_QUEUE) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -156,33 +156,34 @@ def open_loop_scan_boundaries(path: pathlib.Path = DEFAULT_LOOP_LEDGER) -> dict[
             "ok": False,
             "path": str(path.relative_to(REPO_ROOT)) if path.is_absolute() else str(path),
             "open_boundaries": [],
-            "failures": [f"循环扫描账本无法读取：{exc}"],
+            "failures": [f"open-loop 队列无法读取：{exc}"],
         }
-    findings = payload.get("findings")
-    if not isinstance(findings, list):
+    items = payload.get("items")
+    if not isinstance(items, list):
         return {
             "ok": False,
             "path": str(path.relative_to(REPO_ROOT)) if path.is_absolute() else str(path),
             "open_boundaries": [],
-            "failures": ["循环扫描账本缺少 findings 数组"],
+            "failures": ["open-loop 队列缺少 items 数组"],
         }
     open_boundaries: list[dict[str, Any]] = []
-    for finding in findings:
-        if not isinstance(finding, dict):
+    for item in items:
+        if not isinstance(item, dict):
             continue
-        status = str(finding.get("status") or "")
-        if finding.get("type") == "open_boundary" or status.startswith("open_"):
+        status = str(item.get("status") or "")
+        is_terminal_open = item.get("terminal_blocker") is True and status not in {
+            "verified",
+            "runtime-verified",
+            "runtime-verified-manual-boundary",
+        }
+        if is_terminal_open:
             open_boundaries.append({
-                "id": finding.get("id"),
-                "title": finding.get("title"),
-                "severity": finding.get("severity"),
+                "id": item.get("id"),
+                "title": item.get("title"),
+                "severity": item.get("priority"),
                 "status": status,
-                "next_step": finding.get("next_step"),
-                "completion_boundary": (
-                    finding.get("implementation_result", {})
-                    if isinstance(finding.get("implementation_result"), dict)
-                    else {}
-                ).get("completion_boundary"),
+                "next_step": item.get("next_step") or item.get("required_change"),
+                "completion_boundary": "terminal_blocker=true 的开放项禁止关闭 RedCap 完整复活终局。",
             })
     return {
         "ok": True,
@@ -194,12 +195,12 @@ def open_loop_scan_boundaries(path: pathlib.Path = DEFAULT_LOOP_LEDGER) -> dict[
 
 def validate_loop_scan_boundaries(payload: dict[str, Any], failures: list[str], *, require_terminal_verified: bool) -> None:
     if payload.get("ok") is not True:
-        failures.extend(payload.get("failures") or ["循环扫描账本开放边界检查失败"])
+        failures.extend(payload.get("failures") or ["open-loop 终局开放边界检查失败"])
         return
     open_boundaries = payload.get("open_boundaries")
     if require_terminal_verified and isinstance(open_boundaries, list) and open_boundaries:
         ids = [str(item.get("id")) for item in open_boundaries if isinstance(item, dict)]
-        failures.append(f"循环扫描账本仍有开放边界，不能授权完整复活终局关闭：{ids}")
+        failures.append(f"open-loop 队列仍有终局开放边界，不能授权完整复活终局关闭：{ids}")
 
 
 def validate_status(payload: dict[str, Any], failures: list[str], *, require_terminal_verified: bool) -> None:
@@ -343,7 +344,7 @@ def check_complete_revival(
         "authorizes_task_fact": "redcap-complete-revival" if terminal_completion_authorized else None,
         "completion_boundary": completion_boundary,
         "checks": {name: summarize(result) for name, result in commands.items()},
-        "loop_scan_open_boundaries": loop_boundaries,
+        "open_loop_terminal_boundaries": loop_boundaries,
         "failures": failures,
     }
 
@@ -438,14 +439,14 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     boundary_payload = {
         "ok": True,
         "open_boundaries": [
-            {"id": "LS-009", "status": "open_future_real_project_sample_required"}
+            {"id": "OL-11-long-term-third-party-production-sample", "status": "external-sample-required"}
         ],
         "failures": [],
     }
     boundary_failures: list[str] = []
     validate_loop_scan_boundaries(boundary_payload, boundary_failures, require_terminal_verified=True)
-    if not any("开放边界" in item and "LS-009" in item for item in boundary_failures):
-        failures.append("要求终局验证时，循环扫描账本开放边界没有失败")
+    if not any("开放边界" in item and "OL-11" in item for item in boundary_failures):
+        failures.append("要求终局验证时，open-loop 终局开放边界没有失败")
     non_terminal_boundary_failures: list[str] = []
     validate_loop_scan_boundaries(boundary_payload, non_terminal_boundary_failures, require_terminal_verified=False)
     if non_terminal_boundary_failures:

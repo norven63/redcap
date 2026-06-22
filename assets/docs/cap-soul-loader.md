@@ -6,9 +6,9 @@ Cap 灵魂加载器负责把当前 RedCap 工作区连接到私有 Cap 身份源
 
 - 入口命令：`runtime/bin/redcap soul-load`
 - 实现文件：`runtime/core/soul_loader.py`
-- 证据文件：
-  - `assets/evidence/soul/latest-load.json`
-  - `assets/evidence/soul/load-ledger.jsonl`
+- 运行证据：
+  - `.redcap/evidence/soul/latest-load.json`
+  - `.redcap/evidence/soul/load-ledger.jsonl`
 
 ## 来源策略
 

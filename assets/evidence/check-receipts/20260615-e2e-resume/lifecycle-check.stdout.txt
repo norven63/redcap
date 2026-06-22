@@ -1,5 +1,0 @@
-{
-  "ok": true,
-  "failures": []
-}
-REDCAP_DEVELOPMENT_LIFECYCLE_OK

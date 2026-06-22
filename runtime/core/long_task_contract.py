@@ -1591,7 +1591,7 @@ def run_boundary_probe_suite() -> dict[str, Any]:
         "assets/contracts/long-task-loop-boundary.json",
         "runtime/bin/redcap long-task boundary-check",
     ]
-    artifact_root = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-10-long-task-loop-boundary-artifacts"
+    artifact_root = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-10-long-task-loop-boundary-artifacts"
     artifact_root.mkdir(parents=True, exist_ok=True)
     with contextlib.nullcontext(artifact_root) as tmp:
 

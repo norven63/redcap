@@ -110,9 +110,11 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         if not (REPO_ROOT / str(raw)).exists():
             failures.append(f"打包必需路径不存在：{raw}")
     safety = "\n".join(str(item) for item in contract.get("safety_rules", []))
-    for required in ["assets/evidence", "项目级", "hooks"]:
+    for required in ["assets/evidence", "项目级", "hooks", "longrun-observer"]:
         if required not in safety:
             failures.append(f"安装安全规则缺少：{required}")
+    if "longrun-observer" not in str(contract.get("longrun_observer_command", "")):
+        failures.append("项目安装合同缺少长期观察器初始化命令")
     return failures
 
 
@@ -297,7 +299,9 @@ def audit_package(package_path: pathlib.Path) -> dict[str, Any]:
                     failures.append(f"{name}: {reason}")
             required = [
                 f"{PACKAGE_ROOT}/runtime/bin/redcap",
+                f"{PACKAGE_ROOT}/runtime/core/longrun_observer.py",
                 f"{PACKAGE_ROOT}/assets/contracts/codex-hooks.template.json",
+                f"{PACKAGE_ROOT}/assets/contracts/longrun-observer.json",
                 f"{PACKAGE_ROOT}/install-manifest.json",
                 f"{PACKAGE_ROOT}/README.md",
             ]
@@ -367,6 +371,8 @@ def release_check() -> dict[str, Any]:
                 failures.append("真实解压安装命令失败")
             for required in [
                 project / PACKAGE_ROOT / "runtime" / "bin" / "redcap",
+                project / PACKAGE_ROOT / "runtime" / "core" / "longrun_observer.py",
+                project / PACKAGE_ROOT / "assets" / "contracts" / "longrun-observer.json",
                 project / PACKAGE_ROOT / "runtime" / "prism" / "bin" / "prism",
                 project / PACKAGE_ROOT / "install.json",
                 project / PACKAGE_ROOT / "evidence",
@@ -470,6 +476,8 @@ def installed_runtime_smoke_check() -> dict[str, Any]:
             for argv in [
                 ["bash", str(runtime_bin), "project-install", "check"],
                 ["bash", str(runtime_bin), "cli-surface", "check"],
+                ["bash", str(runtime_bin), "longrun-observer", "self-check"],
+                ["bash", str(runtime_bin), "longrun-observer", "scenario-test"],
                 ["bash", str(runtime_bin), "gate", "--task", "外部项目安装后 runtime smoke", "--risk-level", "low"],
             ]:
                 command = run_smoke_command(argv, project)
@@ -523,7 +531,7 @@ def validate_production_readiness_contract(contract: dict[str, Any]) -> list[str
     if "project-install production-readiness-check" not in command:
         failures.append("项目安装生产就绪合同缺少命令声明")
     required = "\n".join(str(item) for item in contract.get("technical_acceptance", []))
-    for marker in ["release-check", "matrix-check", "安装后运行时冒烟", "源仓库绝对路径"]:
+    for marker in ["release-check", "matrix-check", "安装后运行时冒烟", "scenario-test", "源仓库绝对路径"]:
         if marker not in required:
             failures.append(f"项目安装生产就绪合同缺少验收点：{marker}")
     boundary = str(contract.get("completion_boundary", ""))
@@ -858,7 +866,7 @@ def project_install_matrix_check(out: pathlib.Path | None = None) -> dict[str, A
 
 
 def cmd_matrix_check(args: argparse.Namespace) -> int:
-    out = pathlib.Path(args.out).resolve() if args.out else REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-09-project-install-matrix.json"
+    out = pathlib.Path(args.out).resolve() if args.out else REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-09-project-install-matrix.json"
     result = project_install_matrix_check(out)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result.get("ok") is True:
@@ -901,6 +909,8 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append(f"初始化自检失败：{init_result.get('failures')}")
         for required in [
             package_root / "runtime" / "bin" / "redcap",
+            package_root / "runtime" / "core" / "longrun_observer.py",
+            package_root / "assets" / "contracts" / "longrun-observer.json",
             package_root / "install.json",
             package_root / "evidence",
             package_root / "logs",

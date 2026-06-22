@@ -131,7 +131,7 @@ def build_context(args: argparse.Namespace) -> dict[str, Any]:
     if raw_project_runtime_root:
         project_runtime_root = resolve_path(raw_project_runtime_root)
     elif boundary_mode == "self-development":
-        project_runtime_root = (runtime_root / "assets" / "evidence").resolve()
+        project_runtime_root = (runtime_root / ".redcap").resolve()
     else:
         project_runtime_root = default_project_runtime_root(project_workspace)
 
@@ -145,7 +145,7 @@ def build_context(args: argparse.Namespace) -> dict[str, Any]:
     if args.evidence_root:
         evidence_root = resolve_path(args.evidence_root)
     elif boundary_mode == "self-development":
-        evidence_root = runtime_root / "assets" / "evidence"
+        evidence_root = project_runtime_root / "evidence"
     else:
         evidence_root = project_runtime_root / "evidence"
     runtime_dirs = project_runtime_dirs(project_runtime_root)

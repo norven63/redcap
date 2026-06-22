@@ -18,8 +18,8 @@ from typing import Any
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 RUNTIME_BIN = REPO_ROOT / "runtime" / "bin" / "redcap"
 EVIDENCE_SOUL_DIR = REPO_ROOT / "assets" / "evidence" / "soul"
-RSP_EVIDENCE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-16-cap-revival-portability.json"
-RSP_CLAIM = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-16-claim.json"
+RSP_EVIDENCE = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-16-cap-revival-portability.json"
+RSP_CLAIM = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-16-claim.json"
 PUBLIC_SCAN_ROOTS = [
     REPO_ROOT / "assets" / "docs",
     REPO_ROOT / "assets" / "contracts",
@@ -504,7 +504,7 @@ def build_report(out_path: pathlib.Path | None) -> dict[str, Any]:
             "runtime/core/cap_revival_portability.py",
             "runtime/bin/redcap soul-load portability-check",
             "runtime/bin/redcap check --only soul-load-portability-check",
-            str(out_path.relative_to(REPO_ROOT)) if out_path else "assets/evidence/rsp/rsp-16-cap-revival-portability.json",
+            str(out_path.relative_to(REPO_ROOT)) if out_path else ".redcap/evidence/rsp/rsp-16-cap-revival-portability.json",
         ],
         "failures": failures,
     }

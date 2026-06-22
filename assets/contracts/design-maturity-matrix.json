@@ -10,5 +10,5 @@
   "negative_probe": [
     "合同覆盖不得冒充长期成熟"
   ],
-  "evidence_file": "assets/evidence/rsp/rsp-17-design-maturity-matrix.json"
+  "evidence_file": ".redcap/evidence/rsp/rsp-17-design-maturity-matrix.json"
 }

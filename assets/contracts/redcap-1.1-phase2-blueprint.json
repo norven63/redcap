@@ -24,8 +24,9 @@
     "reopen_rule": "A 1.0 decision may be challenged only by a new bounded shard with exact sources, a new user directive or explicit Cap risk finding, Prism review, and a resolution that names which prior decision is being challenged.",
     "non_override_rule": "Phase 2 queue items may refine migration governance, but they may not override RedCap 1.0 exit criteria, terminal decisions, or no-promote records.",
     "handoff_records": [
-      "assets/evidence/lifecycle/latest-completion.json",
-      "assets/evidence/prism/20260603-redcap-1.0-final-claim/session.json",
+      "assets/contracts/redcap-1.0-loop.json",
+      "assets/contracts/terminal-goals.json",
+      "assets/contracts/open-loop-closure-queue.json",
       "assets/archaeology/no-promote/pathology-report-as-progress-v1.json",
       "assets/archaeology/no-promote/pathology-receipt-as-completion-v1.json",
       "assets/archaeology/no-promote/pathology-closeout-recursion-v1.json",

@@ -49,6 +49,8 @@ STEPS: tuple[Step, ...] = (
     Step("known-issues-queue-check", redcap("known-issues-queue", "check", "--require-1-4-verified")),
     Step("evidence-retention-self-check", redcap("evidence-retention", "self-check")),
     Step("evidence-retention-check", redcap("evidence-retention", "check", "--include-plan")),
+    Step("longrun-observer-self-check", redcap("longrun-observer", "self-check")),
+    Step("longrun-observer-scenario-test", redcap("longrun-observer", "scenario-test")),
     Step("check-profiles-self-check", redcap("check-profiles", "self-check")),
     Step("check-profiles-check", redcap("check-profiles", "check")),
     Step("long-task-contract-self-check", redcap("long-task", "self-check")),
@@ -153,11 +155,15 @@ PROFILE_STEPS: dict[str, tuple[str, ...] | None] = {
     "fast": (
         "human-output-self-check",
         "evidence-retention-check",
+        "longrun-observer-self-check",
+        "longrun-observer-scenario-test",
         "check-profiles-check",
     ),
     "standard": (
         "human-output-self-check",
         "evidence-retention-check",
+        "longrun-observer-self-check",
+        "longrun-observer-scenario-test",
         "check-profiles-self-check",
         "check-profiles-check",
         "lifecycle-self-check",
@@ -171,6 +177,8 @@ PROFILE_STEPS: dict[str, tuple[str, ...] | None] = {
     "release": (
         "human-output-self-check",
         "evidence-retention-check",
+        "longrun-observer-self-check",
+        "longrun-observer-scenario-test",
         "check-profiles-check",
         "cli-surface-compat-check",
         "boundary-check",

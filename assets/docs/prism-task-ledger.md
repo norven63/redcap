@@ -12,10 +12,10 @@ health summary for routine observation.
 - Runtime health summary: `.redcap/evidence/prism/task-health.json` in the source workspace, or `evidence/prism/task-health.json` inside an installed project `.redcap/` package
 - Optional overrides: `REDCAP_PRISM_LEDGER` and `REDCAP_PRISM_HEALTH`
 
-The ledger is runtime health data, not a stable source artifact. Historical
-evidence under `assets/evidence/prism/` may be kept as bounded review evidence,
-but live `gate`, `session-init`, and `session-update` calls must not mutate
-tracked files in the RedCap source workspace.
+The ledger is runtime health data, not a stable source artifact. Live `gate`,
+`session-init`, and `session-update` calls must write to `.redcap/evidence/`
+or another explicit runtime directory, and must not mutate tracked files in the
+RedCap source workspace.
 
 `runtime/prism/bin/prism session-init` and `session-update` append session
 records after writing the session manifest. `runtime/prism/bin/prism gate`

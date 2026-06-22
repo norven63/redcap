@@ -22,8 +22,8 @@ REPO_ROOT = pathlib.Path(os.environ.get("REDCAP_KNOWLEDGE_ROOT", pathlib.Path(__
 DEFAULT_INDEX = REPO_ROOT / "assets" / "knowledge" / "index.json"
 DEFAULT_QUALITY = REPO_ROOT / "assets" / "knowledge" / "quality.json"
 DEFAULT_IMPACT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "knowledge-impact-trace.json"
-DEFAULT_IMPACT_EVIDENCE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-08-knowledge-impact-trace.json"
-DEFAULT_IMPACT_ARTIFACTS = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-08-knowledge-impact-artifacts"
+DEFAULT_IMPACT_EVIDENCE = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-08-knowledge-impact-trace.json"
+DEFAULT_IMPACT_ARTIFACTS = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-08-knowledge-impact-artifacts"
 CURRENT_RSP_07_08_TASK_ID = "20260621-rsp-07-08-self-purification-knowledge"
 DEFAULT_RSP_07_08_START_MARKER = (
     REPO_ROOT / "assets" / "evidence" / "prism" / CURRENT_RSP_07_08_TASK_ID / "request.json"

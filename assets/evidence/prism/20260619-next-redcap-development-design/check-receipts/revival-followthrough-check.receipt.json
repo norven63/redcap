@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap revival-followthrough check",
-  "exit_code": 0,
-  "executed_at": "2026-06-19T01:32:39+00:00",
-  "executor": "redcap-next-development-implementation",
-  "stdout_sha256": "9a330cf0cb88d3771fe19a4c78346244672d9333d238b499287e46efb9bc9e1c",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

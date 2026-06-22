@@ -31,12 +31,12 @@ HOOKS_CONFIG = PROJECT_ROOT / ".codex" / "hooks.json"
 DEFAULT_HOOK_EVIDENCE_DIR = (
     REPO_ROOT / "evidence" / "host-hooks" / "codex"
     if INSTALLED_PACKAGE_MODE
-    else REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex"
+    else REPO_ROOT / ".redcap" / "evidence" / "host-hooks" / "codex"
 )
 DEFAULT_TASK_FACTS = (
     REPO_ROOT / "evidence" / "task-facts" / "task-facts.jsonl"
     if INSTALLED_PACKAGE_MODE
-    else REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
+    else REPO_ROOT / ".redcap" / "evidence" / "task-facts" / "task-facts.jsonl"
 )
 EVIDENCE_DIR = pathlib.Path(
     os.environ.get(

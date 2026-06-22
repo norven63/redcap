@@ -21,7 +21,6 @@ DEFAULT_PLAN = REPO_ROOT / "assets" / "docs" / "ol11-trpg-longrun-e2e-plan.md"
 DEFAULT_E2E_CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance-design.json"
 DEFAULT_QUEUE = REPO_ROOT / "assets" / "contracts" / "open-loop-closure-queue.json"
 DEFAULT_SCHEMA = REPO_ROOT / "assets" / "contracts" / "ol11-trpg-longrun-e2e-evidence-schema.json"
-DEFAULT_PROVENANCE = REPO_ROOT / "assets" / "evidence" / "ol11" / "trpg-demand-provenance.json"
 DEFAULT_DRY_RUN_ROOT = pathlib.Path.home() / "workspace" / "redcap-production-samples" / "ol11-trpg-carrier-dry-run"
 
 
@@ -48,6 +47,7 @@ REQUIRED_OL11_SCHEMA_KEYS = [
     "knowledge_impact",
     "prism_reviews",
     "cache_retention",
+    "longrun_observer",
     "cap_observer_verdict",
     "old_source_isolation",
     "real_sample_gate",
@@ -135,6 +135,7 @@ def validate_schema(schema: dict[str, Any], failures: list[str]) -> None:
 def validate_provenance(provenance: dict[str, Any], failures: list[str]) -> None:
     if provenance.get("schema_id") != "redcap-ol11-trpg-demand-provenance":
         failures.append("TRPG 来源证明 schema_id 错误")
+    embedded = provenance.get("status") == "embedded_in_plan"
     boundary = provenance.get("boundary")
     if not isinstance(boundary, dict):
         failures.append("TRPG 来源证明缺少 boundary")
@@ -170,12 +171,55 @@ def validate_provenance(provenance: dict[str, Any], failures: list[str]) -> None
         if isinstance(expected_head, str) and expected_head.strip() and actual_head != expected_head:
             failures.append(f"TRPG 来源项目 git_head 不匹配：{path}")
         refs = source.get("evidence_refs")
+        if embedded:
+            continue
         if not isinstance(refs, list) or not refs:
             failures.append(f"TRPG 来源项目缺少 evidence_refs：{path}")
             continue
         for ref in refs:
             if not isinstance(ref, str) or not pathlib.Path(ref).expanduser().exists():
                 failures.append(f"TRPG 来源证明引用不存在：{ref}")
+
+
+def embedded_trpg_provenance() -> dict[str, Any]:
+    return {
+        "schema_id": "redcap-ol11-trpg-demand-provenance",
+        "schema_version": 1,
+        "status": "embedded_in_plan",
+        "purpose": "证明 OL-11 TRPG 固定需求包来自方案文档中的固定需求边界，不依赖 RedCap 源仓库临时证据文件。",
+        "boundary": {
+            "cap_may_read_for_abstraction": True,
+            "developer_ai_may_read_old_source": False,
+            "reason": "Cap 可从既有项目方向抽象需求；独立开发 AI 只能接收固定需求包，不能读取旧源码或现成答案。",
+        },
+        "source_projects": [
+            {
+                "role": "server",
+                "label": "旧 TRPG 服务端项目方向",
+                "path": "/Users/norven/workspace/trpg-server",
+                "evidence_refs": [],
+            },
+            {
+                "role": "web",
+                "label": "旧 TRPG 前端项目方向",
+                "path": "/Users/norven/workspace/trpg-web",
+                "evidence_refs": [],
+            },
+        ],
+        "fixed_demand_package_path": "assets/docs/ol11-trpg-longrun-e2e-plan.md#固定需求包",
+        "not_claimed": [
+            "不声明这两个旧项目已经是 OL-11 长期样本证据",
+            "不允许开发 AI 开卷读取旧项目源码",
+            "不把旧项目当前状态直接当作新样本验收结果",
+        ],
+    }
+
+
+def load_provenance(raw: str | None) -> tuple[dict[str, Any], str]:
+    if not raw:
+        return embedded_trpg_provenance(), "embedded_in_plan"
+    path = pathlib.Path(raw).expanduser().resolve()
+    return load_json(path), str(path)
 
 
 def validate_contracts(e2e_contract: dict[str, Any], queue: dict[str, Any], failures: list[str]) -> None:
@@ -286,7 +330,7 @@ def run_trpg_carrier_dry_run(args: argparse.Namespace) -> dict[str, Any]:
     )
 
     work_root = pathlib.Path(args.work_root).expanduser().resolve()
-    provenance = load_json(pathlib.Path(args.provenance).resolve())
+    provenance, _ = load_provenance(args.provenance)
     guard_before = source_workspace_snapshot()
     user_codex_before = user_codex_home_state()
     failures = ensure_external_path(work_root)
@@ -481,11 +525,10 @@ def run_plan_check(args: argparse.Namespace) -> dict[str, Any]:
     e2e_contract_path = pathlib.Path(args.e2e_contract).resolve()
     queue_path = pathlib.Path(args.queue).resolve()
     schema_path = pathlib.Path(args.schema).resolve()
-    provenance_path = pathlib.Path(args.provenance).resolve()
     failures: list[str] = []
     validate_plan(plan_path, failures)
     schema = load_json(schema_path)
-    provenance = load_json(provenance_path)
+    provenance, provenance_source = load_provenance(args.provenance)
     e2e_contract = load_json(e2e_contract_path)
     queue = load_json(queue_path)
     validate_schema(schema, failures)
@@ -498,7 +541,7 @@ def run_plan_check(args: argparse.Namespace) -> dict[str, Any]:
         "e2e_contract": str(e2e_contract_path),
         "queue": str(queue_path),
         "evidence_schema": str(schema_path),
-        "demand_provenance": str(provenance_path),
+        "demand_provenance": provenance_source,
         "failures": failures,
     }
 
@@ -518,7 +561,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         e2e_contract=str(DEFAULT_E2E_CONTRACT),
         queue=str(DEFAULT_QUEUE),
         schema=str(DEFAULT_SCHEMA),
-        provenance=str(DEFAULT_PROVENANCE),
+        provenance=None,
     ))
     failures = list(result.get("failures", []))
     bad_schema = load_json(DEFAULT_SCHEMA)
@@ -527,7 +570,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     validate_schema(bad_schema, schema_failures)
     if not schema_failures:
         failures.append("缺少 OL-11 顶层证据项的负向探针没有失败")
-    bad_provenance = load_json(DEFAULT_PROVENANCE)
+    bad_provenance = embedded_trpg_provenance()
     if isinstance(bad_provenance.get("boundary"), dict):
         bad_provenance["boundary"]["developer_ai_may_read_old_source"] = True
     provenance_failures: list[str] = []
@@ -557,13 +600,13 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--e2e-contract", default=str(DEFAULT_E2E_CONTRACT))
     check.add_argument("--queue", default=str(DEFAULT_QUEUE))
     check.add_argument("--schema", default=str(DEFAULT_SCHEMA))
-    check.add_argument("--provenance", default=str(DEFAULT_PROVENANCE))
+    check.add_argument("--provenance")
     check.set_defaults(func=cmd_plan_check)
     self_check = sub.add_parser("self-check")
     self_check.set_defaults(func=cmd_self_check)
     dry_run = sub.add_parser("trpg-carrier-dry-run")
     dry_run.add_argument("--work-root", default=str(DEFAULT_DRY_RUN_ROOT))
-    dry_run.add_argument("--provenance", default=str(DEFAULT_PROVENANCE))
+    dry_run.add_argument("--provenance")
     dry_run.add_argument("--timeout-seconds", type=int, default=240)
     dry_run.set_defaults(func=cmd_trpg_carrier_dry_run)
     return parser

@@ -1,8 +1,0 @@
-{
-  "schema_id": "redcap-persona-distillation-decision",
-  "task_id": "20260619-e2e-watchdog-deadline-classification-fix",
-  "privacy_class": "cap-private-boundary-checked",
-  "public_write": false,
-  "private_body_written": false,
-  "reason": "本轮没有新增需要沉淀到 Cap 私有人格文件的身份内容；所有可公开部分已经作为工程治理经验留在项目证据中。"
-}

@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260621-rsp-19-cli-surface-compat/merge.json --resolution assets/evidence/prism/20260621-rsp-19-cli-surface-compat/resolution.json --manifest assets/evidence/prism/20260621-rsp-19-cli-surface-compat/session.json",
-  "exit_code": 0,
-  "executed_at": "2026-06-21T04:26:04+00:00",
-  "executor": "Cap",
-  "stdout_sha256": "prism-resolution-rsp-19-ok-output-observed",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

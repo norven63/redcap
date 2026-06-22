@@ -21,6 +21,7 @@
     "knowledge_impact",
     "prism_reviews",
     "cache_retention",
+    "longrun_observer",
     "cap_observer_verdict",
     "old_source_isolation",
     "real_sample_gate",
@@ -135,6 +136,12 @@
       "required_report": "cache-retention-report.json",
       "failure_rule": "运行结束后未执行缓存保留检查时不得通过。"
     },
+    "longrun_observer": {
+      "required_state": ".redcap/state/longrun-observer/observations.jsonl",
+      "required_evaluation": ".redcap/evidence/longrun-observer/evaluation.json",
+      "required_command": "runtime/bin/redcap longrun-observer evaluate --project <external-project>",
+      "failure_rule": "长期观察器返回 needs_fix 时必须先修复；返回 continue_observing 时不得关闭 OL-11。"
+    },
     "cap_observer_verdict": {
       "must_state": [
         "Cap 未直接开发目标项目",
@@ -158,6 +165,7 @@
     "runtime/bin/redcap ol11 trpg-carrier-dry-run --work-root <external-root>",
     "runtime/bin/redcap complete-revival-e2e design-check",
     "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-root>",
-    "runtime/bin/redcap project-install production-readiness-check"
+    "runtime/bin/redcap project-install production-readiness-check",
+    "runtime/bin/redcap longrun-observer self-check"
   ]
 }

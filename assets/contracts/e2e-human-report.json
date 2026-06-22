@@ -9,5 +9,5 @@
   "negative_probe": [
     "只报告页面可访问且缺少证据引用不得通过"
   ],
-  "evidence_file": "assets/evidence/rsp/rsp-14-e2e-human-report.json"
+  "evidence_file": ".redcap/evidence/rsp/rsp-14-e2e-human-report.json"
 }

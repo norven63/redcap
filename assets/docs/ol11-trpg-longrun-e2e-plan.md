@@ -20,7 +20,7 @@ OL-11 要验证的不是“能不能做出一个 TRPG（桌面角色扮演游戏
 
 ## 来源边界
 
-固定需求包的来源证明记录在 `assets/evidence/ol11/trpg-demand-provenance.json`。它只证明本测试方向来自 RedCap 源仓库之外的既有本地项目方向，不证明旧项目本身就是 OL-11 的验收样本。
+固定需求包的来源边界以本文件为准，不再依赖 RedCap 源仓库里的临时证据文件。它只证明本测试方向来自 RedCap 源仓库之外的既有本地项目方向，不证明旧项目本身就是 OL-11 的验收样本。
 
 边界要求：
 
@@ -40,6 +40,7 @@ runtime/bin/redcap ol11 trpg-carrier-dry-run --work-root <RedCap 源仓库之外
 runtime/bin/redcap complete-revival-e2e design-check
 runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <RedCap 源仓库之外的外部目录>
 runtime/bin/redcap project-install production-readiness-check
+runtime/bin/redcap longrun-observer self-check
 ```
 
 `ol11 trpg-carrier-dry-run` 只是短演练：它验证固定 TRPG 需求包能被独立 Codex CLI（Codex 命令行工具）承接、能触发项目级 Hook（钩子，宿主自动触发的检查脚本）、能记录 session_id（会话编号）和机器标记；它不允许开发正式项目，也不能关闭 OL-11。
@@ -208,6 +209,7 @@ Cap 可以补充需求，但不得替产品经理直接写最终产物。
 - 需求、架构、开发、测试、评审角色证据完整。
 - 所有角色有 `session_id`，且无未解释的会话丢失。
 - 项目级 Hook 事件被记录。
+- 长期观察器已在外部项目初始化，并能读取观察记录。
 - 棱镜完成需求、架构或最终证据链复核。
 - 失败回流至少真实发生一次，或有充分证据说明没有失败且负向探针仍通过。
 - 自我净化候选和处理决策存在。
@@ -221,6 +223,7 @@ Cap 可以补充需求，但不得替产品经理直接写最终产物。
 | 能力项 | 必须观察到的证据 |
 | --- | --- |
 | 项目级安装 | 外部项目 `.redcap/` 初始化成功，配置和运行产物均在外部项目内 |
+| 长期观察器 | `.redcap/state/longrun-observer/observations.jsonl` 记录多轮事实，`evaluate` 给出继续观察、必须修复或可进入关闭评审 |
 | Hook 触发 | 项目级 Hook 事件摘要包含会话启动、用户提示、工具前、工具后和停止前检查 |
 | Loom 角色分工 | 每个角色有独立会话、输入、输出、原始日志和下游交付 |
 | 会话接续 | 同一角色返工复用 `session_id`，丢失时告警并进入复核 |
@@ -249,6 +252,8 @@ Cap 可以补充需求，但不得替产品经理直接写最终产物。
 <外部项目>/.redcap/evidence/e2e/capability-coverage-matrix.json
 <外部项目>/.redcap/evidence/e2e/final-prism-review.json
 <外部项目>/.redcap/evidence/e2e/cache-retention-report.json
+<外部项目>/.redcap/state/longrun-observer/observations.jsonl
+<外部项目>/.redcap/evidence/longrun-observer/evaluation.json
 ```
 
 ## 反作弊边界

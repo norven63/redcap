@@ -15,9 +15,9 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_TARGET = REPO_ROOT / "runtime" / "core" / "loom_runtime.py"
-DEFAULT_OUT = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-divergence-test.json"
-DEFAULT_MAIN_REPORT = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-divergence-main.json"
-DEFAULT_PROBE_REPORT = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-divergence-independent.json"
+DEFAULT_OUT = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-divergence-test.json"
+DEFAULT_MAIN_REPORT = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-divergence-main.json"
+DEFAULT_PROBE_REPORT = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-divergence-independent.json"
 SCHEMA_ID = "redcap-rsp-24-divergence-test"
 
 

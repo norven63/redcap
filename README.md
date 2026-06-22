@@ -5,12 +5,21 @@ This is the clean revival workspace for RedCap.
 The old RedCap repository is reference material only. This workspace should
 grow by bounded components, not by scattering governance assets across the root.
 
+Current release posture: RedCap has a project-level installation package,
+runtime boundary checks, Loom workflow checks, Prism review routing, knowledge
+and self-purification guards, and long-run external sample observation tooling.
+It is prepared as a 1.0 production baseline for controlled project use.
+
+Boundary: this does not claim RedCap complete revival is terminally closed.
+OL-11, the long-term external project sample, must still pass the long-run
+observer before the broader complete-revival parent goal can close.
+
 ## Top-Level Units
 
 - [`runtime/`](./runtime/) - executable and operational RedCap unit: CLI
   entrypoints, Prism gate/review engine, bootstrap, and host adapters.
 - [`assets/`](./assets/) - persistent non-executable asset unit: contracts,
-  docs, knowledge, evidence, and archaeology references.
+  docs, knowledge, evidence-boundary markers, and archaeology references.
 - [`.codex/`](./.codex/) - Codex host-entry config for project-local hooks.
 
 ## Pre-Task Gate
@@ -27,18 +36,25 @@ project-local hooks run the gate on prompt intake and record action/closeout
 evidence; provider calls go through the Prism dispatcher so follow-up rounds
 cannot bypass task-session checks.
 
-## Temporary Usability Check
+## Release Readiness Checks
 
-The current scaffold has a bounded "usable enough for revival work" check:
+For quick local confidence:
 
 ```bash
 runtime/bin/redcap temporary-usable-check
 ```
 
-It requires the executable Prism/session-ownership/FSM/knowledge/layout checks,
-provider dispatcher self-check, host hook audit, hook coverage check, and
-enforcement matrix probes to pass. The check currently allows no known rough
-edges.
+For package and production baseline checks:
+
+```bash
+runtime/bin/redcap check --profile release
+runtime/bin/redcap project-install production-readiness-check
+runtime/bin/redcap longrun-observer self-check
+```
+
+Runtime output must go to `.redcap/evidence/` in this source workspace, or to
+`<project>/.redcap/evidence/` in an installed project. `assets/evidence/` is a
+source-tree boundary marker only.
 
 ## Revival Doctrine
 

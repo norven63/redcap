@@ -17,7 +17,7 @@ REPO_ROOT = pathlib.Path(os.environ.get("REDCAP_KNOWLEDGE_ROOT", pathlib.Path(__
 DEFAULT_INDEX = REPO_ROOT / "assets" / "knowledge" / "index.json"
 DEFAULT_QUALITY = REPO_ROOT / "assets" / "knowledge" / "quality.json"
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "knowledge-quality.json"
-DEFAULT_EVIDENCE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-26-knowledge-quality.json"
+DEFAULT_EVIDENCE = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-26-knowledge-quality.json"
 
 ALLOWED_STATUSES = {"active", "stale", "conflict", "no_promote", "deprecated", "legacy_reference"}
 ALLOWED_CONFIDENCE = {"high", "medium", "low"}

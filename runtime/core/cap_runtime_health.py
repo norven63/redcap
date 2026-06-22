@@ -16,10 +16,10 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "cap-runtime-health.json"
-DEFAULT_OUT = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-cap-runtime-health.json"
-DEFAULT_INDEPENDENT_PROBE = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-independent-runtime-health.json"
-DEFAULT_DIVERGENCE_TEST = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-divergence-test.json"
-DEFAULT_DIVERGENCE_PERMISSION_TEST = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-24-divergence-permission-test.json"
+DEFAULT_OUT = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-cap-runtime-health.json"
+DEFAULT_INDEPENDENT_PROBE = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-independent-runtime-health.json"
+DEFAULT_DIVERGENCE_TEST = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-divergence-test.json"
+DEFAULT_DIVERGENCE_PERMISSION_TEST = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-24-divergence-permission-test.json"
 CONTRACT_SCHEMA_ID = "redcap-cap-runtime-health-contract"
 REPORT_SCHEMA_ID = "redcap-cap-runtime-health-report"
 SELF_CHECK_SCHEMA_ID = "redcap-cap-runtime-health-self-check"
@@ -423,10 +423,10 @@ def build_report(
             "runtime/core/cap_runtime_health_divergence_probe.py",
             "runtime/bin/redcap",
             "runtime/core/check_runner.py",
-            "assets/evidence/rsp/rsp-24-cap-runtime-health.json",
-            "assets/evidence/rsp/rsp-24-independent-runtime-health.json",
-            "assets/evidence/rsp/rsp-24-divergence-test.json",
-            "assets/evidence/rsp/rsp-24-divergence-permission-test.json",
+            ".redcap/evidence/rsp/rsp-24-cap-runtime-health.json",
+            ".redcap/evidence/rsp/rsp-24-independent-runtime-health.json",
+            ".redcap/evidence/rsp/rsp-24-divergence-test.json",
+            ".redcap/evidence/rsp/rsp-24-divergence-permission-test.json",
         ],
         "failures": failures,
     }

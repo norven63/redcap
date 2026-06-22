@@ -14,14 +14,14 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "prism-context-boundary.json"
-DEFAULT_MANIFEST = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-04-context-consumption.json"
+DEFAULT_MANIFEST = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-04-context-consumption.json"
 CONTRACT_SCHEMA_ID = "redcap-prism-context-boundary-contract"
 MANIFEST_SCHEMA_ID = "redcap-prism-context-consumption"
 REPORT_SCHEMA_ID = "redcap-prism-context-boundary-report"
 SELF_CHECK_SCHEMA_ID = "redcap-prism-context-boundary-self-check"
 CAP_PAYLOAD_SCHEMA_ID = "redcap-cap-context-payload"
 CAP_CONSUME_SCHEMA_ID = "redcap-cap-context-consume"
-DEFAULT_CAP_INPUT = REPO_ROOT / "assets" / "evidence" / "rsp" / "rsp-04-cap-context" / "cap-loader-output.json"
+DEFAULT_CAP_INPUT = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-04-cap-context" / "cap-loader-output.json"
 
 
 def load_json(path: pathlib.Path) -> Any:
@@ -327,7 +327,7 @@ def fixture_manifest(base: dict[str, Any], fixture: str) -> dict[str, Any]:
         manifest.setdefault("contract_overrides", {})["max_brief_excerpt_bytes"] = 1
         return manifest
     if fixture == "raw-in-brief":
-        files.append({"role": "brief_excerpt", "path": "assets/evidence/rsp/rsp-04-fixtures/raw-in-brief.md"})
+        files.append({"role": "brief_excerpt", "path": ".redcap/evidence/rsp/rsp-04-fixtures/raw-in-brief.md"})
         return manifest
     if fixture == "unbounded-manifest":
         manifest.setdefault("contract_overrides", {})["max_manifest_bytes"] = 1
@@ -336,7 +336,7 @@ def fixture_manifest(base: dict[str, Any], fixture: str) -> dict[str, Any]:
         files.append({"role": "structured_review", "path": manifest.get("manifest_path", "manifest.json")})
         return manifest
     if fixture == "file-access-boundary-mismatch":
-        manifest["source_request"] = "assets/evidence/rsp/rsp-04-fixtures/request-without-file-access.json"
+        manifest["source_request"] = ".redcap/evidence/rsp/rsp-04-fixtures/request-without-file-access.json"
         return manifest
     if fixture == "raw-read-full-content-checker":
         manifest["checker_raw_access_mode"] = "full-read"
@@ -351,7 +351,7 @@ def fixture_cap_input(base: dict[str, Any], fixture: str) -> dict[str, Any]:
     if fixture == "cap-input-unlisted-file":
         payload.setdefault("files", []).append({
             "role": "structured_review",
-            "path": "assets/evidence/rsp/unlisted-context.json",
+            "path": ".redcap/evidence/rsp/unlisted-context.json",
             "bytes": 1,
             "sha256": "0" * 64,
         })

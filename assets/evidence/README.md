@@ -1,31 +1,19 @@
-# Evidence Layer
+# Evidence Boundary
 
-Purpose: bounded proof artifacts for high-risk decisions.
+This directory is not a runtime evidence store.
 
-Belongs here:
+It is kept only as a source-tree boundary marker:
 
-- formal Prism review summaries
-- Prism task session manifests
-- lifecycle packets for one bounded development task
-- Prism request files for one bounded review task
-- verification traces
-- acceptance outputs
-- release or migration proof records
+- `README.md` explains the rule.
+- `.gitignore` prevents new runtime evidence from being committed here.
 
-Does not belong here:
+Runtime evidence belongs in one of these places:
 
-- raw provider transcripts by default
-- local caches
-- `.env` files
-- completion claims without changed reality
+- source self-development: `.redcap/evidence/`
+- installed project: `<project>/.redcap/evidence/`
+- disposable validation run: an explicit temporary run directory
 
-Rule: evidence supports a claim; it is not the claim.
+Do not write task packets, Prism review outputs, lifecycle markers, hook logs,
+provider transcripts, E2E artifacts, or cache files under `assets/evidence/`.
 
-Placement rule: one-turn process files must be written here, not to
-`assets/contracts/`. The executable guard for this rule is
-`runtime/bin/redcap process-artifacts check`.
-
-Boundary rule: when RedCap develops RedCap itself, bounded runtime evidence can
-live here because this repository is the project workspace. When RedCap is
-deployed into another project, runtime output belongs under that project's
-`.redcap/` directory, not in this repository.
+Evidence can support a completion claim, but it is never the completion itself.

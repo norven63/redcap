@@ -1,7 +1,0 @@
-## develop...origin/develop [ahead 1]
- M assets/evidence/.gitignore
- M assets/evidence/prism/task-health.json
- M assets/evidence/prism/task-ledger.jsonl
-?? assets/evidence/check-receipts/20260614-e2e-final-readiness/
-?? assets/evidence/lifecycle/20260614-e2e-final-readiness-lifecycle.json
-?? assets/evidence/prism/20260614-e2e-final-readiness/

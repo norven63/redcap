@@ -40,7 +40,7 @@ DEFAULT_HEALTH = configured_path(
     "REDCAP_PRISM_HEALTH",
     prism_runtime_evidence_root() / "task-health.json",
 )
-DEFAULT_TASK_FACTS = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
+DEFAULT_TASK_FACTS = REPO_ROOT / ".redcap" / "evidence" / "task-facts" / "task-facts.jsonl"
 PASSING_VERDICTS = {None, "pass"}
 SUCCESS_STATES = {"converged", "main-decided"}
 GATE_DECISIONS = {"required", "optional", "skipped"}

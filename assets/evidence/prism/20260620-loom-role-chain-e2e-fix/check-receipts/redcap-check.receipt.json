@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap check",
-  "executed_at": "2026-06-20T08:47:50+00:00",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "a4f005583eb6605e1556c09c9ec239fdb28eef8c64ae56b3d2f350d41d14c531",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

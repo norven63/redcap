@@ -7,9 +7,10 @@
   "package_command": "runtime/bin/redcap project-install package --out <zip-path>",
   "audit_command": "runtime/bin/redcap project-install audit-package --package <zip-path>",
   "release_check_command": "runtime/bin/redcap project-install release-check",
+  "longrun_observer_command": "bash .redcap/runtime/bin/redcap longrun-observer init --project <project-root>",
   "runtime_boundary": {
     "external_project_runtime_root": "<project-root>/.redcap",
-    "self_development_exception": "RedCap 自身开发时仍使用 assets/evidence 作为工程内证据区。"
+    "self_development_rule": "RedCap 自身开发也应优先使用项目级 .redcap 运行目录或一次性临时目录；assets/evidence 只保留 README 和忽略规则，不再作为可累积运行证据区。"
   },
   "required_package_roots": [
     "runtime",
@@ -24,6 +25,8 @@
     "<project-root>/.redcap/evidence",
     "<project-root>/.redcap/logs",
     "<project-root>/.redcap/tmp",
+    "<project-root>/.redcap/state/longrun-observer",
+    "<project-root>/.redcap/evidence/longrun-observer",
     "<project-root>/.redcap/install.json",
     "<project-root>/.codex/hooks.json",
     "<project-root>/.codex/config.toml"
@@ -33,6 +36,7 @@
     "init 不得迁移旧证据，只能建立项目级运行目录和钩子配置。",
     "包内不得包含 assets/evidence、.git、缓存目录、供应方原始输出或用户私有状态。",
     "包内不得包含 RedCap 当前源码工作区绝对路径。",
+    "长期外部项目观察证据必须写入外部项目自己的 .redcap/state/longrun-observer 与 .redcap/evidence/longrun-observer。",
     "发布前必须通过 audit-package 审计和 release-check 真实解压安装检查。",
     "包内不得包含当前开发会话的 AGENTS.md；外部项目只通过 init 渲染项目级 hooks。",
     "项目级 hooks 必须从 assets/contracts/codex-hooks.template.json 渲染，并把 {REPO_ROOT} 指向项目 .redcap。",

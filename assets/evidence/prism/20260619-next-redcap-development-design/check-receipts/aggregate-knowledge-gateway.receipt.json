@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap check --only knowledge-gateway-self-check",
-  "exit_code": 0,
-  "executed_at": "2026-06-19T01:32:40+00:00",
-  "executor": "redcap-next-development-implementation",
-  "stdout_sha256": "7e94eee0ab979ffd7fcc3870470f33ad99d6b91d40805d2ccfcf47debae97b72",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

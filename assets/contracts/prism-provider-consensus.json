@@ -57,5 +57,5 @@
     "RedCap 已可发布生产",
     "所有残留问题已解决"
   ],
-  "evidence_output": "assets/evidence/rsp/rsp-23-prism-provider-consensus.json"
+  "evidence_output": ".redcap/evidence/rsp/rsp-23-prism-provider-consensus.json"
 }

@@ -9,5 +9,5 @@
   "negative_probe": [
     "缺少任一合同条目映射时必须失败"
   ],
-  "evidence_file": "assets/evidence/rsp/rsp-22-e2e-contract-mapping.json"
+  "evidence_file": ".redcap/evidence/rsp/rsp-22-e2e-contract-mapping.json"
 }

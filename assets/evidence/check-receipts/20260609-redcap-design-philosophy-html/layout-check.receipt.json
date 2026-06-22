@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap layout-check",
-  "executed_at": "2026-06-08T17:34:59Z",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "25dd8cfeec91de23487e2eed1d78ca6041ab0fd4f125a2aafec4eae5b1deb455",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

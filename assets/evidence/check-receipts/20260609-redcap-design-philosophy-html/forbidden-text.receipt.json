@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "bash -lc if rg -n '完整复活已完成|terminal_complete|最小可用执行内核已足够|本页面证明 RedCap 已完整复活' assets/visuals/redcap-design-philosophy-map.html; then echo FORBIDDEN_TEXT_FOUND; exit 1; else echo FORBIDDEN_TEXT_ABSENT; fi",
-  "executed_at": "2026-06-08T17:19:29+00:00",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "71614e96abbbb56438a61b4b2a038fcc6c8b858acdb47a5469dc397c55118809",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

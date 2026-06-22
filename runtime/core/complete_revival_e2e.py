@@ -14627,7 +14627,7 @@ def rsp_evidence(
 
 
 def write_rsp_result(out: str | None, default_name: str, payload: dict[str, Any]) -> None:
-    target = pathlib.Path(out).expanduser().resolve() if out else REPO_ROOT / "assets" / "evidence" / "rsp" / default_name
+    target = pathlib.Path(out).expanduser().resolve() if out else REPO_ROOT / ".redcap" / "evidence" / "rsp" / default_name
     write_json(target, payload)
 
 

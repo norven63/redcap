@@ -12,7 +12,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "persona-observation.json"
-DEFAULT_EVIDENCE_ROOT = REPO_ROOT / "assets" / "evidence" / "self-purification"
+DEFAULT_EVIDENCE_ROOT = REPO_ROOT / ".redcap" / "evidence" / "self-purification"
 PROBLEM = "problem"
 WARNING = "warning"
 HEALTHY = "healthy"

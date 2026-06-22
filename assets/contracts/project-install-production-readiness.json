@@ -7,7 +7,7 @@
     "project-install check 必须通过，证明项目安装合同和打包清单有效。",
     "project-install release-check 必须通过，证明发布包可以真实解压并初始化外部项目。",
     "project-install matrix-check 必须通过，证明外部项目初始化、重复初始化、卸载重装和源工作区隔离有效。",
-    "安装后运行时冒烟必须通过，至少在外部项目中运行 project-install check、cli-surface check 和 gate 低风险门禁。",
+    "安装后运行时冒烟必须通过，至少在外部项目中运行 project-install check、cli-surface check、longrun-observer scenario-test 和 gate 低风险门禁。",
     "坏包负向探针必须证明包含源仓库绝对路径的发布包会被 audit-package 拒绝。",
     "安装后的项目 hooks 必须指向项目级 .redcap，不能指向 RedCap 源码工作区。",
     ".redcap/.gitignore 必须默认隐藏运行时产物，避免外部项目误提交 RedCap 运行缓存。"

@@ -114,7 +114,7 @@ runtime/bin/redcap rsp-contract check \
   --plan assets/docs/residual-todo-final-solution-plan.md \
   --rsp RSP-03 \
   --claim-file path/to/completion-claim.json \
-  --evidence-file assets/evidence/rsp/rsp-03-provider-health.json
+  --evidence-file .redcap/evidence/rsp/rsp-03-provider-health.json
 ```
 
 最小输出 JSON（结构化数据）：
@@ -125,7 +125,7 @@ runtime/bin/redcap rsp-contract check \
   "rsp": "RSP-03",
   "plan_path": "assets/docs/residual-todo-final-solution-plan.md",
   "claim_file": "path/to/completion-claim.json",
-  "evidence_file": "assets/evidence/rsp/rsp-03-provider-health.json",
+  "evidence_file": ".redcap/evidence/rsp/rsp-03-provider-health.json",
   "checks": {
     "has_positive_acceptance": true,
     "has_negative_probe": true,
@@ -162,7 +162,7 @@ runtime/bin/redcap rsp-contract check \
   "rsp": "RSP-03",
   "claim_scope": "current-machine-current-version",
   "completion_level": "sample_passed",
-  "evidence_file": "assets/evidence/rsp/rsp-03-provider-health.json",
+  "evidence_file": ".redcap/evidence/rsp/rsp-03-provider-health.json",
   "new_issues": []
 }
 ```
@@ -252,34 +252,34 @@ runtime/bin/redcap rsp-contract check \
 
 | 编号 | 完成声明必须引用的证据 |
 |---|---|
-| RSP-00 | `assets/evidence/rsp/rsp-00-invariant-check.json` |
-| RSP-01 | `assets/evidence/rsp/rsp-01-advisory-stop-replay.json` |
-| RSP-02 | `assets/evidence/rsp/rsp-02-intent-judge-matrix.json` |
-| RSP-03 | `assets/evidence/rsp/rsp-03-provider-health.json` |
-| RSP-04 | `assets/evidence/rsp/rsp-04-prism-context-boundary.json` |
-| RSP-05 | `assets/evidence/rsp/rsp-05-loom-role-chain-e2e.json` |
-| RSP-06 | `assets/evidence/rsp/rsp-06-loom-session-continuity.json` |
-| RSP-07 | `assets/evidence/rsp/rsp-07-self-purification-loop.json` |
-| RSP-08 | `assets/evidence/rsp/rsp-08-knowledge-impact-trace.json` |
-| RSP-09 | `assets/evidence/rsp/rsp-09-project-install-matrix.json` |
-| RSP-10 | `assets/evidence/rsp/rsp-10-long-task-loop-boundary.json` |
-| RSP-11 | `assets/evidence/rsp/rsp-11-completion-scope-guard.json` |
-| RSP-12 | `assets/evidence/rsp/rsp-12-reality-change-proof.json` |
-| RSP-13 | `assets/evidence/rsp/rsp-13-e2e-cache-prune.json` |
-| RSP-14 | `assets/evidence/rsp/rsp-14-e2e-human-report.json` |
-| RSP-15 | `assets/evidence/rsp/rsp-15-forge-private-boundary.json` |
-| RSP-16 | `assets/evidence/rsp/rsp-16-cap-revival-portability.json` |
-| RSP-17 | `assets/evidence/rsp/rsp-17-design-maturity-matrix.json` |
-| RSP-18 | `assets/evidence/rsp/rsp-18-fixture-external-project-samples.json` |
-| RSP-19 | `assets/evidence/rsp/rsp-19-cli-surface-compat.json` |
-| RSP-20 | `assets/evidence/rsp/rsp-20-codex-home-isolation.json` |
-| RSP-21 | `assets/evidence/rsp/rsp-21-advisory-stop-health.json` |
-| RSP-22 | `assets/evidence/rsp/rsp-22-e2e-contract-mapping.json` |
-| RSP-23 | `assets/evidence/rsp/rsp-23-prism-provider-consensus.json` |
-| RSP-24 | `assets/evidence/rsp/rsp-24-cap-runtime-health.json` |
-| RSP-25 | `assets/evidence/rsp/rsp-25-hook-quality-metrics.json` |
-| RSP-26 | `assets/evidence/rsp/rsp-26-knowledge-quality.json` |
-| RSP-27 | `assets/evidence/rsp/rsp-27-config-contract-compat.json` |
+| RSP-00 | `.redcap/evidence/rsp/rsp-00-invariant-check.json` |
+| RSP-01 | `.redcap/evidence/rsp/rsp-01-advisory-stop-replay.json` |
+| RSP-02 | `.redcap/evidence/rsp/rsp-02-intent-judge-matrix.json` |
+| RSP-03 | `.redcap/evidence/rsp/rsp-03-provider-health.json` |
+| RSP-04 | `.redcap/evidence/rsp/rsp-04-prism-context-boundary.json` |
+| RSP-05 | `.redcap/evidence/rsp/rsp-05-loom-role-chain-e2e.json` |
+| RSP-06 | `.redcap/evidence/rsp/rsp-06-loom-session-continuity.json` |
+| RSP-07 | `.redcap/evidence/rsp/rsp-07-self-purification-loop.json` |
+| RSP-08 | `.redcap/evidence/rsp/rsp-08-knowledge-impact-trace.json` |
+| RSP-09 | `.redcap/evidence/rsp/rsp-09-project-install-matrix.json` |
+| RSP-10 | `.redcap/evidence/rsp/rsp-10-long-task-loop-boundary.json` |
+| RSP-11 | `.redcap/evidence/rsp/rsp-11-completion-scope-guard.json` |
+| RSP-12 | `.redcap/evidence/rsp/rsp-12-reality-change-proof.json` |
+| RSP-13 | `.redcap/evidence/rsp/rsp-13-e2e-cache-prune.json` |
+| RSP-14 | `.redcap/evidence/rsp/rsp-14-e2e-human-report.json` |
+| RSP-15 | `.redcap/evidence/rsp/rsp-15-forge-private-boundary.json` |
+| RSP-16 | `.redcap/evidence/rsp/rsp-16-cap-revival-portability.json` |
+| RSP-17 | `.redcap/evidence/rsp/rsp-17-design-maturity-matrix.json` |
+| RSP-18 | `.redcap/evidence/rsp/rsp-18-fixture-external-project-samples.json` |
+| RSP-19 | `.redcap/evidence/rsp/rsp-19-cli-surface-compat.json` |
+| RSP-20 | `.redcap/evidence/rsp/rsp-20-codex-home-isolation.json` |
+| RSP-21 | `.redcap/evidence/rsp/rsp-21-advisory-stop-health.json` |
+| RSP-22 | `.redcap/evidence/rsp/rsp-22-e2e-contract-mapping.json` |
+| RSP-23 | `.redcap/evidence/rsp/rsp-23-prism-provider-consensus.json` |
+| RSP-24 | `.redcap/evidence/rsp/rsp-24-cap-runtime-health.json` |
+| RSP-25 | `.redcap/evidence/rsp/rsp-25-hook-quality-metrics.json` |
+| RSP-26 | `.redcap/evidence/rsp/rsp-26-knowledge-quality.json` |
+| RSP-27 | `.redcap/evidence/rsp/rsp-27-config-contract-compat.json` |
 
 ### 2.2.2 完整证据闭环示例
 
@@ -292,7 +292,7 @@ runtime/bin/redcap rsp-contract check \
 | 真实行为改变 | provider 调度器能区分基础调用、会话续接、限定文件读取、路径错误、权限阻塞、本地超时和远端慢响应 |
 | 正向验收 | `kimi -p` 基础调用通过；`kimi -r <session_id>` 续接通过；限定文件清单读取通过 |
 | 负向探针 | 故意传入错误路径、无权限文件和超短超时，必须分别归类失败，不能统一写成 provider 超时 |
-| 证据文件 | `assets/evidence/rsp/rsp-03-provider-health.json` |
+| 证据文件 | `.redcap/evidence/rsp/rsp-03-provider-health.json` |
 | 完成声明允许范围 | 只能声明“RSP-03 Kimi 调用稳定性已在当前机器和当前版本验证通过”，不能声明 Prism 长期稳定或跨机器长期成熟 |
 | 不允许的关闭方式 | 只有文档说明、只有一次成功问答、只有 raw 输出、只有人工口头判断 |
 
@@ -303,7 +303,7 @@ runtime/bin/redcap rsp-contract check \
 本基线用于后续实施排序和状态复核，不替代任何 RSP 的验收。状态判断必须同时看三类材料：
 
 1. 方案书中的正向验收、负向探针和证据路径。
-2. `assets/evidence/rsp/` 下对应 RSP 的证据文件与完成声明。
+2. `.redcap/evidence/rsp/` 下对应 RSP 的证据文件与完成声明。
 3. 生命周期、门禁、Prism（棱镜，异构 AI 评审助手）评审或仲裁记录是否把完成范围限定清楚。
 
 不能只因为存在脚本、文档、清单、报告、证据目录或 claim（完成声明）文件，就判定问题已经解决。若证据只覆盖当前机器、当前版本、当前样本，状态必须保持为“当前范围闭环”，不能扩写成“长期成熟”或“完整复活”。
@@ -737,21 +737,21 @@ runtime/bin/redcap rsp-contract check \
 
 | 设计编号 | 优秀设计 | 最低正向验收 | 最低负向探针 | 完成证据 |
 |---|---|---|---|---|
-| D01 | 运行时、项目工作区、用户私有状态三层分离 | 外部项目运行不污染 RedCap 源仓库 | 运行时写回源仓库必须失败 | `assets/evidence/rsp/rsp-17-d01-boundary.json` |
-| D02 | 自开发例外必须显式化 | 自开发模式能显示边界例外原因 | 外部项目伪装自开发必须失败 | `assets/evidence/rsp/rsp-17-d02-self-development.json` |
-| D03 | 工作区相关命令共享解析器 | 相关命令解析同一路径边界 | 子命令自行解析出不同边界必须失败 | `assets/evidence/rsp/rsp-17-d03-cli-parser.json` |
-| D04 | 身份和私有状态不进入项目资产 | 公共仓库只保存边界和哈希 | 私人人格正文进入公共仓库必须失败 | `assets/evidence/rsp/rsp-17-d04-private-state.json` |
-| D05 | 需求、架构、治理三轨评审门 | 三类评审均可独立触发 | 单一评审冒充三轨通过必须失败 | `assets/evidence/rsp/rsp-17-d05-review-gates.json` |
-| D06 | 原始意图覆盖审计 | 计划和验收均引用原始意图 | 改写用户目标仍通过必须失败 | `assets/evidence/rsp/rsp-17-d06-intent-audit.json` |
-| D07 | 完成等级禁止混报 | 阶段、样本、生产成熟分级明确 | 阶段通过冒充终局通过必须失败 | `assets/evidence/rsp/rsp-17-d07-completion-level.json` |
-| D08 | 人工介入显性化 | 不可替代决策进入人工决策点 | 悄悄代替 Norven 价值判断必须失败 | `assets/evidence/rsp/rsp-17-d08-human-decision.json` |
-| D09 | 始终给出可见下一步 | 阻塞、失败、部分通过都有下一步 | 只报告状态无下一步必须失败 | `assets/evidence/rsp/rsp-17-d09-next-step.json` |
-| D10 | 外置任务真相源 | 长任务状态由外置账目承载 | 只靠上下文记忆推进必须失败 | `assets/evidence/rsp/rsp-17-d10-truth-source.json` |
-| D11 | 索引优先读取 | 大材料先走索引或摘要 | 全量吞入上下文必须失败 | `assets/evidence/rsp/rsp-17-d11-index-first.json` |
-| D12 | 分片账目降低上下文漂移 | 长任务可拆分、合并、验收 | 分片无合并验收必须失败 | `assets/evidence/rsp/rsp-17-d12-shard-ledger.json` |
-| D13 | Cap 验收与评审输出分离 | Cap 仲裁和 Prism 评审分开记录 | Prism pass 被当成 Cap 完成必须失败 | `assets/evidence/rsp/rsp-17-d13-cap-vs-review.json` |
-| D14 | 运行健康状态显性化 | degraded、blocked、healthy 可区分 | degraded 当 healthy 必须失败 | `assets/evidence/rsp/rsp-17-d14-health-state.json` |
-| D15 | 宿主边界诚实声明 | Hook 能力声明绑定宿主与事件 | 声称跨宿主 100% 生效必须失败 | `assets/evidence/rsp/rsp-17-d15-host-boundary.json` |
+| D01 | 运行时、项目工作区、用户私有状态三层分离 | 外部项目运行不污染 RedCap 源仓库 | 运行时写回源仓库必须失败 | `.redcap/evidence/rsp/rsp-17-d01-boundary.json` |
+| D02 | 自开发例外必须显式化 | 自开发模式能显示边界例外原因 | 外部项目伪装自开发必须失败 | `.redcap/evidence/rsp/rsp-17-d02-self-development.json` |
+| D03 | 工作区相关命令共享解析器 | 相关命令解析同一路径边界 | 子命令自行解析出不同边界必须失败 | `.redcap/evidence/rsp/rsp-17-d03-cli-parser.json` |
+| D04 | 身份和私有状态不进入项目资产 | 公共仓库只保存边界和哈希 | 私人人格正文进入公共仓库必须失败 | `.redcap/evidence/rsp/rsp-17-d04-private-state.json` |
+| D05 | 需求、架构、治理三轨评审门 | 三类评审均可独立触发 | 单一评审冒充三轨通过必须失败 | `.redcap/evidence/rsp/rsp-17-d05-review-gates.json` |
+| D06 | 原始意图覆盖审计 | 计划和验收均引用原始意图 | 改写用户目标仍通过必须失败 | `.redcap/evidence/rsp/rsp-17-d06-intent-audit.json` |
+| D07 | 完成等级禁止混报 | 阶段、样本、生产成熟分级明确 | 阶段通过冒充终局通过必须失败 | `.redcap/evidence/rsp/rsp-17-d07-completion-level.json` |
+| D08 | 人工介入显性化 | 不可替代决策进入人工决策点 | 悄悄代替 Norven 价值判断必须失败 | `.redcap/evidence/rsp/rsp-17-d08-human-decision.json` |
+| D09 | 始终给出可见下一步 | 阻塞、失败、部分通过都有下一步 | 只报告状态无下一步必须失败 | `.redcap/evidence/rsp/rsp-17-d09-next-step.json` |
+| D10 | 外置任务真相源 | 长任务状态由外置账目承载 | 只靠上下文记忆推进必须失败 | `.redcap/evidence/rsp/rsp-17-d10-truth-source.json` |
+| D11 | 索引优先读取 | 大材料先走索引或摘要 | 全量吞入上下文必须失败 | `.redcap/evidence/rsp/rsp-17-d11-index-first.json` |
+| D12 | 分片账目降低上下文漂移 | 长任务可拆分、合并、验收 | 分片无合并验收必须失败 | `.redcap/evidence/rsp/rsp-17-d12-shard-ledger.json` |
+| D13 | Cap 验收与评审输出分离 | Cap 仲裁和 Prism 评审分开记录 | Prism pass 被当成 Cap 完成必须失败 | `.redcap/evidence/rsp/rsp-17-d13-cap-vs-review.json` |
+| D14 | 运行健康状态显性化 | degraded、blocked、healthy 可区分 | degraded 当 healthy 必须失败 | `.redcap/evidence/rsp/rsp-17-d14-health-state.json` |
+| D15 | 宿主边界诚实声明 | Hook 能力声明绑定宿主与事件 | 声称跨宿主 100% 生效必须失败 | `.redcap/evidence/rsp/rsp-17-d15-host-boundary.json` |
 
 不降级保证：
 
@@ -1051,7 +1051,7 @@ plan-change-control:
   reason: RSP-25 的误伤率阈值需要从固定数值改为样本集相对阈值，否则小样本阶段会误杀所有 Hook 调整。
   affected_rsp: RSP-25
   cannot_fit_existing_rsp: false
-  evidence: assets/evidence/rsp/rsp-25-hook-quality-metrics.json
+  evidence: .redcap/evidence/rsp/rsp-25-hook-quality-metrics.json
   standard_change: tighten
   prism_required: true
 ```

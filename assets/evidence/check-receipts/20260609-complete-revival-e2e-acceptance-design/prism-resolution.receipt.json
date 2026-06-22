@@ -1,9 +1,0 @@
-{
-  "schema_id": "redcap-executed-check-receipt",
-  "command": "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/merge.json --resolution assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/resolution.json --manifest assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/session.json",
-  "executed_at": "2026-06-08T18:26:12Z",
-  "executor": "cap",
-  "exit_code": 0,
-  "stdout_sha256": "4888d6edd26cb34920daf5362058407f759e6960d7afb0243f927bc84f476027",
-  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}

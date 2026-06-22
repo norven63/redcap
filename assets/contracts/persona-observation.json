@@ -3,7 +3,7 @@
   "version": 1,
   "purpose": "把 LS-005 的保留观察从人工账本备注升级为可执行观察机制：既不误判正常隐私边界，也能在私人人格候选失控、公共泄漏或任务后沉淀证据缺口扩大时升级为问题。",
   "scope": {
-    "evidence_root": "assets/evidence/self-purification",
+    "evidence_root": ".redcap/evidence/self-purification",
     "public_leak_scan": "runtime/bin/redcap soul-load public-leak-scan",
     "does_not_read_private_identity_body": true,
     "does_not_mutate_identity": true

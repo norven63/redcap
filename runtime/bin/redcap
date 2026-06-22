@@ -66,6 +66,7 @@ Usage:
   runtime/bin/redcap known-issues-order check|self-check [...]
   runtime/bin/redcap known-issues-queue check|self-check [...]
   runtime/bin/redcap evidence-retention check|plan|self-check [...]
+  runtime/bin/redcap longrun-observer init|record|evaluate|check|scenario-test|self-check [...]
   runtime/bin/redcap check-profiles check|decide|self-check [...]
   runtime/bin/redcap long-task check|decide|start|record|complete|boundary-check|self-check [...]
   runtime/bin/redcap cli-surface check|self-check|extract [...]
@@ -169,6 +170,10 @@ Commands:
                 Check the ordered queue for known remaining RedCap issues.
   known-issues-queue
                 Check known remaining RedCap issue statuses and deferrals.
+  evidence-retention
+                Check and plan evidence/cache retention boundaries.
+  longrun-observer
+                Record and evaluate long-term external project evidence for OL-11.
   long-task     Decide long-task entry and verify parent-objective anti-loop contracts.
   cli-surface   Verify RedCap command surface compatibility, help text, aliases, and drift probes.
   fsm-check     Compatibility alias for fsm check.
@@ -406,6 +411,9 @@ case "$cmd" in
     ;;
   evidence-retention)
     exec python3 "$REPO_ROOT/runtime/core/evidence_retention.py" "$@"
+    ;;
+  longrun-observer)
+    exec python3 "$REPO_ROOT/runtime/core/longrun_observer.py" "$@"
     ;;
   check-profiles)
     exec python3 "$REPO_ROOT/runtime/core/check_profiles.py" "$@"

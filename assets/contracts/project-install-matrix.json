@@ -10,5 +10,5 @@
   "negative_probe": [
     "模拟源工作区污染必须被识别为失败"
   ],
-  "evidence_file": "assets/evidence/rsp/rsp-09-project-install-matrix.json"
+  "evidence_file": ".redcap/evidence/rsp/rsp-09-project-install-matrix.json"
 }
