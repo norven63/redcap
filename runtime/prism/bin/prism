@@ -1062,6 +1062,17 @@ def apply_semantic_gate(
         semantic_gate["reason"] = "empty gate prompt"
         result["semantic_gate"] = semantic_gate
         return
+    provider = getattr(args, "semantic_provider", "claude-code")
+    fallback_provider = getattr(args, "semantic_fallback_provider", "claude-code")
+    inactive_providers = sorted(
+        {provider, fallback_provider} - ACTIVE_PROVIDERS
+    )
+    if inactive_providers:
+        raise SystemExit(
+            "semantic gate providers must be active dispatch providers; "
+            f"inactive providers: {inactive_providers}; "
+            f"active providers: {sorted(ACTIVE_PROVIDERS)}"
+        )
     try:
         fake_delay = float(getattr(args, "semantic_fake_delay_seconds", 0.0) or 0.0)
     except ValueError:
@@ -1069,8 +1080,8 @@ def apply_semantic_gate(
     judgment = classify_with_policy(
         prompt,
         llm_policy=policy,
-        provider=getattr(args, "semantic_provider", "claude-code"),
-        fallback_provider=getattr(args, "semantic_fallback_provider", "claude-code"),
+        provider=provider,
+        fallback_provider=fallback_provider,
         timeout_seconds=float(getattr(args, "semantic_timeout_seconds", 20.0)),
         fake_response=getattr(args, "semantic_fake_response", None),
         fake_delay_seconds=fake_delay,
@@ -1331,6 +1342,28 @@ def cmd_check(_: argparse.Namespace) -> int:
     )
     if semantic_implementation_probe["decision"] == "skipped":
         raise SystemExit("semantic gate must not downgrade clear implementation directives")
+    retired_semantic_args = argparse.Namespace(**vars(semantic_fixture_args))
+    retired_semantic_args.semantic_provider = "kimi"
+    try:
+        apply_semantic_gate(
+            {
+                "task": "Retired-provider semantic dispatch must fail before provider execution",
+                "risk_level": "medium",
+                "changed_paths": [],
+                "tags": ["provider-retirement"],
+            },
+            evaluate_gate({
+                "task": "Retired-provider semantic dispatch must fail before provider execution",
+                "risk_level": "medium",
+                "changed_paths": [],
+                "tags": ["provider-retirement"],
+            }),
+            retired_semantic_args,
+        )
+        raise SystemExit("semantic gate accepted historical-read-only Kimi provider")
+    except SystemExit as exc:
+        if "semantic gate providers must be active dispatch providers" not in str(exc):
+            raise
     semantic_review_args = argparse.Namespace(
         semantic_policy="auto-on-ambiguous",
         semantic_provider="claude-code",
@@ -2403,8 +2436,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="off",
         help="Use bounded LLM semantic judgment before final gate decision. Default keeps CLI deterministic.",
     )
-    gate.add_argument("--semantic-provider", choices=sorted(ALLOWED_PROVIDERS), default="claude-code")
-    gate.add_argument("--semantic-fallback-provider", choices=sorted(ALLOWED_PROVIDERS), default="claude-code")
+    gate.add_argument("--semantic-provider", choices=sorted(ACTIVE_PROVIDERS), default="claude-code")
+    gate.add_argument("--semantic-fallback-provider", choices=sorted(ACTIVE_PROVIDERS), default="claude-code")
     gate.add_argument("--semantic-timeout-seconds", type=float, default=20.0)
     gate.add_argument("--semantic-fake-response", help="Test-only semantic judgment JSON.")
     gate.add_argument("--semantic-fake-delay-seconds", type=float, default=0.0, help="Test-only semantic delay.")
