@@ -32,8 +32,14 @@ from prism_lock import file_lock, write_json_atomic, write_text_atomic  # noqa: 
 from prism_ledger import record_gate, record_manifest  # noqa: E402
 from intent_judge import classify_with_policy  # noqa: E402
 from prompt_intent import classify_prompt_intent  # noqa: E402
+from prism_provider_policy import (  # noqa: E402
+    active_dispatch_providers as policy_active_dispatch_providers,
+    all_known_policy_providers,
+    required_providers as policy_required_providers,
+)
 
-ALLOWED_PROVIDERS = {"kimi", "claude-code"}
+ACTIVE_PROVIDERS = set(policy_active_dispatch_providers(REPO_ROOT))
+ALLOWED_PROVIDERS = all_known_policy_providers(REPO_ROOT)
 VERDICT_RANK = {"pass": 0, "concern": 1, "block": 2}
 GATE_RANK = {"skipped": 0, "optional": 1, "required": 2}
 PRISM_CONCERN_RESOLUTION_SCHEMA_ID = "prism-concern-resolution"
@@ -44,16 +50,20 @@ PROVIDER_SESSION_STATUSES = {"pending", "active", "converged", "escalated", "exp
 PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS", "600"))
 _ORIGINAL_SUBPROCESS_RUN = subprocess.run
 _PRISM_CHECK_TIMEOUT_GUARD_INSTALLED = False
-PLACEHOLDER_REVIEW_TERMS = {
+SUBSTRING_PLACEHOLDER_REVIEW_TERMS = {
     "暂不填写",
     "先探索代码",
     "待补充",
     "占位文本",
     "占位内容",
-    "todo",
-    "tbd",
-    "placeholder",
 }
+PLACEHOLDER_REVIEW_NORMALIZED_RE = re.compile(
+    r"^(?:"
+    r"(?:todo|tbd)(?:\s+(?:later|for now|details?|content|review|text|item|risk|change|question|summary|fix|pending|here))*"
+    r"|"
+    r"placeholder(?:\s+(?:for now|later|details?|content|review|text|item|risk|change|question|summary|pending|here))*"
+    r")$"
+)
 SELF_DEVELOPMENT_LIFECYCLE_RISKS = {"medium", "high", "critical"}
 SELF_DEVELOPMENT_LIFECYCLE_TERMS = {
     "redcap",
@@ -193,7 +203,10 @@ def validate_request(path: pathlib.Path) -> None:
 
 def review_text_has_placeholder(value: Any) -> bool:
     text = str(value or "").strip().lower()
-    return any(term in text for term in PLACEHOLDER_REVIEW_TERMS)
+    if any(term in text for term in SUBSTRING_PLACEHOLDER_REVIEW_TERMS):
+        return True
+    normalized = re.sub(r"[\s\"'`*_<>\\[\\]{}()。？！、，,.:;：；/\\\\|-]+", " ", text).strip()
+    return bool(PLACEHOLDER_REVIEW_NORMALIZED_RE.fullmatch(normalized))
 
 
 def require_review_string(payload: dict[str, Any], key: str, failures: list[str], *, min_len: int = 1) -> None:
@@ -323,9 +336,15 @@ def validate_session_manifest(path: pathlib.Path) -> None:
     providers = payload["providers"]
     if not isinstance(providers, dict):
         raise SystemExit("session manifest providers must be an object")
-    for provider in ALLOWED_PROVIDERS:
-        if provider not in providers:
-            raise SystemExit(f"session manifest missing provider: {provider}")
+    missing_active = sorted(ACTIVE_PROVIDERS - set(providers))
+    if missing_active:
+        raise SystemExit(f"session manifest missing active providers: {missing_active}")
+    # Old manifests may retain historical providers for read-only validation;
+    # session-update is the authoritative ACTIVE_PROVIDERS-only mutation gate.
+    unknown_providers = sorted(set(providers) - ALLOWED_PROVIDERS)
+    if unknown_providers:
+        raise SystemExit(f"session manifest contains unknown providers: {unknown_providers}")
+    for provider in providers:
         record = providers[provider]
         if not isinstance(record, dict):
             raise SystemExit(f"session manifest provider record must be an object: {provider}")
@@ -886,7 +905,7 @@ def mark_required(result: dict[str, Any], rule_id: str, reason: str, next_step: 
     result["decision"] = "required"
     result["review_mode"] = "lifecycle_review"
     result["reason"] = reason
-    result["required_providers"] = ["kimi", "claude-code"]
+    result["required_providers"] = policy_required_providers(REPO_ROOT)
     result["next_step"] = next_step
 
 
@@ -994,7 +1013,7 @@ def evaluate_gate(payload: dict[str, Any], rules_payload: dict[str, Any] | None 
         "risk_level": payload.get("risk_level", "medium"),
         "matched_rules": [rule["id"] for rule in matched],
         "reason": strictest.get("reason", "Default Prism rule review decision."),
-        "required_providers": ["kimi", "claude-code"] if decision == "required" else [],
+        "required_providers": policy_required_providers(REPO_ROOT) if decision == "required" else [],
         "host_enforcement": "redcap-owned-intake-only; host-level automatic interception is not claimed",
         "next_step": {
             "required": "Run full Prism before implementation or completion claim.",
@@ -1155,6 +1174,23 @@ def cmd_check(_: argparse.Namespace) -> int:
             raise SystemExit(f"invalid placeholder review failed for the wrong reason: {exc}") from exc
     else:
         raise SystemExit("invalid placeholder review should fail")
+    placeholder_positive_cases = [
+        "todo later",
+        "tbd details",
+        "placeholder for now",
+        "待补充：评审意见",
+    ]
+    placeholder_negative_cases = [
+        "The review found pending placeholder evidence in the previous marker preview.",
+        "This fix narrows placeholder detection without dropping concrete evidence.",
+        "需要检查 completion-marker-preview 是否还存在 pending/placeholder evidence 风险。",
+    ]
+    for case in placeholder_positive_cases:
+        if not review_text_has_placeholder(case):
+            raise SystemExit(f"placeholder positive case was not detected: {case}")
+    for case in placeholder_negative_cases:
+        if review_text_has_placeholder(case):
+            raise SystemExit(f"placeholder negative case was incorrectly detected: {case}")
     try:
         validate_review(ROOT / "examples" / "prism-review.invalid-too-short.json")
     except SystemExit as exc:
@@ -1885,7 +1921,7 @@ def apply_completion_semantics(result: dict[str, Any], completion_semantics: dic
             set(result.get("matched_rules", [])) | {"completion-semantics-check"}
         )
         result["reason"] = "Completion semantics check rejected the completion claim."
-        result["required_providers"] = ["kimi", "claude-code"]
+        result["required_providers"] = policy_required_providers(REPO_ROOT)
         result["next_step"] = "Do not claim completion; run full Prism or narrow the claim."
 
 
@@ -2165,7 +2201,7 @@ def cmd_session_init(args: argparse.Namespace) -> int:
                 "status": "pending",
                 "last_review": None,
             }
-            for provider in sorted(ALLOWED_PROVIDERS)
+            for provider in sorted(ACTIVE_PROVIDERS)
         },
         "convergence": {
             "state": "unresolved",
@@ -2212,7 +2248,14 @@ def validate_session_payload(payload: dict[str, Any], label: str) -> None:
         providers = payload["providers"]
         if not isinstance(providers, dict):
             raise SystemExit("session manifest providers must be an object")
-        for provider in ALLOWED_PROVIDERS:
+        missing_active = sorted(ACTIVE_PROVIDERS - set(providers))
+        if missing_active:
+            raise SystemExit(f"session manifest missing active providers: {missing_active}")
+        # Reading historical provider records is compatible; mutating them is not.
+        unknown_providers = sorted(set(providers) - ALLOWED_PROVIDERS)
+        if unknown_providers:
+            raise SystemExit(f"session manifest contains unknown providers: {unknown_providers}")
+        for provider in providers:
             if provider not in providers:
                 raise SystemExit(f"session manifest missing provider: {provider}")
             record = providers[provider]
@@ -2246,6 +2289,11 @@ def validate_session_payload(payload: dict[str, Any], label: str) -> None:
 def cmd_session_update(args: argparse.Namespace) -> int:
     manifest_path = pathlib.Path(args.manifest).resolve()
     provider = args.provider
+    if provider not in ACTIVE_PROVIDERS:
+        raise SystemExit(
+            f"session-update cannot mutate historical-read-only provider {provider}; "
+            f"active providers are {sorted(ACTIVE_PROVIDERS)}"
+        )
     with file_lock(manifest_path):
         payload = load_json(manifest_path)
         if not isinstance(payload, dict):
@@ -2287,7 +2335,7 @@ def cmd_session_check(args: argparse.Namespace) -> int:
     if not isinstance(payload, dict):
         raise SystemExit("session manifest must be an object")
     validate_session_payload(payload, str(manifest_path))
-    providers = [args.provider] if args.provider else sorted(ALLOWED_PROVIDERS)
+    providers = [args.provider] if args.provider else sorted(ACTIVE_PROVIDERS)
     blocked = []
     allowed = []
     max_rounds = payload["max_rounds_per_provider"]
@@ -2435,7 +2483,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     session_update = subparsers.add_parser("session-update", help="update a Prism task session manifest")
     session_update.add_argument("--manifest", required=True)
-    session_update.add_argument("--provider", required=True, choices=sorted(ALLOWED_PROVIDERS))
+    session_update.add_argument("--provider", required=True, choices=sorted(ACTIVE_PROVIDERS))
     session_update.add_argument("--session-handle")
     session_update.add_argument("--round-count", type=int)
     session_update.add_argument("--increment-round", action="store_true")

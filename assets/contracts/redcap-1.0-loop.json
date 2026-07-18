@@ -17,7 +17,7 @@
   "cycle_phases": [
     "select exactly one current item",
     "create or update that item's lifecycle packet",
-    "run RedCap gate; dispatch Kimi and Claude Code when required",
+    "run RedCap gate; dispatch the active provider policy (currently Claude Code) when required",
     "execute the item with a changed-reality target",
     "run item verification plus runtime/bin/redcap check",
     "merge Prism review when the item is structural, high-risk, completion-facing, or old-RedCap-derived",
@@ -34,10 +34,9 @@
   },
   "prism": {
     "providers": [
-      "kimi",
-      "claude-code"
+    "claude-code"
     ],
-    "trigger": "run RedCap-owned Prism rule review at every item intake; dispatch both providers when the gate returns required",
+  "trigger": "run RedCap-owned review gate at every item intake; dispatch every provider required by assets/contracts/prism-provider-policy.json when the gate returns required",
     "concern_triage": [
       "blocks-this-item",
       "blocks-1.0",

@@ -10,7 +10,7 @@
     "risk_level": { "enum": ["low", "medium", "high", "critical"] },
     "matched_rules": { "type": "array", "items": { "type": "string" } },
     "reason": { "type": "string" },
-    "required_providers": { "type": "array", "items": { "enum": ["kimi", "claude-code"] } },
+    "required_providers": { "type": "array", "items": { "enum": ["claude-code"] } },
     "host_enforcement": { "type": "string" },
     "next_step": { "type": "string" }
   }

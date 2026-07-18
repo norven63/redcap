@@ -1,0 +1,31 @@
+{
+  "convergence": {
+    "reason": "Initial Prism task session manifest.",
+    "state": "unresolved"
+  },
+  "created_at": "2026-06-24T18:23:55+00:00",
+  "fixture_note": "Portable real-provider evidence fixture for package prism self-check; runtime evidence ledger remains under project .redcap/evidence.",
+  "max_rounds_per_provider": 3,
+  "providers": {
+    "claude-code": {
+      "evidence_fixture": true,
+      "last_review": "claude-code.review.json",
+      "round_count": 1,
+      "session_handle": "43d56946-2bb6-4223-8679-486a90dd1332",
+      "status": "active"
+    },
+    "kimi": {
+      "evidence_fixture": true,
+      "last_review": "kimi.review.json",
+      "round_count": 1,
+      "session_handle": "session_2ea766b5-5ff5-464e-8c11-68cf80c4c976",
+      "status": "active"
+    }
+  },
+  "run_dir": "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix",
+  "schema_id": "prism-session-manifest",
+  "status": "fixture",
+  "task_id": "20260624-e2e-structural-fix",
+  "task_started_at": "2026-06-24T18:23:55+00:00",
+  "updated_at": "2026-06-24T18:25:11+00:00"
+}

@@ -38,12 +38,15 @@ runtime/bin/redcap ol11 plan-check
 runtime/bin/redcap ol11 self-check
 runtime/bin/redcap ol11 trpg-carrier-dry-run --work-root <RedCap 源仓库之外的外部目录>
 runtime/bin/redcap complete-revival-e2e design-check
+runtime/bin/redcap complete-revival-e2e auto-observation-targeted-e2e --work-root <RedCap 源仓库之外的外部目录>
 runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <RedCap 源仓库之外的外部目录>
 runtime/bin/redcap project-install production-readiness-check
 runtime/bin/redcap longrun-observer self-check
 ```
 
 `ol11 trpg-carrier-dry-run` 只是短演练：它验证固定 TRPG 需求包能被独立 Codex CLI（Codex 命令行工具）承接、能触发项目级 Hook（钩子，宿主自动触发的检查脚本）、能记录 session_id（会话编号）和机器标记；它不允许开发正式项目，也不能关闭 OL-11。
+
+`complete-revival-e2e auto-observation-targeted-e2e` 是自动观测收集的定向 E2E（端到端验收）：它必须同时证明阶段性观察请求能由外层 harness（外层执行器）触发、失败能自动写入长期观察 issues 和 `LATEST-HANDOFF.json`、新会话可通过 resume（恢复命令）读取上下文。它不替代完整 OL-11 长期样本，只负责把自动观测能力从“全量 E2E 的附带现象”变成可独立验证的能力面。
 
 棱镜（异构 AI 评审助手）对执行前方案或证据链给出 `block` 时，不允许启动完整 OL-11 运行。此时只能补齐被指出的缺口，例如证据结构、来源证明、Codex CLI 承载预检、角色会话证据和 Hook 触发证据。
 
@@ -104,12 +107,14 @@ OL-11 必须使用独立开发 AI 执行，优先使用 Codex CLI（Codex 命令
 - 每个角色必须记录 `session_id`（会话编号）、上游输入、下游交付、原始提示和原始输出。
 - 同一角色跨轮返工必须复用同一个 `session_id`；如果丢失，必须写入 `session_loss_alarm`（会话丢失告警）。
 - 会话丢失不一定立即终止整个测试，但必须进入重点复核；如果角色无法证明上下文接续，则该角色本轮产物不得直接通过。
+- E2E 运行器在启动编排者或任一 Loom 角色前，必须把本次角色提示词 SHA-256 写入 `<外部项目>/.redcap/state/e2e-role-authorizations.json`；项目级 Hook 只允许哈希匹配、角色标记匹配、项目路径匹配且未过期的角色提示覆盖 `review_only` 误判，不得关闭危险命令保护、证据保护或普通问答拦截。
 
 建议运行状态位置：
 
 ```text
 <外部项目>/.redcap/state/loom/role-session-manifest.json
 <外部项目>/.redcap/state/loom/role-runs/
+<外部项目>/.redcap/state/e2e-role-authorizations.json
 <外部项目>/.redcap/evidence/e2e/
 <外部项目>/.redcap/evidence/prism/
 <外部项目>/.redcap/evidence/self-purification/
@@ -209,7 +214,9 @@ Cap 可以补充需求，但不得替产品经理直接写最终产物。
 - 需求、架构、开发、测试、评审角色证据完整。
 - 所有角色有 `session_id`，且无未解释的会话丢失。
 - 项目级 Hook 事件被记录。
-- 长期观察器已在外部项目初始化，并能读取观察记录。
+- 长期观察器已在外部项目初始化，并由 E2E 后置门禁自动执行 `auto-collect`，写入观察记录、问题账本、评估结果和跨会话 handoff。
+- E2E worker 在最终收口前必须至少写出一次阶段性 `observer-request.json`，由外层 harness 以兄弟进程触发同机观察者，并把阶段观察输出写入 `.redcap/evidence/e2e/observer-stages/`；阶段观察只证明运行中可观测，不替代最终冻结证据包和最终 `independent-observer.json`。
+- 若 E2E 外层 harness 超时、崩溃、中断、观察者命令失败或 `observer-request.json` 缺失，必须仍然写入自动观测证据；如果外部项目 `.redcap/` 已存在，写入该项目级长期观察器的 `harness-auto-observation-issues.json`、`harness-auto-observation.json`、`issues.jsonl`、`LATEST-HANDOFF.json` 和可 `resume` 的恢复说明；如果失败发生在外部项目创建前，写入 `<work-root>/redcap-e2e-pre-project-observation/.redcap/` 前置失败观察池，并声明它不是 OL-11 目标交付项目。失败不能静默丢失，也不能被改写为通过。
 - 棱镜完成需求、架构或最终证据链复核。
 - 失败回流至少真实发生一次，或有充分证据说明没有失败且负向探针仍通过。
 - 自我净化候选和处理决策存在。
@@ -223,7 +230,7 @@ Cap 可以补充需求，但不得替产品经理直接写最终产物。
 | 能力项 | 必须观察到的证据 |
 | --- | --- |
 | 项目级安装 | 外部项目 `.redcap/` 初始化成功，配置和运行产物均在外部项目内 |
-| 长期观察器 | `.redcap/state/longrun-observer/observations.jsonl` 记录多轮事实，`evaluate` 给出继续观察、必须修复或可进入关闭评审 |
+| 长期观察器 | `.redcap/state/longrun-observer/observations.jsonl` 记录多轮事实，`auto-collect` 自动扫描 E2E 证据并写入 `issues.jsonl`、`evaluation.json`、`LATEST-HANDOFF.json`、`archive/<run-id>/handoff.json`、`sample-registry.json` 和 `collector-state.json`；harness 超时/崩溃/观察请求缺失时必须通过 `auto-collect --issue-json` 摄入结构化 P1 问题；若目标项目尚未创建，必须写入前置失败观察池并保留边界声明；完整 E2E 还必须在最终收口前写出阶段性 `observer-request.json`，证明 worker 运行中也能被 harness 观测 |
 | Hook 触发 | 项目级 Hook 事件摘要包含会话启动、用户提示、工具前、工具后和停止前检查 |
 | Loom 角色分工 | 每个角色有独立会话、输入、输出、原始日志和下游交付 |
 | 会话接续 | 同一角色返工复用 `session_id`，丢失时告警并进入复核 |
@@ -252,9 +259,35 @@ Cap 可以补充需求，但不得替产品经理直接写最终产物。
 <外部项目>/.redcap/evidence/e2e/capability-coverage-matrix.json
 <外部项目>/.redcap/evidence/e2e/final-prism-review.json
 <外部项目>/.redcap/evidence/e2e/cache-retention-report.json
+<外部项目>/.redcap/evidence/e2e/observer-stages/request-<stage>.json
+<外部项目>/.redcap/evidence/e2e/observer-stages/evidence-bundle-<stage>.json
+<外部项目>/.redcap/evidence/e2e/observer-stages/independent-observer-<stage>.json
+<外部项目>/.redcap/evidence/e2e/harness-auto-observation-issues.json
+<外部项目>/.redcap/evidence/e2e/harness-auto-observation.json
 <外部项目>/.redcap/state/longrun-observer/observations.jsonl
+<外部项目>/.redcap/evidence/longrun-observer/issues.jsonl
 <外部项目>/.redcap/evidence/longrun-observer/evaluation.json
+<外部项目>/.redcap/evidence/longrun-observer/LATEST-HANDOFF.json
+<外部项目>/.redcap/evidence/longrun-observer/archive/<run-id>/handoff.json
+<外部项目>/.redcap/state/longrun-observer/sample-registry.json
+<外部项目>/.redcap/state/longrun-observer/collector-state.json
+
+# 仅当前置失败发生在目标项目创建前时生成，不得冒充目标项目产物：
+<work-root>/redcap-e2e-pre-project-observation/.redcap/evidence/e2e/harness-auto-observation-issues.json
+<work-root>/redcap-e2e-pre-project-observation/.redcap/evidence/e2e/harness-auto-observation.json
+<work-root>/redcap-e2e-pre-project-observation/.redcap/evidence/longrun-observer/issues.jsonl
+<work-root>/redcap-e2e-pre-project-observation/.redcap/evidence/longrun-observer/LATEST-HANDOFF.json
+<work-root>/redcap-e2e-pre-project-observation/.redcap/state/longrun-observer/pre-project-boundary.json
 ```
+
+自动观测收集的判定边界如下：
+
+- 缺少尚未完成阶段的证据，记录为 `continue_observing` 影响的 P2 问题，不直接伪造成实现失败。
+- 已存在证据不可读、不是合法 JSON、会话丢失、项目级 Hook 缺失、源仓库泄漏、Cap 直接写目标项目代码、或出现开放 P0/P1，必须记录为 `needs_fix`。
+- E2E harness 超时、worker 崩溃、观察者命令失败或缺少 `observer-request.json`，必须记录为 `needs_fix` 的 P1 问题，并生成跨会话 handoff。
+- 每轮 OL-11 E2E 必须先运行故障注入场景，确认开放 P1 会写入 `issues.jsonl` 并让评估结果进入 `needs_fix`，再允许接受正向路径。
+- 自动观测收集自身必须优先通过 `complete-revival-e2e auto-observation-targeted-e2e` 的定向验收；若该定向验收失败，不允许启动或接受完整 OL-11 结果，因为此时全量样本失败可能仍会丢失可恢复证据。
+- 新会话必须能通过固定路径 `LATEST-HANDOFF.json` 或命令 `longrun-observer resume --project <外部项目>` 读取验收背景、当前问题和下一步动作。
 
 ## 反作弊边界
 

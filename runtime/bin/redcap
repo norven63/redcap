@@ -66,7 +66,7 @@ Usage:
   runtime/bin/redcap known-issues-order check|self-check [...]
   runtime/bin/redcap known-issues-queue check|self-check [...]
   runtime/bin/redcap evidence-retention check|plan|self-check [...]
-  runtime/bin/redcap longrun-observer init|record|evaluate|check|scenario-test|self-check [...]
+  runtime/bin/redcap longrun-observer init|record|evaluate|check|auto-collect|resume|scenario-test|auto-collect-scenario-test|self-check [...]
   runtime/bin/redcap check-profiles check|decide|self-check [...]
   runtime/bin/redcap long-task check|decide|start|record|complete|boundary-check|self-check [...]
   runtime/bin/redcap cli-surface check|self-check|extract [...]
@@ -173,7 +173,7 @@ Commands:
   evidence-retention
                 Check and plan evidence/cache retention boundaries.
   longrun-observer
-                Record and evaluate long-term external project evidence for OL-11.
+                Record, auto-collect, resume, and evaluate long-term external project evidence for OL-11.
   long-task     Decide long-task entry and verify parent-objective anti-loop contracts.
   cli-surface   Verify RedCap command surface compatibility, help text, aliases, and drift probes.
   fsm-check     Compatibility alias for fsm check.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RSP-23 Prism provider consensus and disagreement hardening check."""
+"""RSP-23 current review provenance and historical merge compatibility check."""
 
 from __future__ import annotations
 
@@ -12,6 +12,13 @@ import sys
 import tempfile
 from typing import Any
 
+from prism_provider_policy import (
+    all_known_policy_providers,
+    historical_read_compatibility,
+    required_providers,
+    validate_cap_resolution_trace,
+)
+
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 PRISM = REPO_ROOT / "runtime" / "prism" / "bin" / "prism"
@@ -23,6 +30,8 @@ TRACE_MARKER = "REDCAP_PRISM_PROVIDER_TRACE_OK"
 SCHEMA_ID = "redcap-prism-provider-consensus-check"
 TRACE_SCHEMA_ID = "redcap-prism-provider-consensus-trace"
 VERDICT_RANK = {"pass": 0, "concern": 1, "block": 2}
+CURRENT_PROVIDERS = required_providers(REPO_ROOT)
+KNOWN_PROVIDERS = all_known_policy_providers(REPO_ROOT)
 
 
 def load_json(path: pathlib.Path) -> Any:
@@ -88,7 +97,7 @@ def load_review(path: pathlib.Path, failures: list[str]) -> dict[str, Any] | Non
         return None
     provider = payload.get("provider")
     verdict = payload.get("verdict")
-    if provider not in {"kimi", "claude-code"}:
+    if provider not in KNOWN_PROVIDERS:
         failures.append(f"评审文件 provider 无效：{path}")
     if verdict not in VERDICT_RANK:
         failures.append(f"评审文件 verdict 无效：{path}")
@@ -98,13 +107,48 @@ def load_review(path: pathlib.Path, failures: list[str]) -> dict[str, Any] | Non
     return payload
 
 
-def raw_summary(path: pathlib.Path) -> dict[str, Any]:
-    data = path.read_text(encoding="utf-8", errors="replace")
+def raw_meta_path(path: pathlib.Path) -> pathlib.Path:
+    marker = ".raw."
+    if marker not in path.name:
+        return path.with_suffix(path.suffix + ".meta.json")
+    return path.with_name(path.name.split(marker, 1)[0] + ".raw.meta.json")
+
+
+def raw_summary(path: pathlib.Path, expected_provider: str, failures: list[str]) -> dict[str, Any]:
+    data_bytes = path.read_bytes()
+    data = data_bytes.decode("utf-8", errors="replace")
+    meta_path = raw_meta_path(path)
+    meta = load_json(meta_path) if meta_path.exists() else None
+    if not isinstance(meta, dict):
+        failures.append(f"raw provider 元数据不存在或无效：{meta_path}")
+        meta = {}
+    actual_sha256 = hashlib.sha256(data_bytes).hexdigest()
+    review_path = meta.get("review_path")
+    if meta.get("schema_id") != "prism-provider-raw-metadata":
+        failures.append(f"raw provider 元数据 schema_id 无效：{meta_path}")
+    if meta.get("provider") != expected_provider:
+        failures.append(f"raw provider 元数据 provider 不匹配：{meta_path}")
+    if meta.get("raw_sha256") != actual_sha256:
+        failures.append(f"raw provider 内容哈希不匹配：{path}")
+    if meta.get("raw_size_bytes") != len(data_bytes):
+        failures.append(f"raw provider 大小不匹配：{path}")
+    if meta.get("exit_code") != 0 or meta.get("timed_out") is not False:
+        failures.append(f"raw provider 调用没有成功完成：{meta_path}")
+    resolved_review_path = (
+        pathlib.Path(review_path)
+        if isinstance(review_path, str) and pathlib.Path(review_path).is_absolute()
+        else meta_path.parent / str(review_path or "")
+    )
+    if not isinstance(review_path, str) or not resolved_review_path.exists():
+        failures.append(f"raw provider 元数据 review_path 无效：{meta_path}")
     path_text = str(path.relative_to(REPO_ROOT) if path.is_relative_to(REPO_ROOT) else path)
     return {
         "path": path_text,
-        "bytes": len(data.encode("utf-8")),
-        "sha256": hashlib.sha256(data.encode("utf-8")).hexdigest(),
+        "meta_path": str(meta_path.relative_to(REPO_ROOT) if meta_path.is_relative_to(REPO_ROOT) else meta_path),
+        "bytes": len(data_bytes),
+        "sha256": actual_sha256,
+        "provider": expected_provider,
+        "review_path": review_path,
         "tail": data[-1200:],
     }
 
@@ -116,8 +160,8 @@ def build_provider_trace(review_paths: list[pathlib.Path], raw_paths: list[pathl
         review = load_review(path, failures)
         if review is not None:
             reviews.append(review)
-    if len(reviews) < 2:
-        failures.append("至少需要两份 provider 评审才能形成一致性轨迹")
+    if len(reviews) < 1:
+        failures.append("至少需要一份当前 provider 评审才能形成来源轨迹")
     providers = [str(review.get("provider")) for review in reviews]
     if len(providers) != len(set(providers)):
         failures.append("provider 评审不能重复")
@@ -140,11 +184,12 @@ def build_provider_trace(review_paths: list[pathlib.Path], raw_paths: list[pathl
     must_respond = any_concern_or_block or verdict_delta or concern_delta or minimum_fix_delta
     material_delta = verdict_delta or concern_delta or minimum_fix_delta
     raw_outputs = []
-    for path in raw_paths:
+    for index, path in enumerate(raw_paths):
         if not path.exists():
             failures.append(f"raw provider 输出不存在：{path}")
             continue
-        raw_outputs.append(raw_summary(path))
+        expected_provider = str(reviews[index].get("provider")) if index < len(reviews) else ""
+        raw_outputs.append(raw_summary(path, expected_provider, failures))
     if raw_paths and len(raw_outputs) < len(reviews):
         failures.append("每份 provider 评审都应有对应 raw provider 输出")
 
@@ -157,7 +202,7 @@ def build_provider_trace(review_paths: list[pathlib.Path], raw_paths: list[pathl
         "strictest_verdict": strictest.get("verdict"),
         "must_respond": must_respond,
         "refuses_silent_pass": must_respond,
-        "bounded_outcome": "requires_resolution" if must_respond else "consensus_pass",
+        "bounded_outcome": "requires_cap_resolution" if must_respond else "single_review_pass",
         "allowed_resolution_paths": [
             "accept concern with implementation and verification evidence",
             "reject only after bounded same-provider rebuttal returns pass",
@@ -187,8 +232,12 @@ def build_provider_trace(review_paths: list[pathlib.Path], raw_paths: list[pathl
 def validate_contract(contract: dict[str, Any], failures: list[str]) -> None:
     require(contract.get("schema_id") == "redcap-prism-provider-consensus-contract", "合同 schema_id 错误", failures)
     require(contract.get("rsp") == "RSP-23", "合同必须绑定 RSP-23", failures)
-    providers = contract.get("allowed_providers")
-    require(providers == ["kimi", "claude-code"], "合同必须限定 Kimi 与 Claude Code 两名评审方", failures)
+    require(contract.get("active_providers") == CURRENT_PROVIDERS, "合同 active_providers 必须匹配权威 provider policy", failures)
+    require(
+        contract.get("historical_read_compatibility") == historical_read_compatibility(REPO_ROOT),
+        "合同 historical_read_compatibility 必须匹配权威 provider policy",
+        failures,
+    )
     dimensions = contract.get("required_dimensions")
     require(isinstance(dimensions, list) and len(dimensions) >= 6, "合同必须列出至少 6 条差异处理维度", failures)
     positive = contract.get("positive_acceptance")
@@ -222,7 +271,7 @@ def run_merge_check(tmp_dir: pathlib.Path, failures: list[str], checks: list[dic
             str(EXAMPLES / "prism-concern-resolution.kimi-concern.json"),
         ]
     )
-    checks.append({"id": "merge-concern-keeps-strictest", **command_summary(concern_result)})
+    checks.append({"id": "historical-merge-compatibility", **command_summary(concern_result)})
     require(concern_result["ok"], "concern 合并命令必须通过", failures)
     if concern_merge.exists():
         merged = load_json(concern_merge)
@@ -243,7 +292,7 @@ def run_merge_check(tmp_dir: pathlib.Path, failures: list[str], checks: list[dic
             str(EXAMPLES / "prism-concern-resolution.kimi-followup-pass.json"),
         ]
     )
-    checks.append({"id": "merge-pass-does-not-force-response", **command_summary(pass_result)})
+    checks.append({"id": "historical-pass-merge-compatibility", **command_summary(pass_result)})
     require(pass_result["ok"], "pass 合并命令必须通过", failures)
     if pass_merge.exists():
         merged = load_json(pass_merge)
@@ -293,6 +342,33 @@ def run_resolution_checks(failures: list[str], checks: list[dict[str, Any]]) -> 
         require(not result["ok"], message, failures)
 
 
+def run_cap_resolution_trace_checks(failures: list[str], checks: list[dict[str, Any]]) -> None:
+    valid = {
+        "schema_id": "redcap-cap-review-resolution",
+        "task_id": "fixture",
+        "provider_review_refs": ["claude-code.review.json"],
+        "decision": "accept",
+        "rationale": "The concern changes the implementation and verification plan.",
+        "source_code_refs": ["runtime/core/prism_provider_policy.py"],
+        "contract_refs": ["assets/contracts/prism-provider-policy.json"],
+        "test_run_refs": ["runtime/bin/redcap prism-consensus check"],
+        "norven_decision_ref": "2026-07-17 user directive: 放弃KIMI，只用Claude Code",
+    }
+    valid_failures = validate_cap_resolution_trace(valid, REPO_ROOT)
+    checks.append({"id": "cap-resolution-trace", "ok": not valid_failures, "failures": valid_failures})
+    require(not valid_failures, "完整 Cap 处置轨迹必须通过", failures)
+    invalid = dict(valid)
+    invalid["test_run_refs"] = []
+    invalid_failures = validate_cap_resolution_trace(invalid, REPO_ROOT)
+    checks.append({
+        "id": "cap-trace-missing-test-ref-fails",
+        "ok": bool(invalid_failures),
+        "expected_failure": True,
+        "failures": invalid_failures,
+    })
+    require(bool(invalid_failures), "缺少测试引用的 Cap 处置轨迹必须失败", failures)
+
+
 def run_rebuttal_request_check(tmp_dir: pathlib.Path, failures: list[str], checks: list[dict[str, Any]]) -> None:
     out_path = tmp_dir / "kimi.rebuttal-request.json"
     result = run_command(
@@ -336,28 +412,25 @@ def run_actual_provider_trace(
 ) -> None:
     if provider_run_dir is None:
         return
-    review_paths = [
-        provider_run_dir / "kimi.review.json",
-        provider_run_dir / "claude-code.review.json",
-    ]
-    raw_paths = [
-        provider_run_dir / "kimi.raw.json",
-        provider_run_dir / "claude-code.raw.json",
-    ]
+    review_paths = [provider_run_dir / f"{provider}.review.json" for provider in CURRENT_PROVIDERS]
+    raw_paths: list[pathlib.Path] = []
+    for provider in CURRENT_PROVIDERS:
+        candidates = [provider_run_dir / f"{provider}.raw.txt", provider_run_dir / f"{provider}.raw.json"]
+        raw_paths.append(next((path for path in candidates if path.exists()), candidates[0]))
     trace = build_provider_trace(review_paths, raw_paths)
     if trace_out is not None:
         write_json(trace_out, trace)
     trace_reference = str(trace_out.relative_to(REPO_ROOT) if trace_out and trace_out.is_relative_to(REPO_ROOT) else trace_out)
     checks.append({
-        "id": "actual-provider-disagreement-trace",
+        "id": "actual-provider-provenance-trace",
         "ok": trace["ok"],
         "trace_out": trace_reference,
         "strictest_verdict": trace.get("strictest_verdict"),
         "must_respond": trace.get("must_respond"),
         "material_disagreement": trace.get("material_disagreement"),
     })
-    require(trace["ok"], "真实 provider 差异轨迹必须可生成", failures)
-    require(trace.get("must_respond") is True, "真实 provider 轨迹中 concern/block 或材料差异必须阻止静默通过", failures)
+    require(trace["ok"], "真实 provider 来源轨迹必须可生成", failures)
+    require(trace.get("must_respond") is True, "真实 Claude concern/block 必须阻止静默通过", failures)
     require(trace.get("refuses_silent_pass") is True, "真实 provider 轨迹必须拒绝静默通过", failures)
 
 
@@ -375,15 +448,17 @@ def run_check(provider_run_dir: pathlib.Path | None = None, trace_out: pathlib.P
         run_merge_check(tmp_dir, failures, checks)
         run_resolution_checks(failures, checks)
         run_rebuttal_request_check(tmp_dir, failures, checks)
+        run_cap_resolution_trace_checks(failures, checks)
         run_actual_provider_trace(provider_run_dir, trace_out, failures, checks)
     positive_checks = [
-        "merge-concern-keeps-strictest",
-        "merge-pass-does-not-force-response",
+        "historical-merge-compatibility",
+        "historical-pass-merge-compatibility",
         "resolution-self-check",
         "same-provider-rebuttal",
+        "cap-resolution-trace",
     ]
     if provider_run_dir is not None:
-        positive_checks.append("actual-provider-disagreement-trace")
+        positive_checks.append("actual-provider-provenance-trace")
 
     return {
         "schema_id": SCHEMA_ID,
@@ -402,13 +477,15 @@ def run_check(provider_run_dir: pathlib.Path | None = None, trace_out: pathlib.P
                     "accept-without-verification-fails",
                     "reject-without-followup-fails",
                     "reject-while-followup-still-concern-fails",
+                    "cap-trace-missing-test-ref-fails",
                 ],
             },
         },
         "changed_reality": [
             "RSP-23 拥有独立合同：assets/contracts/prism-provider-consensus.json",
             "RSP-23 拥有可执行检查器：runtime/bin/redcap prism-consensus check",
-            "RSP-23 可以读取真实 provider 评审与 raw 输出并生成差异处理轨迹",
+            "RSP-23 可以读取当前 Claude Code 评审、raw 与 raw.meta 并生成来源轨迹",
+            "RSP-23 要求 concern/block 进入带源码、合同、测试和用户决策引用的 Cap 处置",
             "总检查器可通过 prism-provider-consensus-check 运行该能力",
         ],
         "artifacts": [

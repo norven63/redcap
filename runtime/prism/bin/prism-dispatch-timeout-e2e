@@ -17,6 +17,9 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
+from prism_provider_policy import active_dispatch_providers  # noqa: E402
+
 PRISM = ROOT / "bin" / "prism"
 DISPATCH = ROOT / "bin" / "prism-dispatch"
 
@@ -37,6 +40,12 @@ def process_alive(pid: int) -> bool:
 
 def main() -> int:
     failures: list[str] = []
+    providers = active_dispatch_providers(REPO_ROOT)
+    if providers != ["claude-code"]:
+        failures.append(f"timeout E2E requires the frozen Claude-only provider policy, got {providers}")
+        print(json.dumps({"ok": False, "failures": failures}, ensure_ascii=False, indent=2))
+        return 1
+    provider = providers[0]
     with tempfile.TemporaryDirectory(prefix="prism-dispatch-timeout-e2e-") as tmp_raw:
         tmp = pathlib.Path(tmp_raw)
         request = tmp / "request.json"
@@ -47,7 +56,7 @@ def main() -> int:
             "changed_reality": ["timeout e2e fixture"],
             "review_mode": "implementation_review",
             "risk_level": "low",
-            "requested_providers": ["kimi", "claude-code"],
+            "requested_providers": [provider],
         }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         run_dir = tmp / "run"
         init = run([str(PRISM), "session-init", "--task-id", "timeout-e2e", "--run-dir", str(run_dir)])
@@ -55,12 +64,12 @@ def main() -> int:
             failures.append(f"session-init failed: {init.stderr or init.stdout}")
         manifest = run_dir / "session.json"
         time.sleep(0.02)
-        review_out = tmp / "kimi.review.json"
-        raw_out = tmp / "kimi.raw.json"
+        review_out = tmp / f"{provider}.review.json"
+        raw_out = tmp / f"{provider}.raw.json"
         dispatch = run([
             str(DISPATCH),
             "--provider",
-            "kimi",
+            provider,
             "--manifest",
             str(manifest),
             "--request",

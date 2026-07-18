@@ -20,14 +20,14 @@ claims as suspect.
 
 1. Create a task run directory under `assets/evidence/prism/<task-id>/`.
 2. Create `session.json` with `runtime/prism/bin/prism session-init`.
-3. Send the same shared brief to Kimi and Claude Code.
-4. Kimi focuses on long-context, intent drift, and narrative failure.
-5. Claude Code focuses on implementation, correctness, tests, and operational
-   risk.
-6. Record each provider's task-scoped session handle in `session.json`.
-7. The main AI compares both outputs without averaging them away.
-8. The stricter completion verdict wins for completion, release, deletion,
-   secrets, migration, and irreversible decisions.
+3. Send the shared brief to Claude Code through `prism-dispatch`.
+4. Claude Code challenges intent alignment, implementation, correctness, tests,
+   and operational risk.
+5. Record the task-scoped Claude Code session handle in `session.json`.
+6. Cap accepts, rejects, or escalates the review using a machine-checkable
+   resolution trace; Claude Code is opposition, not authority.
+7. A prior `concern` or `block` remains open until that trace and its referenced
+   implementation evidence pass.
 
 Formal Prism requests, reviews, merges, and session manifests are file-based.
 stdout is only a bounded command/status channel unless `--inline-request` is
@@ -71,9 +71,9 @@ with:
 The main AI may not say "noted" and proceed unchanged.
 
 The main AI also may not blindly obey Prism. If a provider concern is wrong, the
-main AI must reject it with concrete evidence. If providers disagree materially,
-the main AI must discuss the conflict in the same task-scoped provider sessions.
-That discussion is bounded to the round cap in
+main AI must reject it with concrete evidence and a Cap resolution trace. If a
+concern needs clarification, the main AI may continue in the same task-scoped
+Claude Code session. That discussion is bounded to the round cap in
 `assets/contracts/prism-session-protocol.md`.
 Before each follow-up provider call, the main AI must run `session-check` against
 the task's `session.json`; a non-zero result means it must decide or escalate
@@ -88,4 +88,4 @@ The main AI must stop and ask the user if Prism identifies:
 - User-value tradeoffs rather than engineering facts.
 - A mismatch between task card and user original intent.
 - Repeated anti-loop signals after one correction attempt.
-- Provider disagreement that remains unresolved after the configured round cap.
+- A provider concern that remains unresolved after the configured round cap.

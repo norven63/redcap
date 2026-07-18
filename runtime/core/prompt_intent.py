@@ -90,6 +90,12 @@ IMPLEMENTATION_MARKERS = {
     "授权",
     "允许",
     "批准",
+    "放弃",
+    "停用",
+    "禁用",
+    "改用",
+    "只用",
+    "仅用",
 }
 
 REVIEW_MARKERS = {

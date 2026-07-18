@@ -29,7 +29,8 @@ Session JSONL events use `schema_id: prism-task-execution-record` and include:
 - task id, session manifest path, run directory, trigger, executor
 - created and updated timestamps plus computed duration
 - session status, convergence state, convergence reason
-- provider snapshots for Kimi and Claude Code
+- provider snapshots selected by the active provider policy; current records
+  contain Claude Code, while historical records may still contain Kimi
 - round counts, session-handle presence, review hash, last verdict, confidence
 - merge verdict, success boolean, and outcome classification
 

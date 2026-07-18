@@ -28,6 +28,9 @@ EXCLUDED_PREFIXES = {
 }
 FORBIDDEN_ZIP_PARTS = {".git", "__pycache__", "assets/evidence"}
 FORBIDDEN_ZIP_NAMES = {"AGENTS.md", ".DS_Store"}
+ALLOWED_RAW_META_ZIP_PREFIXES = (
+    f"{PACKAGE_ROOT}/assets/fixtures/prism/real-provider-evidence/",
+)
 TRANSIENT_SELF_CHECK_PREFIXES = (
     ".redcap-forge-self-check-",
 )
@@ -281,7 +284,11 @@ def entry_has_forbidden_part(name: str) -> str | None:
                 return f"压缩包不得包含 {forbidden}"
     if parts[-1] in FORBIDDEN_ZIP_NAMES:
         return f"压缩包不得包含 {parts[-1]}"
-    if parts[-1].endswith(".raw.json") or parts[-1].endswith(".raw.meta.json"):
+    stable_fixture_raw_meta = (
+        parts[-1].endswith(".raw.meta.json")
+        and any(name.startswith(prefix) for prefix in ALLOWED_RAW_META_ZIP_PREFIXES)
+    )
+    if parts[-1].endswith(".raw.json") or (parts[-1].endswith(".raw.meta.json") and not stable_fixture_raw_meta):
         return "压缩包不得包含供应方 raw 输出"
     return None
 
@@ -478,6 +485,7 @@ def installed_runtime_smoke_check() -> dict[str, Any]:
                 ["bash", str(runtime_bin), "cli-surface", "check"],
                 ["bash", str(runtime_bin), "longrun-observer", "self-check"],
                 ["bash", str(runtime_bin), "longrun-observer", "scenario-test"],
+                ["bash", str(runtime_bin), "longrun-observer", "auto-collect-scenario-test"],
                 ["bash", str(runtime_bin), "gate", "--task", "外部项目安装后 runtime smoke", "--risk-level", "low"],
             ]:
                 command = run_smoke_command(argv, project)
@@ -911,6 +919,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             package_root / "runtime" / "bin" / "redcap",
             package_root / "runtime" / "core" / "longrun_observer.py",
             package_root / "assets" / "contracts" / "longrun-observer.json",
+            package_root / "assets" / "fixtures" / "prism" / "real-provider-evidence" / "20260624-e2e-structural-fix" / "session.json",
             package_root / "install.json",
             package_root / "evidence",
             package_root / "logs",
@@ -925,6 +934,8 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("项目 hooks 没有指向项目 .redcap")
         if (package_root / "assets" / "evidence").exists():
             failures.append("包内不应包含 assets/evidence")
+        if not (package_root / "assets" / "fixtures").exists():
+            failures.append("包内必须包含 assets/fixtures 稳定自检夹具")
         bad_package = tmp / "bad-redcap.zip"
         with zipfile.ZipFile(bad_package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr(f"{PACKAGE_ROOT}/assets/evidence/forbidden.json", "{}\n")

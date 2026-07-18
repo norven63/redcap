@@ -13,6 +13,9 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
+from prism_provider_policy import active_dispatch_providers  # noqa: E402
+
 PROJECT_ROOT = REPO_ROOT.parent if REPO_ROOT.name == ".redcap" else REPO_ROOT
 HOOKS_CONFIG = PROJECT_ROOT / ".codex" / "hooks.json"
 HOOKS_TEMPLATE = REPO_ROOT / "assets" / "contracts" / "codex-hooks.template.json"
@@ -114,9 +117,11 @@ def main() -> int:
         if not ok:
             failures.append(f"Codex hook event is not deployed through adapter: {event}")
 
+    provider_commands = {"claude-code": "claude"}
     provider_cli = {
-        "kimi": shutil.which("kimi"),
-        "claude-code": shutil.which("claude"),
+        provider: shutil.which(provider_commands[provider])
+        for provider in active_dispatch_providers(REPO_ROOT)
+        if provider in provider_commands
     }
     for provider, path in provider_cli.items():
         if not path:

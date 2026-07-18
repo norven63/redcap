@@ -1,6 +1,6 @@
 {
   "schema_id": "redcap-provider-health-contract",
-  "version": 1,
+  "version": 2,
   "stdout_policy": {
     "summary_only": true,
     "max_summary_chars": 1200,
@@ -29,6 +29,7 @@
     ]
   },
   "live_check_policy": {
+    "active_provider": "claude-code",
     "included_in_aggregate": false,
     "max_retries": 1,
     "timeout_seconds": 30,

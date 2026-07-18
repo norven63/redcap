@@ -26,12 +26,12 @@ Correct:
 
 Bad:
 
-> Add more providers when Kimi and Claude Code disagree.
+> Add another provider automatically when Claude Code raises a hard concern.
 
 Correct:
 
-> Preserve the disagreement. Apply the stricter verdict for high-risk actions or
-> ask the user.
+> Keep the approved Claude Code-only policy. Resolve the concern with concrete
+> evidence or ask the user when the decision is value-laden.
 
 ## Completion Laundering
 
@@ -59,12 +59,12 @@ Correct:
 
 Bad:
 
-> Kimi blocked, Claude Code passed, so average to concern and continue.
+> Claude Code blocked, then later passed, so erase the earlier concern and continue.
 
 Correct:
 
-> Disagreement is evidence. For completion, deletion, release, and secrets, the
-> stricter verdict wins unless the user overrides.
+> A later same-provider pass is additional evidence, not automatic closure. Cap
+> must record how the original concern was fixed, rejected, or escalated.
 
 ## Self-Review Masquerade
 
@@ -74,7 +74,8 @@ Bad:
 
 Correct:
 
-> Prism requires a heterogenous provider: Kimi, Claude Code, or both.
+> Prism requires a real external Claude Code process and machine-verifiable
+> review provenance. Cap cannot write both sides and call that external review.
 
 ## Governance Substitution
 
@@ -87,4 +88,3 @@ Correct:
 
 > If the task is to fix behavior, only behavior change can complete it. Policy is
 > supporting evidence.
-

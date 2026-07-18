@@ -2,6 +2,7 @@
   "schema_id": "redcap-hook-quality-metrics-contract",
   "version": 1,
   "purpose": "持续度量 Hook 误伤率、漏检率和样本退化，避免只靠个案修复证明 Hook 稳定。",
+  "historical_provider_boundary": "样本中的 Kimi reviewer 仅记录 2026-06-21 历史标签来源，不构成当前调度配额；当前 Prism 只调度 Claude Code。",
   "sample_governance": {
     "classes": [
       "false_positive",

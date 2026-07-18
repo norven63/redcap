@@ -11,6 +11,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "loom-workflow.json"
+from prism_provider_policy import required_providers as policy_required_providers
 REQUIRED_ROLES = {
     "product_manager",
     "architect",
@@ -194,8 +195,8 @@ def validate_prism_assistance(contract: dict[str, Any], failures: list[str]) -> 
     missing_required = sorted(REQUIRED_PRISM_ASSISTANCE - required_for)
     if missing_required:
         failures.append(f"Loom 棱镜协助场景缺失：{missing_required}")
-    if policy.get("providers") != ["kimi", "claude-code"]:
-        failures.append("Loom 棱镜协助方必须显式限定为 kimi 和 claude-code")
+    if policy.get("providers") != policy_required_providers(REPO_ROOT):
+        failures.append("Loom 棱镜协助方必须与权威 provider policy 一致")
     evidence = set(policy.get("evidence_required", []) if isinstance(policy.get("evidence_required"), list) else [])
     missing_evidence = sorted(REQUIRED_PRISM_EVIDENCE - evidence)
     if missing_evidence:

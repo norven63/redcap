@@ -16,6 +16,7 @@
     "runtime",
     "assets/contracts",
     "assets/docs",
+    "assets/fixtures",
     "assets/knowledge",
     "assets/archaeology",
     "README.md"

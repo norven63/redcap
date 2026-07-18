@@ -542,7 +542,7 @@
   "human_intervention_rules": [
     "Ask Norven before reading private archives, raw prism runs, old task bodies, old receipts, or old closeout ledgers.",
     "Ask Norven before deleting, moving, or pruning old RedCap evidence.",
-    "Ask Norven before changing provider policy or adding providers beyond Kimi and Claude Code.",
+    "Ask Norven before changing the Claude Code-only provider policy or adding any provider.",
     "Ask Norven before changing Cap identity, soul loader semantics, or user-private state boundaries."
   ],
   "phase2_exit_criteria": [

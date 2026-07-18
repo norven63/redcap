@@ -2,7 +2,7 @@
 
 The Prism gate is the first deterministic rule review for RedCap tasks.
 
-It does not always call Kimi or Claude Code. It always evaluates the task
+It does not call an external provider. It always evaluates the task
 against machine-readable rules and returns one of three decisions:
 
 - `required`: run full Prism before implementation or official completion.
@@ -29,7 +29,8 @@ Codex project-local `UserPromptSubmit` runs the gate and records a live marker.
 `PreToolUse`, `PostToolUse`, and `Stop` provide the current tool-action and
 closeout guardrails. Provider-call interception is handled by
 `runtime/prism/bin/prism-dispatch`, which enforces Prism task-session checks
-before Kimi or Claude Code follow-up rounds.
+before Claude Code follow-up rounds. Kimi is frozen for live dispatch and is
+accepted only as a historical evidence format.
 
 Events not exposed as verified project hooks in this workspace are tracked by
 `runtime/bin/redcap host-hook-audit`; they are not treated as implemented.

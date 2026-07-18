@@ -56,12 +56,9 @@ If the answer is "only explanation", Prism must return `concern` or `block`.
 
 ## The Provider Shape
 
-Prism is intentionally small and heterogenous:
+Prism is intentionally small. Claude Code is its only active external review
+provider and supplies intent, implementation, test, and operational pressure.
+Cap must independently resolve concerns with source, contract, and test
+evidence. This mode is not described as heterogeneous consensus.
 
-- Kimi provides long-context archaeology, synthesis, and hidden-assumption
-  pressure.
-- Claude Code provides engineering review, implementation risk analysis, and
-  concrete fix pressure.
-
-No other provider belongs in this Prism.
-
+Kimi is frozen for live dispatch and appears only in historical evidence.

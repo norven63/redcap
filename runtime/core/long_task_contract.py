@@ -715,9 +715,8 @@ def has_prism_review_resolution_evidence() -> bool:
         merge_files = list(run_dir.glob("merge.json")) + list(run_dir.glob("*.merge.json"))
         if not merge_files:
             continue
-        has_kimi = any("kimi" in path.name and path.name.endswith(".review.json") for path in run_dir.glob("*.review.json"))
         has_claude = any("claude-code" in path.name and path.name.endswith(".review.json") for path in run_dir.glob("*.review.json"))
-        if not (has_kimi and has_claude):
+        if not has_claude:
             continue
         for merge_file in merge_files:
             try:

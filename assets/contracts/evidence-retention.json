@@ -11,8 +11,8 @@
   },
   "thresholds": {
     "source_evidence_boundary": {
-      "warning_bytes": 8192,
-      "critical_bytes": 65536
+      "warning_bytes": 32768,
+      "critical_bytes": 262144
     },
     "source_evidence_boundary_file_count": {
       "warning_count": 3,

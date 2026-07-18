@@ -89,6 +89,17 @@ GOAL_CONTEXT_MARKERS = (
     '<codex_internal_context source="goal"',
     "<goal_context",
 )
+ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
+E2E_ROLE_AUTHORIZATION_FILE = pathlib.Path(
+    os.environ.get(
+        "REDCAP_E2E_ROLE_AUTHORIZATION_FILE",
+        str(
+            REPO_ROOT / "state" / "e2e-role-authorizations.json"
+            if INSTALLED_PACKAGE_MODE
+            else REPO_ROOT / ".redcap" / "state" / "e2e-role-authorizations.json"
+        ),
+    )
+)
 try:
     MAX_TRANSCRIPT_TAIL_BYTES = int(os.environ.get("REDCAP_GOAL_CONTEXT_TAIL_BYTES", str(1024 * 1024)))
 except ValueError:
@@ -1169,6 +1180,148 @@ def is_under(path: pathlib.Path, root: pathlib.Path) -> bool:
     return True
 
 
+def parse_iso_datetime(value: Any) -> dt.datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed
+
+
+def load_e2e_role_authorization() -> dict[str, Any]:
+    try:
+        payload = json.loads(E2E_ROLE_AUTHORIZATION_FILE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def e2e_role_from_prompt_marker(prompt_marker: dict[str, Any]) -> str | None:
+    match = re.search(rf"{re.escape(ROLE_MARKER_PREFIX)}([A-Za-z0-9_:-]+)", prompt_text_from_marker(prompt_marker))
+    if not match:
+        return None
+    role = match.group(1).strip()
+    return role or None
+
+
+def e2e_role_execution_authorization(prompt_marker: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "attempted": True,
+        "authorized": False,
+        "authorization_file_sha256": hashlib.sha256(str(E2E_ROLE_AUTHORIZATION_FILE).encode("utf-8")).hexdigest(),
+    }
+    cwd = payload.get("cwd")
+    cwd_path = pathlib.Path(cwd if isinstance(cwd, str) and cwd else PROJECT_ROOT)
+    if not is_under(cwd_path, PROJECT_ROOT):
+        result["reason"] = "cwd is outside project root"
+        return result
+    if not prompt_marker_same_session(prompt_marker, payload):
+        result["reason"] = "prompt marker session does not match tool session"
+        return result
+    role = e2e_role_from_prompt_marker(prompt_marker)
+    result["role"] = role
+    if role is None:
+        result["reason"] = "prompt marker does not contain an E2E Loom role marker"
+        return result
+    prompt = prompt_marker.get("prompt")
+    prompt_sha256 = prompt.get("sha256") if isinstance(prompt, dict) else None
+    result["prompt_sha256"] = prompt_sha256
+    if not isinstance(prompt_sha256, str) or not prompt_sha256:
+        result["reason"] = "prompt marker has no full prompt sha256"
+        return result
+    auth = load_e2e_role_authorization()
+    if auth.get("schema_id") != "redcap-e2e-role-session-authorizations":
+        result["reason"] = "authorization file missing or schema mismatch"
+        return result
+    if auth.get("enabled") is not True:
+        result["reason"] = "authorization file is not enabled"
+        return result
+    auth_project = auth.get("project")
+    if isinstance(auth_project, str) and pathlib.Path(auth_project).resolve() != PROJECT_ROOT.resolve():
+        result["reason"] = "authorization project does not match current project"
+        return result
+    expires_at = parse_iso_datetime(auth.get("expires_at"))
+    if expires_at is None:
+        result["reason"] = "authorization has no valid expires_at"
+        return result
+    if dt.datetime.now(dt.timezone.utc) > expires_at:
+        result["reason"] = "authorization expired"
+        return result
+    roles = auth.get("roles")
+    role_record = None
+    if isinstance(roles, list):
+        for item in roles:
+            if isinstance(item, dict) and item.get("role") == role:
+                role_record = item
+                break
+    result["role_authorization_present"] = isinstance(role_record, dict)
+    if not isinstance(role_record, dict):
+        result["reason"] = "role is not authorized"
+        return result
+    prompt_hashes = role_record.get("prompt_sha256s")
+    if not isinstance(prompt_hashes, list):
+        prompt_hashes = [role_record.get("prompt_sha256")]
+    prompt_hash_set = {item for item in prompt_hashes if isinstance(item, str) and item}
+    result["authorized_prompt_hash_count"] = len(prompt_hash_set)
+    if prompt_sha256 not in prompt_hash_set:
+        result["reason"] = "prompt sha256 is not authorized for role"
+        return result
+    session_id = payload.get("session_id")
+    if not isinstance(session_id, str) or not session_id.strip():
+        result["reason"] = "tool payload has no session_id for E2E role binding"
+        return result
+    lock_path = E2E_ROLE_AUTHORIZATION_FILE.with_suffix(E2E_ROLE_AUTHORIZATION_FILE.suffix + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        try:
+            current_auth = load_e2e_role_authorization()
+            current_roles = current_auth.get("roles") if isinstance(current_auth, dict) else None
+            current_record = next(
+                (
+                    item
+                    for item in current_roles or []
+                    if isinstance(item, dict) and item.get("role") == role
+                ),
+                None,
+            )
+            if not isinstance(current_record, dict):
+                result["reason"] = "role authorization disappeared before session binding"
+                return result
+            bindings = current_record.get("session_bindings")
+            if not isinstance(bindings, dict):
+                bindings = {}
+            bound_session = bindings.get(prompt_sha256)
+            if isinstance(bound_session, str) and bound_session != session_id:
+                result["reason"] = "prompt sha256 is already bound to a different E2E role session"
+                result["bound_session_sha256"] = hashlib.sha256(bound_session.encode("utf-8")).hexdigest()
+                return result
+            if bound_session is None:
+                bindings[prompt_sha256] = session_id
+                current_record["session_bindings"] = bindings
+                current_record["updated_at"] = iso_now()
+                current_auth["updated_at"] = iso_now()
+                write_json_atomic(E2E_ROLE_AUTHORIZATION_FILE, current_auth)
+            result["session_binding"] = "matched" if bound_session == session_id else "claimed"
+            result["session_id_sha256"] = hashlib.sha256(session_id.encode("utf-8")).hexdigest()
+        finally:
+            fcntl.flock(lock_handle, fcntl.LOCK_UN)
+    allowed_tools = role_record.get("allowed_tools")
+    tool_name = str(payload.get("tool_name") or "")
+    if isinstance(allowed_tools, list) and allowed_tools and tool_name not in {str(item) for item in allowed_tools}:
+        result["reason"] = "tool is not authorized for role"
+        result["tool_name"] = tool_name
+        return result
+    result["authorized"] = True
+    result["reason"] = "fresh E2E role prompt sha256 is authorized for project-local Loom execution"
+    result["tool_name"] = tool_name
+    return result
+
+
 def protected_evidence_write_reason(payload: dict[str, Any]) -> str | None:
     tool_name = str(payload.get("tool_name") or "")
     if tool_name not in {"Write", "Edit", "MultiEdit", "NotebookEdit"}:
@@ -1892,8 +2045,22 @@ def cmd_event(args: argparse.Namespace) -> int:
         prompt_marker_fresh = prompt_marker_is_fresh_for_tool(prompt_marker, payload)
         same_session_continuation_authorized = False
         goal_continuation_authorization: dict[str, Any] = {"attempted": False, "authorized": False}
+        e2e_role_authorization: dict[str, Any] = {"attempted": False, "authorized": False}
         if tool_is_mutating(payload, command):
-            if not prompt_marker_fresh:
+            e2e_role = e2e_role_from_prompt_marker(prompt_marker) if isinstance(prompt_marker, dict) else None
+            if e2e_role is not None:
+                if not prompt_marker_fresh:
+                    intent_deny_reason = "E2E Loom role mutation requires a fresh prompt marker bound to the current session."
+                else:
+                    e2e_role_authorization = e2e_role_execution_authorization(prompt_marker, payload)
+                    if e2e_role_authorization.get("authorized") is True:
+                        same_session_continuation_authorized = True
+                    else:
+                        intent_deny_reason = (
+                            "E2E Loom role mutation is not authorized: "
+                            f"{e2e_role_authorization.get('reason') or 'unknown authorization failure'}."
+                        )
+            elif not prompt_marker_fresh:
                 same_session_continuation_authorized = prompt_marker_can_authorize_same_session_continuation(prompt_marker, payload)
                 if not same_session_continuation_authorized:
                     goal_continuation_authorization = active_goal_continuation_authorization(payload)
@@ -1906,12 +2073,28 @@ def cmd_event(args: argparse.Namespace) -> int:
                             "或同会话已授权实施/完成意图的续跑标记。"
                         )
             elif not prompt_intent_allows_mutation(prompt_marker):
-                intent = effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else {}
-                scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
-                goal_continuation_authorization = active_goal_continuation_authorization(payload)
-                if goal_continuation_authorization.get("authorized") is True:
+                prompt_text = prompt_text_from_marker(prompt_marker) if isinstance(prompt_marker, dict) else ""
+                deterministic_recheck = classify_prompt_intent(prompt_text) if prompt_text.strip() else {}
+                if deterministic_recheck.get("authorized_scope") in {"implementation", "completion"}:
+                    prompt_marker = update_latest_marker("UserPromptSubmit", {
+                        "prompt_intent_effective": deterministic_recheck,
+                        "prompt_intent_rechecked_before_mutation": True,
+                    }, base_marker=prompt_marker)
                     same_session_continuation_authorized = True
+                    intent = deterministic_recheck
                 else:
+                    intent = effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else {}
+                scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
+                if not same_session_continuation_authorized:
+                    e2e_role_authorization = e2e_role_execution_authorization(prompt_marker, payload)
+                if e2e_role_authorization.get("authorized") is True:
+                    same_session_continuation_authorized = True
+                elif not same_session_continuation_authorized:
+                    goal_continuation_authorization = {
+                        "attempted": False,
+                        "authorized": False,
+                        "reason": "fresh latest user prompt is authoritative; active goal cannot override read-only intent",
+                    }
                     intent_judge = run_intent_judge_for_marker(prompt_marker)
                     judge_intent = intent_judge.get("prompt_intent") if isinstance(intent_judge, dict) else None
                     if isinstance(judge_intent, dict) and judge_intent.get("authorized_scope") in {"implementation", "completion"}:
@@ -1922,10 +2105,12 @@ def cmd_event(args: argparse.Namespace) -> int:
                     else:
                         judge_reason = intent_judge.get("reason") if isinstance(intent_judge, dict) else None
                         goal_reason = goal_continuation_authorization.get("reason")
+                        e2e_reason = e2e_role_authorization.get("reason")
                         intent_deny_reason = (
                             "Latest RedCap prompt is classified as "
-                            f"{scope}; neither active goal continuation nor Prism LLM intent judge authorized mutation"
-                            f"{': ' + str(goal_reason) if goal_reason else ''}"
+                            f"{scope}; neither E2E role authorization nor Prism LLM intent judge authorized mutation"
+                            f"{': ' + str(e2e_reason) if e2e_reason else ''}"
+                            f"; active goal override disabled for fresh prompt: {goal_reason}"
                             f"{'; ' + str(judge_reason) if judge_reason else ''}."
                         )
             else:
@@ -1943,6 +2128,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             "prompt_intent_mutation_denied": bool(intent_deny_reason),
             "latest_prompt_marker_fresh": prompt_marker_fresh,
             "same_session_continuation_authorized": same_session_continuation_authorized,
+            "e2e_role_execution_authorization": e2e_role_authorization,
             "active_goal_continuation_authorization": goal_continuation_authorization,
             "latest_prompt_intent": effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else None,
             "prompt_intent_llm_attempted": bool(intent_judge),
@@ -2702,6 +2888,15 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-intent-self-check",
             },
             evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "directive",
+                    "authorized_scope": "review_only",
+                    "action_evidence": "diagnostic",
+                    "confidence": "high",
+                    "reason": "fresh review-only prompt remains authoritative over older goal context",
+                }, ensure_ascii=False),
+            },
         )
         if goal_allow.returncode != 0:
             failures.append(f"goal continuation PreToolUse failed: {goal_allow.stderr or goal_allow.stdout}")
@@ -2709,14 +2904,14 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         goal_auth = goal_allow_marker.get("active_goal_continuation_authorization")
         if goal_allow_marker.get("latest_prompt_marker_fresh") is not True:
             failures.append("goal continuation fixture should keep a fresh review-only prompt marker")
-        if not (isinstance(goal_auth, dict) and goal_auth.get("authorized") is True):
-            failures.append("active goal continuation should authorize implementation objective")
-        if goal_allow_marker.get("same_session_continuation_authorized") is not True:
-            failures.append("active goal continuation should set same_session_continuation_authorized")
-        if goal_allow_marker.get("dangerous_command_denied") is not False:
-            failures.append("active goal continuation should not deny ordinary mutation")
-        if goal_allow_marker.get("prompt_intent_llm_attempted") is not False:
-            failures.append("active goal continuation should not call LLM after explicit goal authorization")
+        if not (isinstance(goal_auth, dict) and goal_auth.get("authorized") is False):
+            failures.append("fresh review-only prompt must not be overridden by active goal continuation")
+        if goal_allow_marker.get("same_session_continuation_authorized") is not False:
+            failures.append("fresh review-only prompt must not authorize same-session mutation")
+        if goal_allow_marker.get("dangerous_command_denied") is not True:
+            failures.append("fresh review-only prompt should deny mutation despite older active goal")
+        if goal_allow_marker.get("prompt_intent_llm_attempted") is not True:
+            failures.append("fresh ambiguous review prompt should use the bounded intent judge")
 
         stale_goal_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
         stale_goal_marker["recorded_at"] = "2000-01-01T00:00:00+00:00"
@@ -2749,6 +2944,139 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("stale active goal continuation should set same_session_continuation_authorized")
         if stale_goal_marker_result.get("dangerous_command_denied") is not False:
             failures.append("stale active goal continuation should not deny ordinary mutation")
+
+        e2e_role_prompt_text = (
+            f"{ROLE_MARKER_PREFIX}orchestrator\n"
+            "你是 OL-11 E2E 的独立编排者。请只写入 ol01-orchestrator-identity-draft.json。"
+        )
+        e2e_role_prompt_sha = hashlib.sha256(utf8_fingerprint_bytes(e2e_role_prompt_text)).hexdigest()
+        e2e_role_auth_file = evidence_dir / "e2e-role-authorizations.json"
+        write_json_atomic(e2e_role_auth_file, {
+            "schema_id": "redcap-e2e-role-session-authorizations",
+            "schema_version": 1,
+            "created_at": iso_now(),
+            "updated_at": iso_now(),
+            "expires_at": (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=10)).replace(microsecond=0).isoformat(),
+            "project": str(PROJECT_ROOT),
+            "enabled": True,
+            "roles": [
+                {
+                    "role": "orchestrator",
+                    "prompt_sha256s": [e2e_role_prompt_sha],
+                    "allowed_tools": ["apply_patch"],
+                }
+            ],
+        })
+        e2e_role_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": e2e_role_prompt_text,
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "e2e-role-session",
+                "turn_id": "e2e-role-session-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_E2E_ROLE_AUTHORIZATION_FILE": str(e2e_role_auth_file)},
+        )
+        if e2e_role_prompt.returncode != 0:
+            failures.append(f"E2E role UserPromptSubmit failed: {e2e_role_prompt.stderr or e2e_role_prompt.stdout}")
+        e2e_role_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        e2e_role_marker["prompt_intent"] = {
+            "prompt_kind": "question",
+            "authorized_scope": "review_only",
+            "action_evidence": "diagnostic",
+            "confidence": "high",
+            "reason": "fixture forces review_only to test role authorization override",
+        }
+        e2e_role_marker.pop("prompt_intent_effective", None)
+        write_json_atomic(evidence_dir / "latest-UserPromptSubmit.json", e2e_role_marker)
+        e2e_role_session_marker = evidence_dir / "latest-UserPromptSubmit.e2e-role-session.json"
+        write_json_atomic(e2e_role_session_marker, e2e_role_marker)
+        e2e_role_allow = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "e2e-role-session",
+                "turn_id": "e2e-role-session-tool",
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-e2e-role-allow",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_E2E_ROLE_AUTHORIZATION_FILE": str(e2e_role_auth_file)},
+        )
+        if e2e_role_allow.returncode != 0:
+            failures.append(f"E2E role PreToolUse failed: {e2e_role_allow.stderr or e2e_role_allow.stdout}")
+        e2e_role_allow_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        e2e_auth = e2e_role_allow_marker.get("e2e_role_execution_authorization")
+        if not (isinstance(e2e_auth, dict) and e2e_auth.get("authorized") is True):
+            failures.append("E2E role authorization should authorize matching role prompt sha")
+        if e2e_role_allow_marker.get("same_session_continuation_authorized") is not True:
+            failures.append("E2E role authorization should set same_session_continuation_authorized")
+        if e2e_role_allow_marker.get("dangerous_command_denied") is not False:
+            failures.append("E2E role authorization should not deny ordinary project-local mutation")
+        if e2e_role_allow_marker.get("prompt_intent_llm_attempted") is not False:
+            failures.append("E2E role authorization should not call LLM after hash-scoped authorization")
+
+        e2e_role_bad_prompt_text = f"{ROLE_MARKER_PREFIX}orchestrator\n伪造角色提示，不在授权哈希内。"
+        e2e_role_bad_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": e2e_role_bad_prompt_text,
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "e2e-role-bad-session",
+                "turn_id": "e2e-role-bad-session-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_E2E_ROLE_AUTHORIZATION_FILE": str(e2e_role_auth_file)},
+        )
+        if e2e_role_bad_prompt.returncode != 0:
+            failures.append(f"E2E bad role UserPromptSubmit failed: {e2e_role_bad_prompt.stderr or e2e_role_bad_prompt.stdout}")
+        e2e_bad_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        e2e_bad_marker["prompt_intent"] = {
+            "prompt_kind": "question",
+            "authorized_scope": "review_only",
+            "action_evidence": "diagnostic",
+            "confidence": "high",
+            "reason": "fixture keeps unauthorized role prompt non-mutating",
+        }
+        e2e_bad_marker.pop("prompt_intent_effective", None)
+        write_json_atomic(evidence_dir / "latest-UserPromptSubmit.json", e2e_bad_marker)
+        write_json_atomic(evidence_dir / "latest-UserPromptSubmit.e2e-role-bad-session.json", e2e_bad_marker)
+        e2e_role_deny = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(PROJECT_ROOT),
+                "session_id": "e2e-role-bad-session",
+                "turn_id": "e2e-role-bad-session-tool",
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-e2e-role-deny",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_E2E_ROLE_AUTHORIZATION_FILE": str(e2e_role_auth_file),
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "question",
+                    "authorized_scope": "answer_only",
+                    "action_evidence": "none",
+                    "confidence": "high",
+                    "reason": "bad E2E role prompt is not authorized",
+                }, ensure_ascii=False),
+            },
+        )
+        if e2e_role_deny.returncode != 0:
+            failures.append(f"E2E bad role PreToolUse failed: {e2e_role_deny.stderr or e2e_role_deny.stdout}")
+        e2e_role_deny_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        e2e_bad_auth = e2e_role_deny_marker.get("e2e_role_execution_authorization")
+        if not (isinstance(e2e_bad_auth, dict) and e2e_bad_auth.get("authorized") is False):
+            failures.append("E2E role authorization should reject non-matching prompt sha")
+        if e2e_role_deny_marker.get("dangerous_command_denied") is not True:
+            failures.append("unauthorized E2E role prompt should still deny mutation")
 
         ordinary_review_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",

@@ -1,0 +1,30 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "captured_session_handle": null,
+      "exit_code": 0,
+      "recovery": null,
+      "stderr_bytes": 0,
+      "stdout_bytes": 4371,
+      "timed_out": false,
+      "timeout_scope": null
+    }
+  ],
+  "attempts_count": 1,
+  "exit_code": 0,
+  "max_retries": 1,
+  "provider": "kimi",
+  "raw_kind": "provider-output",
+  "raw_path": "kimi.raw.txt",
+  "raw_sha256": "b8de7eafd5a77ca582e4ad53d4cae55844333e91d81525e96648ae870a14af6b",
+  "raw_size_bytes": 10003,
+  "review_path": "kimi.review.json",
+  "schema_id": "prism-provider-raw-metadata",
+  "task_elapsed_timeout_seconds": null,
+  "task_remaining_timeout_seconds": null,
+  "task_total_timeout_seconds": null,
+  "timed_out": false,
+  "timeout_seconds": 240.0,
+  "total_timeout_seconds": 300.0
+}

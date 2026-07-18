@@ -56,7 +56,6 @@
       "session_loss_recovery"
     ],
     "providers": [
-      "kimi",
       "claude-code"
     ],
     "evidence_required": [

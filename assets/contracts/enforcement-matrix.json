@@ -1048,18 +1048,23 @@
     },
     {
       "id": "provider-dispatcher",
-      "title": "Automatic Kimi and Claude Code provider dispatcher",
+      "title": "Claude Code-only provider dispatcher with historical evidence compatibility",
       "kind": "workflow",
-      "source_paths": [
-        "runtime/prism/README.md",
-        "assets/evidence/prism/20260601-timeout-retry-accountability/session.json",
-        "assets/evidence/prism/20260613-advisory-stop-implementation/session.json",
-        "runtime/prism/bin/prism",
-        "runtime/prism/bin/prism-dispatch",
-        "runtime/prism/bin/prism-dispatch-timeout-e2e",
-        "assets/contracts/prism-timeout-governance.json",
-        "runtime/bin/redcap"
-      ],
+    "source_paths": [
+      "runtime/prism/README.md",
+      "runtime/prism/bin/prism",
+      "runtime/prism/bin/prism-dispatch",
+      "runtime/prism/bin/prism-dispatch-timeout-e2e",
+      "assets/contracts/prism-timeout-governance.json",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/session.json",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/kimi.raw.txt",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/kimi.raw.meta.json",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/kimi.review.json",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/claude-code.raw.txt",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/claude-code.raw.meta.json",
+      "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix/claude-code.review.json",
+      "runtime/bin/redcap"
+    ],
       "evaluation": {
         "evaluated": true,
         "decision": "required_now",
@@ -1124,7 +1129,7 @@
               "runtime/prism/bin/prism-dispatch",
               "--verify-evidence",
               "--evidence-run-dir",
-              "assets/evidence/prism/20260613-advisory-stop-implementation",
+              "assets/fixtures/prism/real-provider-evidence/20260624-e2e-structural-fix",
               "--max-age-hours",
               "100000"
             ],
@@ -1578,7 +1583,7 @@
       "evaluation": {
         "evaluated": true,
         "decision": "required_now",
-        "reason": "RedCap must not claim generic cross-host hooks; it must audit the real host hook surface and enforce Kimi/Claude provider calls through the dispatcher."
+        "reason": "RedCap must not claim generic cross-host hooks; it must audit the real host hook surface and enforce Claude Code calls plus the frozen Kimi boundary through the dispatcher."
       },
       "enforcement": {
         "status": "operational",

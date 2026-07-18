@@ -1,68 +1,51 @@
 # Prism Provider Policy
 
-## Allowed Providers
+## Current Provider
 
-Prism has exactly two allowed providers:
+Prism has one active provider: Claude Code.
 
-| Provider | Role | Primary Strength |
-|---|---|---|
-| Kimi | Long-context challenger | Archaeology, synthesis, intent drift, narrative gaps |
-| Claude Code | Engineering challenger | Code review, implementation risk, test gaps, concrete fixes |
+Kimi is retired from live dispatch. Current Gate, Loom, revival loop, complete
+E2E, OL-11, provider health, retry, fallback, and release paths must not invoke,
+wait for, or count Kimi. The machine-readable authority is
+`assets/contracts/prism-provider-policy.json`.
 
-## Excluded Providers
+## Historical Compatibility
 
-All other providers are excluded by design.
+Historical Kimi raw output, metadata, reviews, session manifests, and fixtures
+may still be parsed read-only. This compatibility exists so old evidence remains
+auditable. It never creates a current quota, fallback, session, or dispatch
+right.
 
-Excluded providers are not:
+The dispatcher must reject a live Kimi request before process launch. Its
+self-check places a marker-writing fake `kimi` executable on `PATH` and proves
+the marker is not created.
 
-- Fallbacks.
-- Emergency quorum members.
-- Degraded review sources.
-- Future default candidates.
-- Silent participants.
+## Review Meaning
 
-Adding a provider requires a new human-approved policy change. It must not be
-introduced as an automatic fallback.
+The current mode is `single-provider-strong-review`. It is not heterogeneous
+red-team review and must not be described as multi-provider consensus.
 
-## Why Only Two
+Claude Code provides external opposition. Cap remains responsible for the
+decision and implementation. A review `pass` is evidence, not authority.
 
-Prism failed when review became ceremony. More providers can increase ceremony
-without increasing opposition.
+## Concern Resolution
 
-The new rule is:
+A Claude Code `concern` or `block` cannot be erased merely by asking the same
+provider again. A later `pass` may add evidence, but closure also requires a
+machine-checkable Cap resolution trace with:
 
-> Use the smallest pair that reliably disagrees with the main AI in useful ways.
+- provider review references
+- decision and rationale
+- source-code references
+- contract references
+- test-run references
+- the relevant Norven decision reference
 
-Kimi and Claude Code are enough because their failure modes and strengths are
-different:
+Cap may accept and fix the concern, reject it with independent evidence, or
+escalate an irreducible value decision to Norven.
 
-- Kimi challenges context, intent, and hidden narrative drift.
-- Claude Code challenges engineering reality, implementation details, and
-  verification gaps.
+## Policy Changes
 
-## Quorum
-
-Prism has three valid quorum shapes:
-
-| Quorum | Meaning |
-|---|---|
-| `kimi-only` | Advisory review; useful for intent, archaeology, and strategy |
-| `claude-code-only` | Advisory review; useful for code, tests, and implementation |
-| `kimi-plus-claude-code` | Full Prism review |
-
-No review may claim "full Prism" unless both Kimi and Claude Code participated.
-
-## Disagreement Rule
-
-If Kimi and Claude Code disagree, the result is not averaged.
-
-The main AI must:
-
-1. State the disagreement plainly.
-2. Identify which claim is about user intent and which is about engineering
-   reality.
-3. Apply the stricter verdict when the disagreement concerns completion,
-   deletion, release, secrets, or irreversible change.
-4. Ask the user when both positions are plausible and the decision is
-   value-laden.
-
+No automatic fallback provider is allowed. Adding or replacing a provider is a
+human-approved policy change and must update the authority contract, runtime,
+package, negative dispatch tests, and documentation together.

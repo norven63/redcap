@@ -54,7 +54,8 @@ Those may be opened later only by exact path and exact question.
 
 ## Prism Opposition Summary
 
-Kimi verdict: revive with amputations.
+Historical Kimi verdict: revive with amputations. Kimi is no longer an active
+provider and this paragraph is retained only as archaeology provenance.
 
 Main pressure: the new RedCap must not mistake documentation/report apparatus
 for runtime. Rebuild core execution, session ownership, hooks, and completion
@@ -83,7 +84,7 @@ runtime with these layers:
 | Layer | Keep | Redesign Smaller |
 | --- | --- | --- |
 | Runtime / Loom | Task execution, FSM, role handoff, recovery, closeout | Minimum kernel is only a bootstrap layer; full role orchestration is required before complete revival |
-| Prism | Heterogeneous opposition for high-risk decisions | Keep current new Prism small: Kimi + Claude Code only |
+| Prism | External opposition for high-risk decisions | Keep current Prism Claude Code-only, with Cap evidence-backed arbitration and no fake consensus claim |
 | References / Contracts | Machine-readable policies and boundaries | Only promote a policy when a component consumes it |
 | Knowledge | Lessons, design philosophy, stable concepts | Three-tier gateway first; advanced wiki later |
 | Evolution / Forge | Candidate capture, promotion, no-promote decisions | Capture high-signal learnings without blocking every tiny task |
@@ -265,7 +266,8 @@ Carry forward:
 
 - Prism exists to oppose, not approve.
 - Disagreement should be preserved, not averaged away.
-- Full Prism requires both Kimi and Claude Code under current new policy.
+- Current full Prism dispatch requires Claude Code plus a machine-checkable Cap
+  resolution for any concern; it does not claim heterogeneous consensus.
 - Resource-limited Prism must be labeled honestly.
 - Prism is mandatory for architecture, governance, completion,
   release-readiness, long-term roadmap, migration, deletion, secrets, provider
@@ -273,7 +275,7 @@ Carry forward:
 
 Redesign:
 
-- Keep new Prism as the smallest useful pair.
+- Keep Prism to the single explicitly approved Claude Code provider.
 - Use Prism to challenge claims before writing long reports.
 - Store review outputs only when they change a decision or prove a high-risk
   gate.
@@ -346,7 +348,7 @@ Discard:
 
 7. **Prism Integration**
    - Generate request briefs.
-   - Run Kimi and Claude Code when available.
+   - Run Claude Code through the policy-enforced dispatcher.
    - Merge by strictest verdict.
    - Force accepted/rejected/changed-plan response.
 

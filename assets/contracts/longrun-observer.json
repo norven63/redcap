@@ -5,7 +5,13 @@
   "project_runtime_paths": {
     "config": ".redcap/state/longrun-observer/config.json",
     "observations": ".redcap/state/longrun-observer/observations.jsonl",
-    "evaluation_default": ".redcap/evidence/longrun-observer/evaluation.json"
+    "issues": ".redcap/evidence/longrun-observer/issues.jsonl",
+    "sample_registry": ".redcap/state/longrun-observer/sample-registry.json",
+    "collector_state": ".redcap/state/longrun-observer/collector-state.json",
+    "evaluation_default": ".redcap/evidence/longrun-observer/evaluation.json",
+    "latest_handoff": ".redcap/evidence/longrun-observer/LATEST-HANDOFF.json",
+    "archive_handoff": ".redcap/evidence/longrun-observer/archive/<run-id>/handoff.json",
+    "immutable_history_segments": ".redcap/evidence/longrun-observer/archive/history-segments/*.jsonl.gz"
   },
   "required_capabilities": [
     "project_install",
@@ -47,6 +53,84 @@
     "eligible_to_close_ol11": "长期外部项目样本覆盖所有门槛，且没有 P0/P1 开放失败，可以进入 OL-11 关闭评审。",
     "continue_observing": "样本仍不足以关闭 OL-11，需要继续观察或补充运行证据。",
     "needs_fix": "观察到 P0/P1 开放失败或结构性缺陷，必须先修复再继续观察。"
+  },
+  "auto_collection": {
+    "trigger_points": [
+      "complete-revival-e2e-post-condition",
+      "complete-revival-e2e-harness-timeout-or-crash",
+      "ol11-longrun-sample-phase-end",
+      "manual-resume-check"
+    ],
+    "external_issue_ingestion": {
+      "cli": "runtime/bin/redcap longrun-observer auto-collect --project <project> --issue-json <json>",
+      "required_for": [
+        "E2E harness timeout",
+        "E2E worker crash",
+        "observer-request.json missing",
+        "observer command failure",
+        "interrupted run with partial project evidence"
+      ],
+      "rule": "外部执行器只能把结构化 issue 交给长期观察器摄入；最终 issues.jsonl、evaluation.json、LATEST-HANDOFF.json 和 sample registry 仍必须由项目级 longrun-observer 统一生成，禁止在 harness 中旁路伪造长期观察结果。"
+    },
+    "required_outputs": [
+      ".redcap/evidence/longrun-observer/issues.jsonl",
+      ".redcap/evidence/longrun-observer/LATEST-HANDOFF.json",
+      ".redcap/evidence/longrun-observer/archive/<run-id>/handoff.json",
+      ".redcap/state/longrun-observer/sample-registry.json",
+      ".redcap/state/longrun-observer/collector-state.json",
+      ".redcap/evidence/longrun-observer/evaluation.json"
+    ],
+    "decision_boundary": [
+      {
+        "condition": "required evidence is absent while the corresponding phase has not claimed completion",
+        "decision_effect": "continue_observing",
+        "severity": "P2",
+        "rationale": "缺证是观察缺口，不得自动伪造成实现失败。"
+      },
+      {
+        "condition": "required evidence exists but is unreadable or invalid JSON",
+        "decision_effect": "needs_fix",
+        "severity": "P1",
+        "rationale": "已存在证据不可解析说明执行链或产物生成失败，不能继续放行。"
+      },
+      {
+        "condition": "E2E harness timeout, worker crash, missing observer-request.json, or observer command failure",
+        "decision_effect": "needs_fix",
+        "severity": "P1",
+        "rationale": "外层执行失败不能被静默丢弃；必须进入项目级问题账本和跨会话 handoff，下一会话可恢复处理。"
+      },
+      {
+        "condition": "open P0/P1 issue, injected P0/P1 fault, lost role session id, missing project hook after phase completion, source workspace leakage, or Cap writes target project code directly",
+        "decision_effect": "needs_fix",
+        "severity": "P0|P1",
+        "rationale": "这些属于工作流或隔离边界破坏，必须修复后重跑。"
+      },
+      {
+        "condition": "capabilities are covered and only calendar time thresholds are not met",
+        "decision_effect": "continue_observing",
+        "severity": "P2",
+        "rationale": "即时 E2E 只能证明真实长期样本启动就绪，不能冒充跨日样本完成。"
+      }
+    ],
+    "issue_schema_required_fields": [
+      "severity",
+      "issue_type",
+      "decision_effect",
+      "evidence_ref",
+      "source_sha256",
+      "first_seen",
+      "last_seen",
+      "run_id",
+      "dedupe_key"
+    ],
+    "retention": {
+      "max_observations_total": 400,
+      "max_issues_total": 400,
+      "max_archived_handoffs": 20,
+      "compaction_strategy": "超出活动文件上限时，在同一文件锁内把全部溢出记录写入不可变 gzip JSONL 历史分段，记录原文与压缩体哈希及连续序号，成功校验后才原子截短活动文件。",
+      "history_replay_rule": "评估、恢复和问题查询必须重放不可变历史分段与活动文件；历史缺段、序号断裂、哈希不符或解压失败均作为 P0 阻断问题。",
+      "archive_pruning_boundary": "max_archived_handoffs 只轮转每轮 handoff 目录，禁止删除 archive/history-segments。"
+    }
   },
   "anti_completion_rules": [
     "观察器通过只表示 OL-11 具备关闭候选资格，不表示 RedCap 完整复活终局完成。",

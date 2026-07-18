@@ -24,6 +24,7 @@ from typing import Any
 
 OBSERVER_BROWSER_VIEWPORT = {"width": 1032, "height": 760}
 ENTRYPOINT_CANDIDATES = ["index.html", "app/index.html", "public/index.html", "dist/index.html", "build/index.html"]
+LOCAL_URL_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
 def iso_now() -> str:
@@ -69,11 +70,15 @@ def seconds_between(start_iso: str | None, end_iso: str | None) -> float | None:
 def write_json_locked(path: pathlib.Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     seal_input = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    script_record = payload.get("script") if isinstance(payload.get("script"), dict) else {}
     payload["observer_seal"] = {
         "algorithm": "sha256",
         "payload_sha256_without_seal": sha256_text(seal_input),
         "sealed_at": iso_now(),
         "intended_mode": "0444",
+        "sealed_payload_includes_script_record": bool(script_record),
+        "script_path_at_seal": script_record.get("path"),
+        "script_sha256_at_seal": script_record.get("sha256"),
     }
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -281,7 +286,7 @@ def run_browser_observation(project: pathlib.Path, output_png: pathlib.Path) -> 
                 last_error = f"server exited: {server.returncode}"
                 break
             try:
-                with urllib.request.urlopen(url, timeout=0.5) as response:
+                with LOCAL_URL_OPENER.open(url, timeout=0.5) as response:
                     ready = response.status < 500
                     if ready:
                         break
@@ -295,7 +300,7 @@ def run_browser_observation(project: pathlib.Path, output_png: pathlib.Path) -> 
             result["failures"].append(f"HTTP 服务未就绪：{last_error}")
             return result
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True)
+            browser = playwright.chromium.launch(headless=True, args=["--no-proxy-server"])
             browser_version = browser.version
             page = browser.new_page(viewport=OBSERVER_BROWSER_VIEWPORT)
             page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
@@ -381,7 +386,7 @@ def main() -> int:
     evidence = pathlib.Path(args.evidence).resolve()
     bundle_path = pathlib.Path(args.bundle).resolve()
     output = pathlib.Path(args.output).resolve()
-    screenshot = output.with_name("independent-observer.png")
+    screenshot = output.with_suffix(".png")
     script_path = pathlib.Path(__file__).resolve()
     failures: list[str] = []
     try:

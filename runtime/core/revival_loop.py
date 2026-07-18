@@ -12,6 +12,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "redcap-1.0-loop.json"
+from prism_provider_policy import required_providers as policy_required_providers
 
 REQUIRED_TRIAGE = {
     "blocks-this-item",
@@ -144,8 +145,8 @@ def validate_contract(path: pathlib.Path) -> list[str]:
     if not isinstance(prism, dict):
         failures.append("prism must be an object")
     else:
-        if prism.get("providers") != ["kimi", "claude-code"]:
-            failures.append("prism.providers must be exactly kimi and claude-code")
+        if prism.get("providers") != policy_required_providers(REPO_ROOT):
+            failures.append("prism.providers must match the authoritative provider policy")
         triage = prism.get("concern_triage")
         if set(triage or []) != REQUIRED_TRIAGE:
             failures.append("prism.concern_triage must define the required four labels")

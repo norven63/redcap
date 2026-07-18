@@ -14,7 +14,11 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-ALLOWED_PROVIDERS = {"kimi", "claude-code"}
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
+from prism_provider_policy import active_dispatch_providers  # noqa: E402
+
+
+ALLOWED_PROVIDERS = set(active_dispatch_providers(REPO_ROOT))
 ACCOUNT_SCHEMA_ID = "prism-shard-account"
 OUTPUT_SCHEMA_ID = "prism-shard-output"
 MERGE_SCHEMA_ID = "prism-shard-merge"
@@ -460,9 +464,8 @@ def valid_account_payload(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Pat
                 "forbidden_sources": ["raw evidence archives"],
                 "stop_condition": "extract shard account rules only",
                 "acceptance_criteria": ["output has required schema"],
-                "providers": ["kimi", "claude-code"],
+                "providers": ["claude-code"],
                 "provider_sessions": {
-                    "kimi": {"status": "pending", "manifest_path": None},
                     "claude-code": {"status": "pending", "manifest_path": None},
                 },
                 "max_rounds": 3,
@@ -571,8 +574,13 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         provider_failures, _ = validate_account_payload(invalid_provider, account)
         if not any("unsupported providers" in failure for failure in provider_failures):
             failures.append("unsupported provider was not rejected")
+        retired_provider = load_json(account)
+        retired_provider["shards"][0]["providers"] = ["kimi"]
+        retired_provider_failures, _ = validate_account_payload(retired_provider, account)
+        if not any("unsupported providers" in failure for failure in retired_provider_failures):
+            failures.append("historical-read-only Kimi provider was accepted by an active shard")
         invalid_session = load_json(account)
-        invalid_session["shards"][0]["provider_sessions"]["kimi"]["status"] = "mystery"
+        invalid_session["shards"][0]["provider_sessions"]["claude-code"]["status"] = "mystery"
         session_failures, _ = validate_account_payload(invalid_session, account)
         if not any("status invalid" in failure for failure in session_failures):
             failures.append("invalid provider session status was not rejected")

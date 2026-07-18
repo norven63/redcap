@@ -4,13 +4,13 @@ RedCap is being rebuilt from a clean workspace.
 
 This repository is not a continuation of the old RedCap runtime. It is a new
 home for the parts worth saving: reliable AI engineering collaboration,
-heterogeneous review, task continuity, and reality-based completion.
+external opposition review, task continuity, and reality-based completion.
 
 The first revived component is Prism.
 
 ## Prism First
 
-Prism is the heterogeneous AI opposition layer for the main executing AI.
+Prism is the external AI opposition layer for the main executing AI.
 Its job is not to produce ceremony, reports, receipts, or extra governance.
 Its job is to prevent the main AI from replacing real completion with a
 self-consistent story.
@@ -19,19 +19,14 @@ Prism exists to ask:
 
 - Did the user's real-world target actually change?
 - Is the main AI hiding behind documents, ledgers, receipts, or plans?
-- What is the strongest objection from a different model family?
+- What is the strongest external objection to the current plan or claim?
 - What is the smallest correction before the work can honestly continue?
 
 ## Provider Policy
 
-Prism only uses two providers:
-
-- Kimi
-- Claude Code
-
-All other providers are intentionally excluded from the new Prism design. They
-are not fallback candidates, not degraded quorum members, and not part of the
-revival surface.
+Prism's only active provider is Claude Code. Kimi is frozen for live dispatch
+and retained only for read-only historical evidence compatibility. No provider
+is an automatic fallback or silent quorum member.
 
 ## Current Structure
 
@@ -56,7 +51,6 @@ bin/
   hook-coverage-check
 prompts/
   prism-shared-brief.md
-  kimi-prism-review.md
   claude-code-prism-review.md
 examples/
   prism-request.example.json
@@ -68,9 +62,9 @@ examples/
 ## Task Sessions
 
 Full Prism tasks use file-backed task sessions under
-`assets/evidence/prism/<task-id>/`. The session manifest records the Kimi resume
-id and the Claude Code session id so follow-up rounds for one delegated Prism
-task stay in the same provider conversations.
+`assets/evidence/prism/<task-id>/`. The session manifest records the Claude Code
+session id so follow-up rounds for one delegated Prism task stay in the same
+provider conversation.
 
 Use `runtime/prism/bin/prism-dispatch` for provider calls. The dispatcher runs
 `session-check --require-existing-session` before follow-up rounds, generates
@@ -83,7 +77,7 @@ failure with all attempt metadata.
 test fast: it validates the 300-second and 5-retry defaults, five timeout retry
 attempts followed by success, retry command rebuilding with a captured provider
 handle, exhausted-timeout raw evidence writing, and markdown review extraction.
-It does not intentionally hang a real Kimi or Claude Code network call.
+It does not intentionally hang a real Claude Code network call.
 
 `runtime/prism/bin/prism session-check` remains the lower-level guard. It exits
 non-zero when the task or provider has reached a terminal state, a follow-up is
@@ -111,4 +105,5 @@ without deployed hook coverage or an explicit unsupported-event audit.
 - Do not migrate historical report piles.
 - Do not create background follow-up tasks outside a Prism task session.
 - Do not let Prism become an approval stamp.
-- Do not add providers beyond Kimi and Claude Code.
+- Do not add or replace the Claude Code provider without a human-approved
+  provider-policy change.

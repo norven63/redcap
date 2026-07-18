@@ -28,9 +28,9 @@ ALLOWED_EVIDENCE = {"none", "diagnostic", "substantive"}
 ALLOWED_KINDS = {"question", "directive", "mixed"}
 ALLOWED_CONFIDENCE = {"low", "medium", "high"}
 LLM_POLICIES = {"off", "auto", "auto-on-ambiguous", "force"}
-PROVIDERS = {"kimi", "claude-code"}
+PROVIDERS = {"claude-code"}
 DEFAULT_PROVIDER = "claude-code"
-DEFAULT_FALLBACK_PROVIDER = "claude-code"
+DEFAULT_FALLBACK_PROVIDER = None
 DEFAULT_TIMEOUT_SECONDS = 75.0
 MAX_JUDGE_PROMPT_CHARS = 4000
 JUDGMENT_SCHEMA = {
@@ -278,18 +278,6 @@ def build_judge_prompt(user_prompt: str, deterministic: dict[str, str]) -> str:
 
 
 def provider_command(provider: str, prompt: str) -> list[str]:
-    if provider == "kimi":
-        return [
-            "kimi",
-            "--work-dir",
-            str(REPO_ROOT),
-            "--plan",
-            "--quiet",
-            "--max-steps-per-turn",
-            "1",
-            "-p",
-            prompt,
-        ]
     if provider == "claude-code":
         return [
             "claude",
@@ -299,8 +287,13 @@ def provider_command(provider: str, prompt: str) -> list[str]:
             "--no-session-persistence",
             "--permission-mode",
             "plan",
-            "--disallowedTools",
-            "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
+            "--tools",
+            "",
+            "--safe-mode",
+            "--no-chrome",
+            "--disable-slash-commands",
+            "--prompt-suggestions",
+            "false",
             "--",
             prompt,
         ]
@@ -310,7 +303,7 @@ def provider_command(provider: str, prompt: str) -> list[str]:
 def run_provider(provider: str, judge_prompt: str, timeout_seconds: float) -> dict[str, Any]:
     if provider not in PROVIDERS:
         return {"ok": False, "provider": provider, "reason": "unsupported provider"}
-    binary = "claude" if provider == "claude-code" else provider
+    binary = "claude"
     if shutil.which(binary) is None:
         return {"ok": False, "provider": provider, "reason": f"provider binary not found: {binary}"}
     argv = provider_command(provider, judge_prompt)

@@ -124,7 +124,6 @@
     },
     "prism_reviews": {
       "required_providers": [
-        "kimi",
         "claude-code"
       ],
       "minimum_scope": [

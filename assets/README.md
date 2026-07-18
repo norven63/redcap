@@ -8,6 +8,7 @@ Belongs here:
 - first-read docs and architecture notes
 - reviewed knowledge
 - bounded evidence
+- portable deterministic check fixtures
 - controlled archaeology references into old RedCap
 
 Does not belong here:

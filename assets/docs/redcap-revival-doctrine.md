@@ -135,8 +135,8 @@ first bounded component, its owner, and what is explicitly out of scope.
 
 - Old `.dev-task.md` state, raw `prism/runs`, closeout receipts, prompt dumps,
   local `.env`, or task-report piles as default context.
-- Provider inflation. New Prism allows only Kimi and Claude Code unless Norven
-  approves a provider-policy change.
+- Provider inflation. New Prism actively dispatches only Claude Code unless
+  Norven approves a provider-policy change; Kimi is historical-read-only.
 - Completion laundering: "a receipt says complete" is never enough.
 - Report spirals: a concern should produce a small correction, narrowed claim,
   missing evidence, or human decision, not another governance stack.

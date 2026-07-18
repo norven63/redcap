@@ -20,7 +20,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "provider-health.json"
-DEFAULT_EVIDENCE_DIR = REPO_ROOT / "assets" / "evidence" / "provider-health"
+DEFAULT_EVIDENCE_DIR = REPO_ROOT / ".redcap" / "evidence" / "provider-health"
 CONTRACT_SCHEMA_ID = "redcap-provider-health-contract"
 REPORT_SCHEMA_ID = "redcap-provider-health-report"
 SELF_CHECK_SCHEMA_ID = "redcap-provider-health-self-check"
@@ -55,7 +55,6 @@ SUPPORTED_FIXTURES = {
     "connection-refused",
     "unknown-failure",
 }
-SESSION_RE = re.compile(r"(session_[0-9a-fA-F-]{36}|[0-9a-fA-F]{8}-[0-9a-fA-F-]{27})")
 GENERIC_EXCEPTION_NAMES = {"BaseException", "Exception", "OSError", "IOError"}
 EXCEPTION_PARENTS = {
     "asyncio.TimeoutError": "TimeoutError",
@@ -160,6 +159,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         live_policy = {}
     if live_policy.get("included_in_aggregate") is not False:
         failures.append("live_check_policy.included_in_aggregate must be false")
+    if live_policy.get("active_provider") != "claude-code":
+        failures.append("live_check_policy.active_provider must be claude-code")
     for key in ["max_retries", "timeout_seconds", "file_read_timeout_seconds", "retry_backoff_seconds"]:
         value = live_policy.get(key)
         if not isinstance(value, int) or value < 0:
@@ -279,7 +280,7 @@ def fixture_signal(fixture: str) -> dict[str, Any]:
             "probe": "path",
             "exit_code": None,
             "timed_out": False,
-            "stderr": "command not found: kimi",
+            "stderr": "command not found: claude",
         },
         "permission-block": {
             "probe": "basic_call",
@@ -543,20 +544,6 @@ def run_provider_command(
         }
 
 
-def extract_session_id(output: str) -> str | None:
-    for line in output.splitlines():
-        if "To resume this session:" in line or "session.resume_hint" in line:
-            match = SESSION_RE.search(line)
-            if match:
-                value = match.group(1)
-                return value if value.startswith("session_") else f"session_{value}"
-    match = SESSION_RE.search(output)
-    if match:
-        value = match.group(1)
-        return value if value.startswith("session_") else f"session_{value}"
-    return None
-
-
 def file_allowed(path: pathlib.Path, budget: dict[str, Any]) -> tuple[bool, str | None]:
     resolved = path.resolve()
     try:
@@ -575,14 +562,47 @@ def file_allowed(path: pathlib.Path, budget: dict[str, Any]) -> tuple[bool, str 
     return True, None
 
 
-def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[str, Any]:
+def claude_code_command(
+    provider_path: str,
+    prompt: str,
+    *,
+    session_id: str | None = None,
+    resume: bool = False,
+    tools: str = "",
+) -> list[str]:
+    argv = [
+        provider_path,
+        "--print",
+        "--output-format",
+        "json",
+        "--permission-mode",
+        "plan",
+        "--tools",
+        tools,
+        "--safe-mode",
+        "--no-chrome",
+        "--disable-slash-commands",
+        "--prompt-suggestions",
+        "false",
+    ]
+    if tools:
+        argv.extend(["--allowedTools", tools])
+    if session_id:
+        argv.extend(["--resume" if resume else "--session-id", session_id])
+    argv.extend(["-p", prompt])
+    return argv
+
+
+def live_check_claude_code(args: argparse.Namespace, contract: dict[str, Any]) -> dict[str, Any]:
     failures = validate_contract(contract)
     budget = contract.get("file_access_budget", {}) if isinstance(contract.get("file_access_budget"), dict) else {}
-    evidence_dir = pathlib.Path(args.evidence_dir).resolve()
-    evidence_dir.mkdir(parents=True, exist_ok=True)
+    evidence_root = pathlib.Path(args.evidence_dir).resolve()
+    run_id = f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
+    evidence_dir = evidence_root / run_id
+    evidence_dir.mkdir(parents=True, exist_ok=False)
     marker = f"redcap-provider-health-{uuid.uuid4().hex[:12]}"
     file_marker = f"file-marker-{uuid.uuid4().hex[:12]}"
-    source_file = evidence_dir / f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}-kimi-file-read-source.txt"
+    source_file = evidence_dir / "bounded-file-read-source.txt"
     source_file.write_text(f"marker={file_marker}\n", encoding="utf-8")
     allowed, denied_reason = file_allowed(source_file, budget)
     if not allowed:
@@ -601,7 +621,7 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
     else:
         file_budget_classification = None
 
-    provider_path = shutil.which("kimi")
+    provider_path = shutil.which("claude")
     probes: dict[str, Any] = {
         "path": {
             "ok": provider_path is not None,
@@ -611,19 +631,19 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
                 "ok": provider_path is not None,
                 "exit_code": 0 if provider_path else None,
                 "timed_out": False,
-                "stderr": "" if provider_path else "command not found: kimi",
+                "stderr": "" if provider_path else "command not found: claude",
                 "elapsed_seconds": 0,
                 "retry_count": 0,
             }, contract),
         }
     }
     if provider_path is None:
-        failures.append("kimi executable not found")
+        failures.append("claude executable not found")
         return {
             "schema_id": LIVE_SCHEMA_ID,
             "ok": False,
             "generated_at": iso_now(),
-            "provider": "kimi",
+            "provider": "claude-code",
             "contract": rel(DEFAULT_CONTRACT),
             "evidence_dir": rel(evidence_dir),
             "probes": probes,
@@ -639,28 +659,26 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
     )
     probes["version"] = command_summary(version)
     if not version["ok"]:
-        failures.append("kimi version probe failed")
+        failures.append("claude-code version probe failed")
 
     basic_prompt = f"这是 RedCap provider health 巡检。请记住标记 {marker}，并简短回复已记住该标记。"
+    session_id = str(uuid.uuid4())
     basic = run_provider_command(
-        [provider_path, "-p", basic_prompt, "--output-format", "stream-json"],
+        claude_code_command(provider_path, basic_prompt, session_id=session_id),
         cwd=REPO_ROOT,
         timeout_seconds=args.timeout_seconds,
         contract=contract,
         probe="basic_call",
     )
     probes["basic_call"] = command_summary(basic)
-    session_id = extract_session_id(str(basic.get("stdout") or ""))
     probes["basic_call"]["captured_session_id"] = session_id
     if not basic["ok"]:
-        failures.append("kimi basic call failed")
-    if not session_id:
-        failures.append("kimi basic call did not expose session id")
+        failures.append("claude-code basic call failed")
 
-    if session_id:
+    if basic["ok"]:
         resume_prompt = f"请只回答刚才让你记住的 RedCap provider health 标记。标记应包含 {marker}。"
         resume = run_provider_command(
-            [provider_path, "--session", session_id, "-p", resume_prompt, "--output-format", "stream-json"],
+            claude_code_command(provider_path, resume_prompt, session_id=session_id, resume=True),
             cwd=REPO_ROOT,
             timeout_seconds=args.timeout_seconds,
             contract=contract,
@@ -682,7 +700,7 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
             "remembered_marker": resume_ok,
         }
         if not resume_ok:
-            failures.append("kimi session resume did not preserve marker")
+            failures.append("claude-code session resume did not preserve marker")
 
     session_continuity = {
         "session_id": session_id,
@@ -716,7 +734,7 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
             f"{source_file}"
         )
         file_read = run_provider_command(
-            [provider_path, "-p", file_prompt, "--output-format", "stream-json"],
+            claude_code_command(provider_path, file_prompt, tools="Read"),
             cwd=REPO_ROOT,
             timeout_seconds=args.file_read_timeout_seconds,
             contract=contract,
@@ -731,7 +749,7 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
             "marker_observed": file_ok,
         }
         if not file_ok:
-            failures.append("kimi bounded file read did not return marker")
+            failures.append("claude-code bounded file read did not return marker")
     else:
         probes["bounded_file_read"] = {
             "ok": False,
@@ -760,7 +778,7 @@ def live_check_kimi(args: argparse.Namespace, contract: dict[str, Any]) -> dict[
         "schema_id": LIVE_SCHEMA_ID,
         "ok": not failures,
         "generated_at": iso_now(),
-        "provider": "kimi",
+        "provider": "claude-code",
         "contract": rel(DEFAULT_CONTRACT),
         "evidence_dir": rel(evidence_dir),
         "live_check_included_in_aggregate": False,
@@ -838,11 +856,14 @@ def cmd_live_check(args: argparse.Namespace) -> int:
     contract = load_json(pathlib.Path(args.contract).resolve())
     if not isinstance(contract, dict):
         raise SystemExit("contract must be a JSON object")
-    if args.provider != "kimi":
-        raise SystemExit("live-check currently supports provider: kimi")
-    report = live_check_kimi(args, contract)
+    if args.provider != "claude-code":
+        raise SystemExit("live-check currently supports provider: claude-code")
+    report = live_check_claude_code(args, contract)
+    report_dir = pathlib.Path(str(report["evidence_dir"]))
+    if not report_dir.is_absolute():
+        report_dir = REPO_ROOT / report_dir
     out_path = pathlib.Path(args.out).resolve() if args.out else (
-        pathlib.Path(args.evidence_dir).resolve() / f"{dt.datetime.now().strftime('%Y%m%d%H%M%S')}-kimi-live-report.json"
+        report_dir.resolve() / "claude-code-live-report.json"
     )
     write_json(out_path, report)
     summary = {
@@ -874,7 +895,7 @@ def build_parser() -> argparse.ArgumentParser:
     self_check.add_argument("--contract", default=str(DEFAULT_CONTRACT))
     live = subparsers.add_parser("live-check")
     live.add_argument("--contract", default=str(DEFAULT_CONTRACT))
-    live.add_argument("--provider", choices=["kimi"], default="kimi")
+    live.add_argument("--provider", choices=["claude-code"], default="claude-code")
     live.add_argument("--timeout-seconds", type=int, default=30)
     live.add_argument("--file-read-timeout-seconds", type=int, default=45)
     live.add_argument("--evidence-dir", default=str(DEFAULT_EVIDENCE_DIR))

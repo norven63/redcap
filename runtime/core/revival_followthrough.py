@@ -12,6 +12,8 @@ import sys
 import tempfile
 from typing import Any
 
+from prism_provider_policy import required_providers as policy_required_providers
+
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_QUEUE = REPO_ROOT / "assets" / "contracts" / "revival-followthrough-queue.json"
@@ -982,8 +984,12 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("final-prism-review.strictest_verdict 必须是 pass")
         reviews = final_prism.get("reviews")
         providers = {str(item.get("provider")) for item in reviews if isinstance(item, dict)} if isinstance(reviews, list) else set()
-        if providers != {"kimi", "claude-code"}:
-            failures.append(f"最终棱镜复核必须包含 Kimi 和 Claude Code：{sorted(providers)}")
+        required_providers = set(policy_required_providers())
+        if providers != required_providers:
+            failures.append(
+                "最终棱镜复核必须与权威 provider policy 的当前活动提供方完全一致："
+                f"expected={sorted(required_providers)}, actual={sorted(providers)}"
+            )
 
     marker = load_optional_json(evidence_root / "completion-marker.json")
     if marker is None:
@@ -1132,6 +1138,15 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         failures.append("当前 open-loop 队列检查必须暴露 terminal_blockers 列表")
     with tempfile.TemporaryDirectory(prefix="redcap-followthrough-") as raw:
         root = pathlib.Path(raw)
+        fixture_runtime_evidence = root / "fixture-runtime-check.json"
+        fixture_runtime_evidence.write_text('{"ok": true}\n', encoding="utf-8")
+        fixture_evidence_root = root / "e2e"
+        fixture_evidence_root.mkdir()
+        fixture_completion_marker = fixture_evidence_root / "completion-marker.json"
+        fixture_completion_marker.write_text(
+            '{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true}\n',
+            encoding="utf-8",
+        )
         open_loop_fixture = load_json(DEFAULT_OPEN_LOOP_QUEUE)
         dirty_open_loop_fixture = json.loads(json.dumps(open_loop_fixture, ensure_ascii=False))
         for item in dirty_open_loop_fixture["items"]:
@@ -1154,7 +1169,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         for item in open_loop_fixture["items"]:
             if item.get("priority") in {"P0", "P1"}:
                 item["status"] = "verified"
-                item["verified_runtime_evidence"] = ["fixture-runtime-check"]
+                item["verified_runtime_evidence"] = [str(fixture_runtime_evidence)]
                 item["prism_review"] = "passed"
         open_loop_fixture["status"] = "verified"
         verified_queue = root / "open-loop-verified.json"
@@ -1232,7 +1247,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         if PRIVATE_PERSONA_MARKERS != rules.get("public_persona_boundary", {}).get("private_markers"):
             failures.append("公共人格边界规则报告没有完整暴露扫描标记")
         evidence = root / "e2e"
-        evidence.mkdir()
         role_ids = {
             "product_manager": "11111111-1111-4111-8111-111111111111",
             "architect": "22222222-2222-4222-8222-222222222222",
@@ -1285,7 +1299,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 for role in sorted(REQUIRED_LOOM_ROLES)
             ],
         }, ensure_ascii=False), encoding="utf-8")
-        (evidence / "prism-assisted-review.json").write_text('{"used": true, "reviews": [{"provider": "kimi", "verdict": "pass"}], "cap_decision": "accepted"}\n', encoding="utf-8")
+        (evidence / "prism-assisted-review.json").write_text('{"used": true, "reviews": [{"provider": "claude-code", "verdict": "pass"}], "cap_decision": "accepted"}\n', encoding="utf-8")
         (evidence / "knowledge-retrieval-evidence.json").write_text('{"search_ran": true, "query": "loom", "matches": [{"id": "loom"}]}\n', encoding="utf-8")
         (evidence / "self-purification-candidates.json").write_text(
             '{"candidates": [{"id": "fixture-candidate", "decisions": [{"decision": "no_promote", "reason": "fixture"}]}]}\n',
@@ -1331,7 +1345,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "ok": True,
             "strictest_verdict": "pass",
             "reviews": [
-                {"provider": "kimi", "verdict": "pass"},
                 {"provider": "claude-code", "verdict": "pass"},
             ],
         }, ensure_ascii=False), encoding="utf-8")

@@ -48,7 +48,7 @@
     "providers": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["claude-code", "kimi"],
+      "required": ["claude-code"],
       "properties": {
         "claude-code": {
           "$ref": "#/$defs/provider_session"

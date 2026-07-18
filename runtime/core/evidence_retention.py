@@ -11,6 +11,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,8 +27,10 @@ class Metric:
     path: pathlib.Path
     exists: bool
     bytes: int
+    logical_bytes: int
     file_count: int
     dir_count: int
+    symlink_count: int
     git_policy: str
 
 
@@ -82,23 +85,44 @@ def git_policy(path: pathlib.Path) -> str:
 
 def measure_path(metric_id: str, path: pathlib.Path) -> Metric:
     resolved = path if path.is_absolute() else REPO_ROOT / path
-    if not resolved.exists():
-        return Metric(metric_id, resolved, False, 0, 0, 0, "missing")
-    if resolved.is_file():
-        return Metric(metric_id, resolved, True, resolved.stat().st_size, 1, 0, git_policy(resolved))
+    if not os.path.lexists(resolved):
+        return Metric(metric_id, resolved, False, 0, 0, 0, 0, 0, "missing")
+
+    def sizes(item: pathlib.Path) -> tuple[int, int]:
+        stat_result = item.lstat()
+        blocks = getattr(stat_result, "st_blocks", None)
+        allocated = int(blocks) * 512 if blocks is not None else stat_result.st_size
+        return allocated, stat_result.st_size
+
+    if resolved.is_symlink() or resolved.is_file():
+        physical, logical = sizes(resolved)
+        return Metric(metric_id, resolved, True, physical, logical, 1, 0, int(resolved.is_symlink()), git_policy(resolved))
     total = 0
+    logical_total = 0
     files = 0
     dirs = 0
+    symlinks = 0
     for item in resolved.rglob("*"):
-        if item.is_dir():
+        if item.is_symlink():
+            files += 1
+            symlinks += 1
+            try:
+                physical, logical = sizes(item)
+                total += physical
+                logical_total += logical
+            except OSError:
+                continue
+        elif item.is_dir():
             dirs += 1
         elif item.is_file():
             files += 1
             try:
-                total += item.stat().st_size
+                physical, logical = sizes(item)
+                total += physical
+                logical_total += logical
             except OSError:
                 continue
-    return Metric(metric_id, resolved, True, total, files, dirs, git_policy(resolved))
+    return Metric(metric_id, resolved, True, total, logical_total, files, dirs, symlinks, git_policy(resolved))
 
 
 def sha256_file(path: pathlib.Path) -> str | None:
@@ -158,8 +182,11 @@ def metric_payload(metric: Metric, *, warning_bytes: int | None = None, critical
         "path": path_label(metric.path),
         "exists": metric.exists,
         "bytes": metric.bytes,
+        "physical_bytes": metric.bytes,
+        "logical_bytes": metric.logical_bytes,
         "file_count": metric.file_count,
         "dir_count": metric.dir_count,
+        "symlink_count": metric.symlink_count,
         "git_policy": metric.git_policy,
         "state": state,
         "size_state": size_state,
@@ -177,11 +204,22 @@ def dir_size(path: pathlib.Path) -> tuple[int, int]:
     total = 0
     files = 0
     for item in path.rglob("*"):
+        if item.is_symlink():
+            files += 1
+            try:
+                stat_result = item.lstat()
+                blocks = getattr(stat_result, "st_blocks", None)
+                total += int(blocks) * 512 if blocks is not None else stat_result.st_size
+            except OSError:
+                pass
+            continue
         if not item.is_file():
             continue
         files += 1
         try:
-            total += item.stat().st_size
+            stat_result = item.stat()
+            blocks = getattr(stat_result, "st_blocks", None)
+            total += int(blocks) * 512 if blocks is not None else stat_result.st_size
         except OSError:
             continue
     return total, files
@@ -443,6 +481,29 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         failures.append("materialized plan must require human authorization for deletion")
     if not isinstance(materialized.get("summary_index"), dict):
         failures.append("materialized plan missing summary_index")
+    with tempfile.TemporaryDirectory(prefix="redcap-retention-metric-") as tmp_raw:
+        root = pathlib.Path(tmp_raw)
+        target = root / "target.bin"
+        target.write_bytes(b"x" * 1024 * 1024)
+        link = root / "target-link"
+        link.symlink_to(target)
+        metric = measure_path("fixture", root)
+        if metric.symlink_count != 1:
+            failures.append("physical metric did not count the symlink itself")
+        if metric.logical_bytes >= 2 * target.stat().st_size:
+            failures.append("physical metric followed a symlink target into duplicate logical bytes")
+        sparse = root / "sparse.bin"
+        with sparse.open("wb") as handle:
+            handle.seek(8 * 1024 * 1024)
+            handle.write(b"x")
+        sparse_metric = measure_path("sparse", sparse)
+        sparse_stat = sparse.stat()
+        sparse_blocks = getattr(sparse_stat, "st_blocks", None)
+        expected_physical = int(sparse_blocks) * 512 if sparse_blocks is not None else sparse_stat.st_size
+        if sparse_metric.bytes != expected_physical:
+            failures.append("physical byte metric does not match filesystem allocated blocks")
+        if sparse_metric.logical_bytes != sparse_stat.st_size:
+            failures.append("logical byte metric does not match file length")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

@@ -22,10 +22,17 @@ from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
+from prism_provider_policy import (  # noqa: E402
+    active_dispatch_providers as policy_active_dispatch_providers,
+    all_known_policy_providers,
+    historical_read_compatibility as policy_historical_read_compatibility,
+)
+
 PRISM = ROOT / "bin" / "prism"
-KIMI_REVIEW_AGENT_FILE = ROOT / "provider-agents" / "kimi-review-agent.yaml"
-KIMI_EMPTY_SKILLS_DIR = ROOT / "skills" / "kimi-empty"
-ALLOWED_PROVIDERS = {"kimi", "claude-code"}
+ACTIVE_PROVIDERS = set(policy_active_dispatch_providers(REPO_ROOT))
+HISTORICAL_PROVIDERS = set(policy_historical_read_compatibility(REPO_ROOT))
+ALLOWED_PROVIDERS = all_known_policy_providers(REPO_ROOT)
 DEFAULT_TIMEOUT_SECONDS = 300
 DEFAULT_MAX_RETRIES = 5
 TIMEOUT_KILL_GRACE_SECONDS = 0.5
@@ -262,8 +269,6 @@ def verify_raw_meta(meta_path: pathlib.Path) -> tuple[bool, list[str], dict[str,
 
 
 def provider_cwd(argv: list[str]) -> str:
-    if argv and pathlib.Path(argv[0]).name == "kimi":
-        return tempfile.gettempdir()
     return str(REPO_ROOT)
 
 
@@ -283,9 +288,9 @@ def provider_env() -> dict[str, str]:
     return env
 
 
-def run(argv: list[str], *, timeout: float | None = None) -> subprocess.CompletedProcess[str]:
+def run(argv: list[str], *, timeout: float | None = None, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     if timeout is not None:
-        return run_with_hard_timeout(argv, timeout)
+        return run_with_hard_timeout(argv, timeout, input_text=input_text)
     return subprocess.run(
         argv,
         cwd=provider_cwd(argv),
@@ -293,6 +298,7 @@ def run(argv: list[str], *, timeout: float | None = None) -> subprocess.Complete
         check=False,
         capture_output=True,
         text=True,
+        input=input_text,
         timeout=timeout,
     )
 
@@ -335,11 +341,12 @@ def terminate_process_group(proc: subprocess.Popen[str], grace_seconds: float) -
             time.sleep(0.02)
 
 
-def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.CompletedProcess[str]:
+def run_with_hard_timeout(argv: list[str], timeout: float, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     proc = subprocess.Popen(
         argv,
         cwd=provider_cwd(argv),
         env=provider_env(),
+        stdin=subprocess.PIPE if input_text is not None else None,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -355,7 +362,7 @@ def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.Complet
         old_handlers[signum] = signal.getsignal(signum)
         signal.signal(signum, terminate_child_then_exit)
     try:
-        stdout, stderr = proc.communicate(timeout=timeout)
+        stdout, stderr = proc.communicate(input=input_text, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         terminate_process_group(proc, TIMEOUT_KILL_GRACE_SECONDS)
         try:
@@ -726,7 +733,16 @@ def apply_kimi_file_access(prompt: str, request: pathlib.Path, out_path: pathlib
 
 
 def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) -> tuple[str, dict[str, Any] | None]:
-    completed = run([
+    inline_request = True
+    if provider == "kimi":
+        payload = load_json(request)
+        if not isinstance(payload, dict):
+            raise SystemExit(f"request must be a JSON object: {request}")
+        # Kimi can fail with compaction errors when a large final review request is
+        # inlined. For bounded-read requests, keep the prompt small and provide a
+        # generated bundle instead of embedding the full JSON body.
+        inline_request = kimi_file_access_config(payload)["mode"] != "bounded-read"
+    cmd = [
         str(PRISM),
         "brief",
         "--provider",
@@ -735,8 +751,10 @@ def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) ->
         str(request),
         "--out",
         str(out_path),
-        "--inline-request",
-    ])
+    ]
+    if inline_request:
+        cmd.append("--inline-request")
+    completed = run(cmd)
     if completed.returncode != 0:
         raise SystemExit(completed.stderr or completed.stdout)
     prompt = out_path.read_text(encoding="utf-8")
@@ -764,21 +782,36 @@ def iter_json_objects(text: str) -> list[dict[str, Any]]:
     return objects
 
 
-def extract_review(raw_text: str, provider: str) -> dict[str, Any]:
+def source_path_matches_provider(source_path: pathlib.Path | None, provider: str) -> bool:
+    if source_path is None:
+        return True
+    name = source_path.name
+    return name == provider or name.startswith(f"{provider}.")
+
+
+def review_candidate_matches(obj: dict[str, Any], provider: str, source_path: pathlib.Path | None = None) -> bool:
+    required_without_provider = REQUIRED_REVIEW_KEYS - {"provider"}
+    if not required_without_provider.issubset(obj.keys()):
+        return False
+    provider_value = obj.get("provider")
+    if provider_value not in (None, "", provider):
+        return False
+    if provider_value in (None, "") and not source_path_matches_provider(source_path, provider):
+        return False
+    return obj.get("verdict") in {"pass", "concern", "block"}
+
+
+def extract_review(raw_text: str, provider: str, source_path: pathlib.Path | None = None) -> dict[str, Any]:
     for obj in iter_json_objects(raw_text):
-        if REQUIRED_REVIEW_KEYS.issubset(obj.keys()) and obj.get("provider") == provider:
-            if obj.get("verdict") not in {"pass", "concern", "block"}:
-                continue
-            return normalize_review(obj, provider)
+        if review_candidate_matches(obj, provider, source_path):
+            return normalize_review(obj, provider, source_path=source_path)
     for text in candidate_markdown_texts(raw_text):
         for obj in iter_json_objects(text):
-            if REQUIRED_REVIEW_KEYS.issubset(obj.keys()) and obj.get("provider") == provider:
-                if obj.get("verdict") not in {"pass", "concern", "block"}:
-                    continue
-                return normalize_review(obj, provider)
+            if review_candidate_matches(obj, provider, source_path):
+                return normalize_review(obj, provider, source_path=source_path)
         markdown_review = extract_markdown_review(text, provider)
         if markdown_review is not None:
-            return normalize_review(markdown_review, provider)
+            return normalize_review(markdown_review, provider, source_path=source_path)
     raise SystemExit(json.dumps({
         "ok": False,
         "stage": "extract-review",
@@ -787,24 +820,51 @@ def extract_review(raw_text: str, provider: str) -> dict[str, Any]:
     }, ensure_ascii=False))
 
 
-def normalize_review(review: dict[str, Any], provider: str) -> dict[str, Any]:
+def normalize_user_intent_alignment(value: Any) -> tuple[str, str | None]:
+    text = str(value or "").strip()
+    lowered = text.lower()
+    for allowed in ["aligned", "unclear", "drifting", "misaligned"]:
+        if lowered == allowed or re.match(rf"^{re.escape(allowed)}(?:[\s.:-]|$)", lowered):
+            return allowed, None
+    if "misaligned" in lowered:
+        return "misaligned", text or None
+    if "drifting" in lowered:
+        return "drifting", text or None
+    if "unclear" in lowered:
+        return "unclear", text or None
+    if re.search(r"\b(high|aligned)\b", lowered):
+        return "aligned", text or None
+    return "unclear", text or None
+
+
+def normalize_review(review: dict[str, Any], provider: str, source_path: pathlib.Path | None = None) -> dict[str, Any]:
     normalized = dict(review)
+    raw_provider = review.get("provider")
+    transforms: list[str] = []
     normalized["provider"] = provider
+    if raw_provider in (None, ""):
+        transforms.append("provider_injected_from_dispatch_source")
+    elif raw_provider != provider:
+        transforms.append("provider_overridden_from_dispatch_source")
     for key in ["top_risks", "missing_evidence"]:
         value = normalized.get(key)
         if isinstance(value, str):
             normalized[key] = [value] if value.strip() else []
+            transforms.append(f"{key}_string_to_list")
         elif isinstance(value, list):
             normalized[key] = [str(item) for item in value]
         else:
             normalized[key] = []
+            transforms.append(f"{key}_default_empty_list")
     anti_loop = normalized.get("anti_loop_signal")
     if not isinstance(anti_loop, dict):
         text = str(anti_loop or "").strip()
+        lowered = text.lower()
         normalized["anti_loop_signal"] = {
-            "present": bool(text),
+            "present": bool(text) and not re.search(r"\b(no|none|not)\b.{0,50}\b(anti[- ]?loop|loop signal|repeated loop)\b", lowered),
             "reason": text or "No anti-loop signal provided.",
         }
+        transforms.append("anti_loop_signal_text_to_object")
     else:
         anti_loop_reason = str(anti_loop.get("reason") or "No anti-loop signal provided.")
         anti_loop_present = bool(anti_loop.get("present"))
@@ -816,6 +876,21 @@ def normalize_review(review: dict[str, Any], provider: str) -> dict[str, Any]:
         }
     for key in ["reality_delta", "main_concern", "minimum_fix", "user_intent_alignment"]:
         normalized[key] = str(normalized.get(key) or "")
+    alignment, raw_alignment = normalize_user_intent_alignment(normalized.get("user_intent_alignment"))
+    if alignment != normalized.get("user_intent_alignment"):
+        transforms.append("user_intent_alignment_text_to_enum")
+    normalized["user_intent_alignment"] = alignment
+    if raw_alignment is not None:
+        normalized["user_intent_alignment_raw"] = raw_alignment
+    normalized["normalization"] = {
+        "source_path": str(source_path) if source_path is not None else None,
+        "source_path_provider_match": source_path_matches_provider(source_path, provider),
+        "expected_provider": provider,
+        "raw_provider": raw_provider,
+        "provider_injected": raw_provider in (None, ""),
+        "transforms": transforms,
+    }
+    normalized["raw_review_candidate"] = review
     return normalized
 
 
@@ -1126,19 +1201,7 @@ def assert_provider_command_safe(argv: list[str]) -> None:
     if "bypassPermissions" in argv:
         raise SystemExit("unsafe provider command: claude must not use bypassPermissions during Prism review")
     if argv and pathlib.Path(argv[0]).name == "kimi":
-        if "--plan" in argv:
-            raise SystemExit("unsafe provider command: kimi prompt mode cannot combine with plan mode")
-        if "-p" not in argv and "--prompt" not in argv:
-            raise SystemExit("unsafe provider command: kimi must run in non-interactive prompt mode during Prism review")
-        if "--skills-dir" not in argv or str(KIMI_EMPTY_SKILLS_DIR) not in argv:
-            raise SystemExit("unsafe provider command: kimi must use the Prism empty skills directory")
-        if "--output-format" not in argv or "stream-json" not in argv:
-            raise SystemExit("unsafe provider command: kimi must use stream-json output during Prism review")
-        for forbidden in ["--work-dir", "--agent-file", "--print", "--final-message-only", "--max-steps-per-turn", "-y", "--yolo", "--auto"]:
-            if forbidden in argv:
-                raise SystemExit(f"unsafe provider command: kimi must not use unsupported or unsafe option {forbidden}")
-        if str(REPO_ROOT) in argv:
-            raise SystemExit("unsafe provider command: kimi must not use the RedCap repo as work-dir during Prism review")
+        raise SystemExit("retired provider command: live Kimi dispatch is frozen")
     if argv and argv[0] == "claude":
         if "plan" not in argv:
             raise SystemExit("unsafe provider command: claude must run in plan permission mode during Prism review")
@@ -1148,21 +1211,15 @@ def assert_provider_command_safe(argv: list[str]) -> None:
             raise SystemExit("unsafe provider command: claude Prism review should rely on --tools '' instead of stale deny lists")
         if "--json-schema" not in argv:
             raise SystemExit("unsafe provider command: claude Prism review must request structured JSON output")
+        if "--input-format" not in argv or "text" not in argv:
+            raise SystemExit("unsafe provider command: claude Prism review must read large prompts through stdin text input")
 
 
 def provider_command(provider: str, handle: str | None, prompt: str, max_steps: int) -> tuple[list[str], str | None]:
     if provider == "kimi":
-        KIMI_EMPTY_SKILLS_DIR.mkdir(parents=True, exist_ok=True)
-        argv = [
-            "kimi",
-            "--skills-dir",
-            str(KIMI_EMPTY_SKILLS_DIR),
-        ]
-        if handle:
-            argv.extend(["--session", handle])
-        argv.extend(["-p", prompt, "--output-format", "stream-json"])
-        assert_provider_command_safe(argv)
-        return argv, handle
+        raise SystemExit(
+            "provider kimi is retired and historical-read-only; live dispatch requires claude-code"
+        )
     if provider == "claude-code":
         if handle:
             argv = [
@@ -1170,6 +1227,8 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
                 "--print",
                 "--output-format",
                 "json",
+                "--input-format",
+                "text",
                 "--permission-mode",
                 "plan",
                 "--tools",
@@ -1178,7 +1237,6 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
                 review_json_schema_arg(),
                 "--resume",
                 handle,
-                prompt,
             ]
             assert_provider_command_safe(argv)
             return argv, handle
@@ -1188,6 +1246,8 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
             "--print",
             "--output-format",
             "json",
+            "--input-format",
+            "text",
             "--permission-mode",
             "plan",
             "--tools",
@@ -1196,7 +1256,6 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
             review_json_schema_arg(),
             "--session-id",
             next_handle,
-            prompt,
         ]
         assert_provider_command_safe(argv)
         return argv, next_handle
@@ -1226,6 +1285,10 @@ def write_provider_timeout_raw(
 
 
 def update_session(manifest: pathlib.Path, provider: str, handle: str | None, review_path: pathlib.Path) -> None:
+    if provider not in ACTIVE_PROVIDERS:
+        raise SystemExit(
+            f"cannot update session for historical-read-only provider: {provider}"
+        )
     argv = [
         str(PRISM),
         "session-update",
@@ -1601,7 +1664,11 @@ def run_provider_command(
                 )
             effective_timeout = min(timeout_seconds, remaining)
         try:
-            completed = run(current_argv, timeout=effective_timeout)
+            completed = run(
+                current_argv,
+                timeout=effective_timeout,
+                input_text=prompt if provider == "claude-code" else None,
+            )
         except subprocess.TimeoutExpired as exc:
             stdout = output_text(exc.stdout)
             stderr = output_text(exc.stderr)
@@ -1646,6 +1713,8 @@ def run_provider_command(
                 "--print",
                 "--output-format",
                 "json",
+                "--input-format",
+                "text",
                 "--permission-mode",
                 "plan",
                 "--tools",
@@ -1654,7 +1723,6 @@ def run_provider_command(
                 review_json_schema_arg(),
                 "--session-id",
                 fallback_handle,
-                prompt,
             ]
             try:
                 fallback_timeout = timeout_seconds
@@ -1663,7 +1731,7 @@ def run_provider_command(
                     if remaining <= 0:
                         raise subprocess.TimeoutExpired(cmd=fallback_argv, timeout=0)
                     fallback_timeout = min(timeout_seconds, remaining)
-                completed = run(fallback_argv, timeout=fallback_timeout)
+                completed = run(fallback_argv, timeout=fallback_timeout, input_text=prompt)
             except subprocess.TimeoutExpired as exc:
                 stdout = output_text(exc.stdout)
                 stderr = output_text(exc.stderr)
@@ -1707,6 +1775,11 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     provider = args.provider
     if provider not in ALLOWED_PROVIDERS:
         raise SystemExit(f"excluded provider: {provider}")
+    if provider not in ACTIVE_PROVIDERS and not args.extract_from_raw:
+        raise SystemExit(
+            f"provider is historical-read-only and cannot be dispatched: {provider}; "
+            f"active providers are {sorted(ACTIVE_PROVIDERS)}"
+        )
     manifest = pathlib.Path(args.manifest).resolve()
     if not args.review_out:
         raise SystemExit("--review-out is required")
@@ -1715,21 +1788,25 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     brief_out = pathlib.Path(args.brief_out).resolve() if args.brief_out else review_out.with_suffix(".brief.md")
 
     if args.extract_from_raw:
-        raw_text = pathlib.Path(args.extract_from_raw).resolve().read_text(encoding="utf-8")
+        extract_path = pathlib.Path(args.extract_from_raw).resolve()
+        raw_text = extract_path.read_text(encoding="utf-8")
         record = provider_record(manifest, provider)
         handle = record.get("session_handle") if isinstance(record.get("session_handle"), str) else None
-        review = extract_review(raw_text, provider)
+        review = extract_review(raw_text, provider, source_path=extract_path)
         review_out.parent.mkdir(parents=True, exist_ok=True)
         review_out.write_text(json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         next_handle = extract_provider_handle(raw_text, provider, handle)
-        update_session(manifest, provider, next_handle, review_out)
+        manifest_updated = provider in ACTIVE_PROVIDERS
+        if manifest_updated:
+            update_session(manifest, provider, next_handle, review_out)
         print(json.dumps({
             "ok": True,
             "provider": provider,
             "review_path": str(review_out),
-            "raw_path": str(pathlib.Path(args.extract_from_raw).resolve()),
+            "raw_path": str(extract_path),
             "session_handle": next_handle,
             "extract_from_raw": True,
+            "manifest_updated": manifest_updated,
         }, ensure_ascii=False, indent=2))
         print("PRISM_DISPATCH_EXTRACT_OK")
         return 0
@@ -1820,10 +1897,6 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     )
     if completed.returncode != 0:
         captured_handle = None
-        if provider == "kimi":
-            captured_handle = extract_kimi_handle(completed.stdout + "\n" + completed.stderr, handle)
-            if captured_handle and captured_handle != handle:
-                update_session_handle(manifest, provider, captured_handle)
         raise SystemExit(json.dumps({
             "ok": False,
             "stage": "provider-call",
@@ -1833,20 +1906,10 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "raw_path": str(raw_out),
         }, ensure_ascii=False))
 
-    review = extract_review(completed.stdout + "\n" + completed.stderr, provider)
+    review = extract_review(completed.stdout + "\n" + completed.stderr, provider, source_path=raw_out)
     review_out.parent.mkdir(parents=True, exist_ok=True)
     review_out.write_text(json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     next_handle = command_handle or planned_handle
-    if provider == "kimi":
-        next_handle = extract_kimi_handle(completed.stdout + "\n" + completed.stderr, command_handle or handle)
-        if not next_handle:
-            raise SystemExit(json.dumps({
-                "ok": False,
-                "stage": "session-handle",
-                "provider": provider,
-                "reason": "Kimi review succeeded but no resume handle was captured",
-                "raw_path": str(raw_out),
-            }, ensure_ascii=False))
     update_session(manifest, provider, next_handle, review_out)
     print(json.dumps({
         "ok": True,
@@ -1870,7 +1933,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "changed_reality": ["self-check fixture"],
             "review_mode": "implementation_review",
             "risk_level": "low",
-            "requested_providers": ["kimi", "claude-code"],
+            "requested_providers": ["claude-code"],
         }, ensure_ascii=False), encoding="utf-8")
         manifest_dir = tmp / "run"
         init = run([str(PRISM), "session-init", "--task-id", "dispatcher-self-check", "--run-dir", str(manifest_dir)])
@@ -1881,13 +1944,13 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         first = run([
             *self_cmd,
             "--provider",
-            "kimi",
+            "claude-code",
             "--manifest",
             str(manifest),
             "--request",
             str(request),
             "--review-out",
-            str(tmp / "kimi.review.json"),
+            str(tmp / "claude-code.review.json"),
             "--dry-run",
         ])
         run([
@@ -1896,14 +1959,14 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "--manifest",
             str(manifest),
             "--provider",
-            "kimi",
+            "claude-code",
             "--round-count",
             "1",
         ])
         blocked = run([
             *self_cmd,
             "--provider",
-            "kimi",
+            "claude-code",
             "--manifest",
             str(manifest),
             "--request",
@@ -1912,103 +1975,80 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             str(tmp / "blocked.review.json"),
             "--dry-run",
         ])
-        file_request = tmp / "file-request.json"
-        file_request.write_text(json.dumps({
-            "task": "dispatcher bounded file access self-check",
-            "user_intent": "verify Kimi can receive bounded file evidence",
-            "main_claim": "Kimi may read only the generated file bundle when explicitly authorized",
-            "changed_reality": ["bounded file bundle fixture"],
-            "review_mode": "implementation_review",
-            "risk_level": "low",
-            "requested_providers": ["kimi"],
-            "file_access": {
-                "mode": "bounded-read",
-                "allowed_paths": [
-                    "runtime/prism/prompts/kimi-prism-review.md",
-                    "runtime/prism/skills/kimi-empty"
-                ],
-                "max_files": 2,
-                "max_directory_entries": 5,
-                "max_bytes_per_file": 4096,
-                "max_total_bytes": 4096,
-                "purpose": "dispatcher self-check fixture"
-            },
+        fake_bin = tmp / "fake-bin"
+        fake_bin.mkdir()
+        retired_marker = tmp / "retired-kimi-invoked.txt"
+        fake_kimi = fake_bin / "kimi"
+        fake_kimi.write_text(
+            "#!/bin/sh\nprintf 'invoked' > " + repr(str(retired_marker)) + "\nexit 99\n",
+            encoding="utf-8",
+        )
+        fake_kimi.chmod(0o755)
+        retired_env = os.environ.copy()
+        retired_env["PATH"] = str(fake_bin) + os.pathsep + retired_env.get("PATH", "")
+        retired_dispatch = subprocess.run(
+            [
+                *self_cmd,
+                "--provider",
+                "kimi",
+                "--manifest",
+                str(manifest),
+                "--request",
+                str(request),
+                "--review-out",
+                str(tmp / "retired-kimi.review.json"),
+            ],
+            cwd=str(REPO_ROOT),
+            env=retired_env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        retired_session_update = run([
+            str(PRISM),
+            "session-update",
+            "--manifest",
+            str(manifest),
+            "--provider",
+            "kimi",
+            "--provider-status",
+            "active",
+        ])
+        historical_manifest = tmp / "historical-session.json"
+        historical_payload = load_json(manifest)
+        historical_payload["providers"]["kimi"] = {
+            "session_handle": "session_historical-read-only",
+            "round_count": 1,
+            "status": "converged",
+            "last_review": "historical-kimi.review.json",
+        }
+        write_json_file(historical_manifest, historical_payload)
+        historical_raw = tmp / "kimi.historical.raw.json"
+        historical_raw.write_text(json.dumps({
+            "provider": "kimi",
+            "verdict": "pass",
+            "confidence": "high",
+            "reality_delta": "Historical evidence remains readable without restoring live dispatch.",
+            "main_concern": "No live provider process is involved in this bounded extraction fixture.",
+            "top_risks": [],
+            "missing_evidence": [],
+            "minimum_fix": "Keep historical extraction read-only and outside current provider quotas.",
+            "anti_loop_signal": {"present": False, "reason": "No repeated loop signal was detected."},
+            "user_intent_alignment": "aligned",
         }, ensure_ascii=False), encoding="utf-8")
-        file_manifest_dir = tmp / "file-run"
-        file_init = run([str(PRISM), "session-init", "--task-id", "dispatcher-file-access-self-check", "--run-dir", str(file_manifest_dir)])
-        file_manifest = file_manifest_dir / "session.json"
-        file_access_dry_run = run([
+        historical_manifest_before = historical_manifest.read_bytes()
+        historical_extract = run([
             *self_cmd,
             "--provider",
             "kimi",
             "--manifest",
-            str(file_manifest),
-            "--request",
-            str(file_request),
+            str(historical_manifest),
+            "--extract-from-raw",
+            str(historical_raw),
             "--review-out",
-            str(tmp / "file.review.json"),
-            "--dry-run",
+            str(tmp / "historical-kimi.review.json"),
         ])
-        bad_file_request = tmp / "bad-file-request.json"
-        bad_file_request.write_text(json.dumps({
-            "task": "dispatcher bounded file access rejection self-check",
-            "user_intent": "verify Kimi file access rejects paths outside the repository",
-            "main_claim": "Kimi file access must reject path traversal",
-            "changed_reality": ["bounded file bundle rejection fixture"],
-            "review_mode": "implementation_review",
-            "risk_level": "low",
-            "requested_providers": ["kimi"],
-            "file_access": {
-                "mode": "bounded-read",
-                "allowed_paths": ["../outside-redcap-secret.txt"],
-            },
-        }, ensure_ascii=False), encoding="utf-8")
-        bad_file_manifest_dir = tmp / "bad-file-run"
-        bad_file_init = run([str(PRISM), "session-init", "--task-id", "dispatcher-bad-file-access-self-check", "--run-dir", str(bad_file_manifest_dir)])
-        bad_file_access = run([
-            *self_cmd,
-            "--provider",
-            "kimi",
-            "--manifest",
-            str(bad_file_manifest_dir / "session.json"),
-            "--request",
-            str(bad_file_request),
-            "--review-out",
-            str(tmp / "bad-file.review.json"),
-            "--dry-run",
-        ])
-        truncation_request = tmp / "truncation-request.json"
-        truncation_request.write_text(json.dumps({
-            "task": "dispatcher bounded file truncation self-check",
-            "user_intent": "verify Kimi file access records budget truncation",
-            "main_claim": "Kimi file bundle must record content truncation when the byte budget is exhausted",
-            "changed_reality": ["bounded file bundle truncation fixture"],
-            "review_mode": "implementation_review",
-            "risk_level": "low",
-            "requested_providers": ["kimi"],
-            "file_access": {
-                "mode": "bounded-read",
-                "allowed_paths": ["runtime/prism/bin/prism-dispatch"],
-                "max_files": 1,
-                "max_bytes_per_file": 1024,
-                "max_total_bytes": 1024,
-                "purpose": "dispatcher truncation self-check fixture"
-            },
-        }, ensure_ascii=False), encoding="utf-8")
-        truncation_manifest_dir = tmp / "truncation-run"
-        truncation_init = run([str(PRISM), "session-init", "--task-id", "dispatcher-truncation-self-check", "--run-dir", str(truncation_manifest_dir)])
-        truncation_dry_run = run([
-            *self_cmd,
-            "--provider",
-            "kimi",
-            "--manifest",
-            str(truncation_manifest_dir / "session.json"),
-            "--request",
-            str(truncation_request),
-            "--review-out",
-            str(tmp / "truncation.review.json"),
-            "--dry-run",
-        ])
+        historical_manifest_after = historical_manifest.read_bytes()
         nested = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"pass\",\"confidence\":\"high\",\"reality_delta\":\"Implementation evidence is consistent with the request.\",\"main_concern\":\"No blocking concern remains for this bounded review.\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"No further fix is required for this bounded pass.\",\"anti_loop_signal\":{\"present\":false,\"reason\":\"No repeated loop signal was detected.\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
         kimi_text_part_review = extract_review(
             "TextPart(type='text', text="
@@ -2023,6 +2063,37 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     )""",
             "kimi",
         )
+        kimi_stream_markdown_review = extract_review(
+            json.dumps({
+                "role": "assistant",
+                "content": (
+                    "```json\n"
+                    "{\n"
+                    '  "verdict": "pass",\n'
+                    '  "confidence": "medium",\n'
+                    '  "reality_delta": "The external project, role artifacts, browser checks, and boundary disclosures were materially generated.",\n'
+                    '  "main_concern": "The verification chain remains same-host and must stay scoped as an engineering trial.",\n'
+                    '  "top_risks": ["Same-host evidence could be overclaimed."],\n'
+                    '  "missing_evidence": ["Cross-machine validation is not present."],\n'
+                    '  "minimum_fix": "Keep completion scoped to engineering-trial evidence and copy boundary disclosures.",\n'
+                    '  "anti_loop_signal": "No repeated loop signal was detected.",\n'
+                    '  "user_intent_alignment": "High for the stated engineering-trial intent; low if later presented as external certification."\n'
+                    "}\n"
+                    "```"
+                ),
+            }, ensure_ascii=False),
+            "kimi",
+            source_path=tmp / "kimi.raw.json",
+        )
+        kimi_subtle_loop_review = extract_review(json.dumps({"content": "```json\n{\"verdict\":\"concern\",\"confidence\":\"medium\",\"reality_delta\":\"The implementation changed the dispatcher behavior.\",\"main_concern\":\"A repeated verification loop may still be hidden by normalization.\",\"top_risks\":[\"Loop concern may be softened.\"],\"missing_evidence\":[],\"minimum_fix\":\"Keep this concern blocking until a concrete counterexample passes.\",\"anti_loop_signal\":\"A subtle loop concern may still be present in this path.\",\"user_intent_alignment\":\"unclear\"}\n```"}), "kimi", source_path=tmp / "kimi.raw.json")
+        kimi_absent_loop_review = extract_review(json.dumps({"content": "```json\n{\"verdict\":\"pass\",\"confidence\":\"medium\",\"reality_delta\":\"The dispatcher parsed the provider output.\",\"main_concern\":\"No blocking concern remains for this bounded extraction path.\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"No further fix is required for this bounded pass.\",\"anti_loop_signal\":\"No anti-loop concern is present in this provider output.\",\"user_intent_alignment\":\"aligned\"}\n```"}), "kimi", source_path=tmp / "kimi.raw.json")
+        kimi_ambiguous_loop_review = extract_review(json.dumps({"content": "```json\n{\"verdict\":\"concern\",\"confidence\":\"medium\",\"reality_delta\":\"The dispatcher parsed the provider output but loop evidence is inconclusive.\",\"main_concern\":\"Loop evidence is inconclusive and should remain conservative.\",\"top_risks\":[\"Ambiguous loop evidence could be underreported.\"],\"missing_evidence\":[],\"minimum_fix\":\"Treat ambiguous loop wording as present until proven absent.\",\"anti_loop_signal\":\"Loop evidence is inconclusive in this provider output.\",\"user_intent_alignment\":\"unclear\"}\n```"}), "kimi", source_path=tmp / "kimi.raw.json")
+        kimi_drifting_alignment_review = extract_review(json.dumps({"content": "```json\n{\"verdict\":\"concern\",\"confidence\":\"medium\",\"reality_delta\":\"The dispatcher changed the output shape.\",\"main_concern\":\"The implementation is polite but drifting from the user's no-downgrade requirement.\",\"top_risks\":[\"A warning could be rounded up.\"],\"missing_evidence\":[],\"minimum_fix\":\"Do not treat this review as aligned.\",\"anti_loop_signal\":{\"present\":false,\"reason\":\"No repeated loop signal was detected.\"},\"user_intent_alignment\":\"Polite wording, but drifting from the user's original requirement.\"}\n```"}), "kimi", source_path=tmp / "kimi.raw.json")
+        missing_provider_bad_source_rejected = False
+        try:
+            extract_review(json.dumps({"content": "```json\n{\"verdict\":\"pass\",\"confidence\":\"medium\",\"reality_delta\":\"The dispatcher parsed a review.\",\"main_concern\":\"This review has no provider and a mismatched raw source.\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"Reject this source attribution.\",\"anti_loop_signal\":{\"present\":false,\"reason\":\"No repeated loop signal was detected.\"},\"user_intent_alignment\":\"aligned\"}\n```"}), "kimi", source_path=tmp / "unknown.raw.json")
+        except SystemExit:
+            missing_provider_bad_source_rejected = True
         contradictory_anti_loop = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"concern\",\"confidence\":\"high\",\"reality_delta\":\"The evidence still has a meaningful concern.\",\"main_concern\":\"The review reports a concern that requires response.\",\"top_risks\":[\"A repeated loop may still be hidden.\"],\"missing_evidence\":[\"Need a concrete follow-up check.\"],\"minimum_fix\":\"Resolve the concern with a concrete follow-up check.\",\"anti_loop_signal\":{\"present\":true,\"reason\":\"Present: false. No loop signal.\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
         retry_fixture = tmp / "timeout_then_success.py"
         retry_counter = tmp / "retry-count.txt"
@@ -2035,7 +2106,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 "value = int(counter.read_text() or '0') if counter.exists() else 0",
                 "value += 1",
                 "counter.write_text(str(value))",
-                "print(f'To resume this session: kimi -r {handle}', flush=True)",
                 "if value <= 2:",
                 "    time.sleep(2)",
                 "print('retry-ok')",
@@ -2049,10 +2119,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             return [sys.executable, str(retry_fixture)], current_handle
 
         retry_completed, retry_attempts, _ = run_provider_command(
-            "kimi",
+            "claude-code",
             [sys.executable, str(retry_fixture)],
             "",
-            None,
+            retry_handle,
             None,
             1,
             0.75,
@@ -2069,7 +2139,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 f"handle = {retry_handle!r}",
                 "value = int(counter.read_text() or '0') if counter.exists() else 0",
                 "counter.write_text(str(value + 1))",
-                "print(f'To resume this session: kimi -r {handle}', flush=True)",
                 "time.sleep(2)",
             ]) + "\n",
             encoding="utf-8",
@@ -2078,10 +2147,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         timeout_payload: dict[str, Any] = {}
         try:
             run_provider_command(
-                "kimi",
+                "claude-code",
                 [sys.executable, str(exhausted_fixture)],
                 "",
-                None,
+                retry_handle,
                 None,
                 1,
                 0.2,
@@ -2098,7 +2167,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 [sys.executable, str(exhausted_fixture)],
                 exc,
                 2,
-                "kimi",
+                "claude-code",
             )
         stubborn_fixture = tmp / "stubborn_child_timeout.py"
         stubborn_child_pid = tmp / "stubborn-child.pid"
@@ -2114,7 +2183,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 "    'import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); print(\"child-started\", flush=True); time.sleep(999)',",
                 "])",
                 "pid_path.write_text(str(child.pid))",
-                "print(f'To resume this session: kimi -r {handle}', flush=True)",
                 "child.wait()",
             ]) + "\n",
             encoding="utf-8",
@@ -2125,10 +2193,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         try:
             stubborn_start = time.monotonic()
             run_provider_command(
-                "kimi",
+                "claude-code",
                 [sys.executable, str(stubborn_fixture)],
                 "",
-                None,
+                retry_handle,
                 None,
                 1,
                 0.2,
@@ -2146,7 +2214,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 [sys.executable, str(stubborn_fixture)],
                 exc,
                 0,
-                "kimi",
+                "claude-code",
             )
             time.sleep(0.2)
             if stubborn_child_pid.exists():
@@ -2231,7 +2299,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 "### Minimum Fix",
                 "x",
             ]),
-            "kimi",
+            "claude-code",
         )
         lowercase_split_bold_review = extract_review(
             "\n".join([
@@ -2251,7 +2319,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         defaults = build_parser().parse_args([
             "--provider",
-            "kimi",
+            "claude-code",
             "--manifest",
             str(manifest),
             "--request",
@@ -2276,10 +2344,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         task_total_attempts: list[dict[str, Any]] = []
         try:
             run_provider_command(
-                "kimi",
+                "claude-code",
                 [sys.executable, str(task_total_fixture)],
                 "",
-                None,
+                retry_handle,
                 None,
                 1,
                 5.0,
@@ -2298,7 +2366,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 [sys.executable, str(task_total_fixture)],
                 exc,
                 0,
-                "kimi",
+                "claude-code",
                 task_total_budget,
             )
         task_total_report = run([
@@ -2312,63 +2380,46 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("first dry-run dispatch did not pass")
         if blocked.returncode == 0:
             failures.append("follow-up without session handle was not blocked")
-        if file_init.returncode != 0:
-            failures.append("file access self-check manifest init failed")
-        if file_access_dry_run.returncode != 0 or "PRISM_DISPATCH_DRY_RUN_OK" not in file_access_dry_run.stdout:
-            failures.append("bounded file access dry-run did not pass")
-        else:
-            file_access_objects = iter_json_objects(file_access_dry_run.stdout)
-            file_access_result = file_access_objects[0] if file_access_objects else {}
-            file_access_meta = file_access_result.get("file_access") if isinstance(file_access_result, dict) else None
-            bundle_path_value = file_access_meta.get("bundle_path") if isinstance(file_access_meta, dict) else None
-            if not isinstance(bundle_path_value, str) or not bundle_path_value:
-                failures.append("bounded file access dry-run did not report a bundle path")
-            else:
-                bundle_path = pathlib.Path(bundle_path_value)
-                if not bundle_path.is_file():
-                    failures.append("bounded file access bundle file was not created")
-                else:
-                    bundle = load_json(bundle_path)
-                    if bundle.get("schema_id") != KIMI_FILE_BUNDLE_SCHEMA_ID:
-                        failures.append("bounded file access bundle schema_id invalid")
-                    if bundle.get("mode") != "bounded-read":
-                        failures.append("bounded file access bundle mode invalid")
-                    entries = bundle.get("entries")
-                    if not isinstance(entries, list) or len(entries) != 2:
-                        failures.append("bounded file access bundle did not preserve both authorized paths")
-                    elif not any(entry.get("kind") == "directory" for entry in entries if isinstance(entry, dict)):
-                        failures.append("bounded file access bundle did not include directory listing support")
-                    if isinstance(file_access_meta, dict) and file_access_meta.get("bundle_sha256") != sha256_file(bundle_path):
-                        failures.append("bounded file access dry-run bundle sha256 mismatch")
-        if bad_file_init.returncode != 0:
-            failures.append("bad file access self-check manifest init failed")
-        if bad_file_access.returncode == 0:
-            failures.append("bounded file access accepted a path outside the RedCap repo")
-        if truncation_init.returncode != 0:
-            failures.append("truncation self-check manifest init failed")
-        if truncation_dry_run.returncode != 0 or "PRISM_DISPATCH_DRY_RUN_OK" not in truncation_dry_run.stdout:
-            failures.append("bounded file access truncation dry-run did not pass")
-        else:
-            truncation_objects = iter_json_objects(truncation_dry_run.stdout)
-            truncation_result = truncation_objects[0] if truncation_objects else {}
-            truncation_meta = truncation_result.get("file_access") if isinstance(truncation_result, dict) else None
-            truncation_bundle_path = truncation_meta.get("bundle_path") if isinstance(truncation_meta, dict) else None
-            if not isinstance(truncation_bundle_path, str) or not truncation_bundle_path:
-                failures.append("bounded file access truncation dry-run did not report a bundle path")
-            else:
-                truncation_bundle = load_json(pathlib.Path(truncation_bundle_path))
-                truncation_entries = truncation_bundle.get("entries")
-                first_truncation_entry = truncation_entries[0] if isinstance(truncation_entries, list) and truncation_entries else {}
-                if not isinstance(first_truncation_entry, dict) or first_truncation_entry.get("content_truncated") is not True:
-                    failures.append("bounded file access truncation fixture did not record content_truncated=true")
-                if isinstance(first_truncation_entry, dict) and first_truncation_entry.get("bytes_included") != 1024:
-                    failures.append("bounded file access truncation fixture did not respect the 1024 byte budget")
+        if retired_dispatch.returncode == 0:
+            failures.append("retired Kimi dispatch was not rejected")
+        if "historical-read-only" not in (retired_dispatch.stdout + retired_dispatch.stderr):
+            failures.append("retired Kimi dispatch did not expose the historical-read-only boundary")
+        if retired_marker.exists():
+            failures.append("retired Kimi executable was invoked by an active dispatch path")
+        if retired_session_update.returncode == 0:
+            failures.append("session-update accepted historical-read-only Kimi mutation")
+        if historical_extract.returncode != 0 or "PRISM_DISPATCH_EXTRACT_OK" not in historical_extract.stdout:
+            failures.append("historical Kimi evidence was not readable through the extraction-only path")
+        if '"manifest_updated": false' not in historical_extract.stdout:
+            failures.append("historical Kimi extraction did not declare its read-only manifest boundary")
+        if historical_manifest_before != historical_manifest_after:
+            failures.append("historical Kimi extraction mutated the session manifest")
         if nested.get("provider") != "kimi":
             failures.append("nested review extraction failed")
         if kimi_text_part_review.get("provider") != "kimi" or kimi_text_part_review.get("verdict") != "pass":
             failures.append("Kimi TextPart JSON review extraction failed")
         if kimi_wrapped_text_part_review.get("confidence") != "high":
             failures.append("Kimi wrapped TextPart JSON repair failed")
+        if kimi_stream_markdown_review.get("provider") != "kimi" or kimi_stream_markdown_review.get("user_intent_alignment") != "aligned":
+            failures.append("Kimi stream-json markdown review normalization failed")
+        if kimi_stream_markdown_review.get("anti_loop_signal", {}).get("present") is not False:
+            failures.append("Kimi stream-json anti-loop string normalization failed")
+        if "user_intent_alignment_raw" not in kimi_stream_markdown_review:
+            failures.append("Kimi stream-json alignment raw text was not preserved")
+        if kimi_stream_markdown_review.get("normalization", {}).get("provider_injected") is not True:
+            failures.append("Kimi stream-json provider injection was not recorded")
+        if not isinstance(kimi_stream_markdown_review.get("raw_review_candidate"), dict):
+            failures.append("Kimi stream-json raw review candidate was not retained")
+        if kimi_subtle_loop_review.get("anti_loop_signal", {}).get("present") is not True:
+            failures.append("subtle loop concern was normalized away")
+        if kimi_absent_loop_review.get("anti_loop_signal", {}).get("present") is not False:
+            failures.append("absent loop signal was not normalized to false")
+        if kimi_ambiguous_loop_review.get("anti_loop_signal", {}).get("present") is not True:
+            failures.append("ambiguous loop signal should remain conservative")
+        if kimi_drifting_alignment_review.get("user_intent_alignment") != "drifting":
+            failures.append("drifting alignment text was rounded up incorrectly")
+        if not missing_provider_bad_source_rejected:
+            failures.append("missing-provider review with mismatched raw source was accepted")
         if contradictory_anti_loop.get("anti_loop_signal", {}).get("present") is not False:
             failures.append("contradictory anti-loop JSON normalization failed")
         if defaults.timeout_seconds != DEFAULT_TIMEOUT_SECONDS:
@@ -2419,7 +2470,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         total_deadline_fixture.write_text(
             "\n".join([
                 "import time",
-                "print('To resume this session: kimi -r 22222222-2222-4222-8222-222222222222', flush=True)",
                 "time.sleep(2)",
             ]) + "\n",
             encoding="utf-8",
@@ -2429,10 +2479,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         try:
             total_deadline_start = time.monotonic()
             run_provider_command(
-                "kimi",
+                "claude-code",
                 [sys.executable, str(total_deadline_fixture)],
                 "",
-                None,
+                "22222222-2222-4222-8222-222222222222",
                 None,
                 1,
                 2.0,
@@ -2457,15 +2507,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         mark_session_expired(manifest, "claude-code", "33333333-3333-4333-8333-333333333333", "self-check expired provider")
         expired_manifest = load_json(manifest)
         expired_provider = expired_manifest.get("providers", {}).get("claude-code", {})
-        kimi_after_expire = expired_manifest.get("providers", {}).get("kimi", {})
         if expired_provider.get("status") != "expired":
             failures.append("mark_session_expired did not persist provider expired status")
         if expired_provider.get("session_handle") != "33333333-3333-4333-8333-333333333333":
             failures.append("mark_session_expired did not persist captured provider handle")
-        if kimi_after_expire.get("round_count") != 1:
-            failures.append("mark_session_expired should not alter the other provider round count")
-        if kimi_after_expire.get("status") != "pending":
-            failures.append("mark_session_expired should not expire unrelated providers")
         if expired_manifest.get("convergence", {}).get("state") != "unresolved":
             failures.append("mark_session_expired should keep convergence unresolved")
         if markdown_review.get("provider") != "claude-code":
@@ -2484,23 +2529,12 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("split bold verdict/confidence extraction failed")
         if lowercase_split_bold_review.get("verdict") != "concern" or lowercase_split_bold_review.get("confidence") != "medium":
             failures.append("lowercase split bold verdict/confidence extraction failed")
-        kim_safe_argv, _ = provider_command("kimi", None, "safe-check", 1)
-        if "--plan" in kim_safe_argv:
-            failures.append("kimi provider command still uses plan mode, which cannot combine with prompt mode")
-        if "--skills-dir" not in kim_safe_argv or str(KIMI_EMPTY_SKILLS_DIR) not in kim_safe_argv:
-            failures.append("kimi provider command is missing the empty skills directory")
-        if "-p" not in kim_safe_argv and "--prompt" not in kim_safe_argv:
-            failures.append("kimi provider command is missing non-interactive prompt mode")
-        if "--output-format" not in kim_safe_argv or "stream-json" not in kim_safe_argv:
-            failures.append("kimi provider command is missing stream-json output mode")
-        for forbidden in ["--work-dir", "--agent-file", "--print", "--final-message-only", "--max-steps-per-turn", "-y", "--yolo", "--auto"]:
-            if forbidden in kim_safe_argv:
-                failures.append(f"kimi provider command still uses unsupported or unsafe option {forbidden}")
-        if str(REPO_ROOT) in kim_safe_argv:
-            failures.append("kimi provider command still uses RedCap repo as work-dir")
-        kim_resume_argv, kim_resume_handle = provider_command("kimi", "session_11111111-1111-4111-8111-111111111111", "safe-check", 1)
-        if "--session" not in kim_resume_argv or kim_resume_handle != "session_11111111-1111-4111-8111-111111111111":
-            failures.append("kimi provider command is missing session resume support")
+        try:
+            provider_command("kimi", None, "safe-check", 1)
+            failures.append("retired Kimi provider still exposes a live command")
+        except SystemExit as exc:
+            if "historical-read-only" not in str(exc):
+                failures.append("retired Kimi provider did not report the historical-read-only boundary")
         stream_resume = extract_kimi_handle(
             '{"role":"meta","type":"session.resume_hint","session_id":"session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","command":"kimi -r session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","content":"To resume this session: kimi -r session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}',
             None,
@@ -2519,8 +2553,6 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         if fake_resume is not None:
             failures.append("Kimi handle extraction accepted a fake session from code text")
-        if provider_cwd(kim_safe_argv) == str(REPO_ROOT):
-            failures.append("kimi provider command should run outside the RedCap repo cwd")
         claude_safe_argv, _ = provider_command("claude-code", None, "safe-check", 1)
         if "--bare" in claude_safe_argv:
             failures.append("claude provider command should not use bare mode because it conflicts with current reasoning settings")
@@ -2534,6 +2566,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("claude provider command should not use stale disallowed tools")
         if "--json-schema" not in claude_safe_argv:
             failures.append("claude provider command is missing JSON schema output guard")
+        if "--input-format" not in claude_safe_argv or "text" not in claude_safe_argv:
+            failures.append("claude provider command must read Prism prompt through stdin text input")
+        if "safe-check" in claude_safe_argv:
+            failures.append("claude provider command must not pass Prism prompt as an argv element")
         try:
             assert_provider_command_safe([
                 "kimi",
@@ -2549,7 +2585,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             assert_provider_command_safe([
                 "kimi",
                 "--skills-dir",
-                str(KIMI_EMPTY_SKILLS_DIR),
+                "/retired/kimi-skills",
                 "--plan",
                 "-p",
                 "x",
@@ -2561,7 +2597,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             assert_provider_command_safe([
                 "kimi",
                 "--skills-dir",
-                str(KIMI_EMPTY_SKILLS_DIR),
+                "/retired/kimi-skills",
                 "--output-format",
                 "stream-json",
                 "--plan",
@@ -2575,7 +2611,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             assert_provider_command_safe([
                 "kimi",
                 "--skills-dir",
-                str(KIMI_EMPTY_SKILLS_DIR),
+                "/retired/kimi-skills",
                 "--output-format",
                 "stream-json",
                 "--auto",
@@ -2679,7 +2715,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--failure-report", action="store_true")
     parser.add_argument("--timeout-policy-check", action="store_true")
     parser.add_argument("--evidence-run-dir")
-    parser.add_argument("--providers", default="kimi,claude-code")
+    parser.add_argument("--providers", default=",".join(sorted(ACTIVE_PROVIDERS)))
     parser.add_argument("--max-age-hours", type=float)
     parser.add_argument("--provider", choices=sorted(ALLOWED_PROVIDERS))
     parser.add_argument("--manifest")

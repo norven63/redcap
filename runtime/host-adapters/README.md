@@ -1,6 +1,6 @@
 # Host Adapters Layer
 
-Purpose: thin bridges from Codex, Claude Code, Kimi, or other approved hosts
+Purpose: thin bridges from Codex, Claude Code, or other explicitly approved hosts
 into RedCap-owned commands.
 
 Belongs here:
@@ -28,7 +28,8 @@ Current adapters:
   correction constraints so hook feedback does not become a new reply topic.
 - `host-hook-audit.py`: verifies the deployed Codex hook surface and the
   provider-call interception boundary. Provider calls are intercepted at the
-  RedCap Prism dispatcher layer for Kimi and Claude Code.
+  RedCap Prism dispatcher layer. Claude Code is the only active provider; Kimi
+  historical evidence is read-only.
 
 The current audit deliberately records unsupported host events such as
 `PermissionRequest`, `PreCompact`, and `PostCompact` instead of pretending they

@@ -1,0 +1,48 @@
+{
+  "schema_id": "redcap-prism-provider-policy",
+  "schema_version": 1,
+  "status": "active",
+  "live_dispatch_frozen": true,
+  "frozen_at": "2026-07-18",
+  "mode": "single-provider-strong-review",
+  "required_providers": [
+    "claude-code"
+  ],
+  "active_dispatch_providers": [
+    "claude-code"
+  ],
+  "historical_read_compatibility": [
+    "kimi"
+  ],
+  "claims": {
+    "heterogeneous_redteam_equivalent": false,
+    "multi_provider_consensus_allowed": false,
+    "allowed_current_claim": "Claude Code 已完成外部评审，Cap 已完成独立且有证据的仲裁。"
+  },
+  "concern_resolution": {
+    "same_provider_pass_closes_prior_concern": false,
+    "cap_resolution_required": true,
+    "required_trace_fields": [
+      "task_id",
+      "provider_review_refs",
+      "decision",
+      "rationale",
+      "source_code_refs",
+      "contract_refs",
+      "test_run_refs",
+      "norven_decision_ref"
+    ],
+    "minimum_independent_evidence": {
+      "source_code_refs": 1,
+      "contract_refs": 1,
+      "test_run_refs": 1
+    }
+  },
+  "runtime_rules": [
+    "Current Gate, Loom, revival loop, complete E2E, OL-11 and release checks must not invoke, wait for or count Kimi.",
+    "No current command builder, fallback, retry or health check may launch the Kimi executable.",
+    "Historical Kimi raw, metadata, review and fixture files may be parsed read-only.",
+    "Policy load or validation failure is fatal; callers must not fall back to local provider defaults."
+  ],
+  "user_decision_ref": "2026-07-17 and 2026-07-18 user directives: 放弃KIMI，只用Claude Code；立即冻结所有 Kimi 调度"
+}

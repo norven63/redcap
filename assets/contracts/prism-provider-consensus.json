@@ -1,61 +1,65 @@
 {
   "schema_id": "redcap-prism-provider-consensus-contract",
   "rsp": "RSP-23",
-  "title": "Prism（棱镜，异构 AI 评审助手）多评审方一致性与差异处理合同",
+  "title": "Claude Code 单评审方来源校验与 Cap 处置合同",
   "status": "runtime-gated",
-  "scope": "固化 Kimi（棱镜评审方之一）与 Claude Code（棱镜评审方之一）的合并、差异回应、同评审方反驳与 Cap 仲裁边界。",
-  "allowed_providers": [
-    "kimi",
+  "scope": "当前运行只要求 Claude Code；验证评审来源、最严格结论和 Cap 证据化处置。历史双提供方合并仅作为只读兼容回归。",
+  "provider_policy": "assets/contracts/prism-provider-policy.json",
+  "active_providers": [
     "claude-code"
   ],
+  "historical_read_compatibility": [
+    "kimi"
+  ],
   "required_dimensions": [
-    "两名评审方必须独立给出结构化 verdict（结论等级）",
-    "合并结果必须保留最严格 verdict，不能平均化差异",
-    "concern（疑虑）或 block（阻断）必须进入回应流程",
-    "接纳疑虑必须绑定实现证据和验证证据",
-    "拒绝疑虑必须先生成同评审方反驳请求，并拿到同评审方 pass（通过）",
-    "无法解决的差异必须升级为人工或主控仲裁，不得静默通过"
+    "当前评审方必须独立给出结构化 verdict",
+    "评审 raw 与 raw.meta 必须通过 provider、hash、exit、timeout 和 review_path 校验",
+    "concern 或 block 必须进入 Cap 证据化处置",
+    "同一 Claude 后续 pass 不得自动抹除先前 concern 或 block",
+    "Cap 处置必须引用源码、合同、测试运行和 Norven 决策",
+    "历史 Kimi 证据只读兼容且不得增加当前评审配额"
   ],
   "positive_acceptance": [
     {
-      "id": "merge-concern-keeps-strictest",
-      "description": "Kimi 返回 concern、Claude Code 返回 pass 时，合并结果必须是 concern，且 must_respond=true。"
+      "id": "single-claude-concern-requires-resolution",
+      "description": "单份 Claude concern 必须得到 must_respond=true。"
     },
     {
-      "id": "merge-pass-does-not-force-response",
-      "description": "两名评审方都 pass 时，合并结果必须是 pass，且 must_respond=false。"
+      "id": "single-claude-pass-does-not-force-response",
+      "description": "单份 Claude pass 可得到 must_respond=false。"
     },
     {
-      "id": "resolution-self-check",
-      "description": "既有 prism-resolution（棱镜疑虑处理检查器）正反例必须通过。"
+      "id": "cap-resolution-trace",
+      "description": "Cap 处置必须包含源码、合同、测试和用户决策引用。"
     },
     {
-      "id": "same-provider-rebuttal",
-      "description": "拒绝某个评审方疑虑前，必须生成该评审方自己的 rebuttal request（反驳复核请求）。"
+      "id": "historical-merge-compatibility",
+      "description": "旧双提供方夹具仍能验证最严格 verdict，但不计入当前配额。"
     },
     {
-      "id": "actual-provider-disagreement-trace",
-      "description": "真实 Kimi 与 Claude Code 评审输出必须能生成差异轨迹，明确 must_respond=true 且拒绝静默通过。"
+      "id": "actual-provider-provenance-trace",
+      "description": "真实 Claude review 必须由匹配的 raw.meta 和内容哈希证明来源。"
     }
   ],
   "negative_probes": [
     {
-      "id": "accept-without-verification-fails",
-      "description": "接纳疑虑但没有验证证据必须失败。"
+      "id": "cap-trace-missing-test-ref-fails",
+      "description": "Cap 处置缺少测试运行引用必须失败。"
     },
     {
-      "id": "reject-without-followup-fails",
-      "description": "拒绝疑虑但没有同评审方反驳记录必须失败。"
+      "id": "tampered-raw-fails",
+      "description": "raw 内容被篡改后来源校验必须失败。"
     },
     {
-      "id": "reject-while-followup-still-concern-fails",
-      "description": "同评审方反驳后仍 concern/block 时，拒绝必须失败。"
+      "id": "historical-kimi-does-not-satisfy-current-quota",
+      "description": "仅有 Kimi 历史证据不能满足当前 Claude 配额。"
     }
   ],
   "forbidden_completion_claims": [
     "RedCap 完整复活",
     "RedCap 已可发布生产",
-    "所有残留问题已解决"
+    "所有残留问题已解决",
+    "Claude 单评审等价于多家族 redteam"
   ],
   "evidence_output": ".redcap/evidence/rsp/rsp-23-prism-provider-consensus.json"
 }

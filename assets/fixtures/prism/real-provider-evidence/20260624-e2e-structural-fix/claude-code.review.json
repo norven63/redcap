@@ -1,0 +1,54 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The review request describes a planned fix for E2E structural concerns, but no implementation diff exists yet. This is a design review of intentions, not an audit of completed work. The main claim draws a sharp line between 'the fix will improve things' and 'no capability is downgraded,' but the current codebase's actual behaviour around completion-marker-preview and placeholder detection is the ground truth needed to judge whether the planned changes are minimally sufficient.",
+  "main_concern": "The planned fix's 'boundary-attestation shape summary' replacing deferred_payload_shape storage introduces a new intermediate artifact type without a clear specification of what fields are preserved vs. dropped. If the attestation omits a field that a downstream consumer (or later Prism review) implicitly depends on, the fix introduces a silent regression that existing tests may not catch because the preview was previously self-referential.",
+  "top_risks": [
+    "Removing full marker_payload from preview may hide completion-marker build failures until final Prism, making late-stage failures harder to diagnose—especially if build failures are intermittent or environment-specific.",
+    "The 3:1 evidence-to-deliverable ratio check is arbitrary; a 4:1 ratio does not inherently mean bloat, and a 2:1 ratio does not guarantee quality. A fixed threshold risks becoming either a rubber-stamp or a perpetual warning that trains reviewers to ignore it.",
+    "Placeholder substring tightening is described as 'Chinese substrings remain substring checks, English tokens require full-field equality'—this split by language risks inconsistent behaviour when mixed-language strings appear in evidence or when the same conceptual pattern is expressed in both languages."
+  ],
+  "missing_evidence": [
+    "No current code diff or branch reference showing what files would change and how deep the edits go. A design review without a concrete diff can only assess intent, not implementation risk.",
+    "No specification of what fields the 'boundary-attestation shape summary' includes or excludes relative to the current marker_payload, making it impossible to assess whether downstream consumers will break.",
+    "No test plan or test case list showing how the new placeholder detection rules will be verified across Chinese, English, and mixed-language inputs."
+  ],
+  "minimum_fix": "Before implementing, produce a concrete field-level diff of the boundary-attestation shape summary vs. the current completion-marker-preview payload, listing every field that is kept, dropped, or transformed. Run the existing E2E suite against this spec to identify which tests would need updating, and document any test assertions that previously relied on preview payload completeness. Add at least two mixed-language placeholder test cases to the detection suite. Make the evidence proportionality ratio configurable rather than hardcoding 3:1.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "The review request does not show self-referential loops in the proposed fix itself. The concern about loops is a pre-existing E2E design characteristic that the fix acknowledges and partially addresses."
+  },
+  "user_intent_alignment": "aligned",
+  "normalization": {
+    "source_path": "claude-code.raw.txt",
+    "source_path_provider_match": true,
+    "expected_provider": "claude-code",
+    "raw_provider": "claude-code",
+    "provider_injected": false,
+    "transforms": []
+  },
+  "raw_review_candidate": {
+    "provider": "claude-code",
+    "verdict": "concern",
+    "confidence": "medium",
+    "reality_delta": "The review request describes a planned fix for E2E structural concerns, but no implementation diff exists yet. This is a design review of intentions, not an audit of completed work. The main claim draws a sharp line between 'the fix will improve things' and 'no capability is downgraded,' but the current codebase's actual behaviour around completion-marker-preview and placeholder detection is the ground truth needed to judge whether the planned changes are minimally sufficient.",
+    "main_concern": "The planned fix's 'boundary-attestation shape summary' replacing deferred_payload_shape storage introduces a new intermediate artifact type without a clear specification of what fields are preserved vs. dropped. If the attestation omits a field that a downstream consumer (or later Prism review) implicitly depends on, the fix introduces a silent regression that existing tests may not catch because the preview was previously self-referential.",
+    "top_risks": [
+      "Removing full marker_payload from preview may hide completion-marker build failures until final Prism, making late-stage failures harder to diagnose—especially if build failures are intermittent or environment-specific.",
+      "The 3:1 evidence-to-deliverable ratio check is arbitrary; a 4:1 ratio does not inherently mean bloat, and a 2:1 ratio does not guarantee quality. A fixed threshold risks becoming either a rubber-stamp or a perpetual warning that trains reviewers to ignore it.",
+      "Placeholder substring tightening is described as 'Chinese substrings remain substring checks, English tokens require full-field equality'—this split by language risks inconsistent behaviour when mixed-language strings appear in evidence or when the same conceptual pattern is expressed in both languages."
+    ],
+    "missing_evidence": [
+      "No current code diff or branch reference showing what files would change and how deep the edits go. A design review without a concrete diff can only assess intent, not implementation risk.",
+      "No specification of what fields the 'boundary-attestation shape summary' includes or excludes relative to the current marker_payload, making it impossible to assess whether downstream consumers will break.",
+      "No test plan or test case list showing how the new placeholder detection rules will be verified across Chinese, English, and mixed-language inputs."
+    ],
+    "minimum_fix": "Before implementing, produce a concrete field-level diff of the boundary-attestation shape summary vs. the current completion-marker-preview payload, listing every field that is kept, dropped, or transformed. Run the existing E2E suite against this spec to identify which tests would need updating, and document any test assertions that previously relied on preview payload completeness. Add at least two mixed-language placeholder test cases to the detection suite. Make the evidence proportionality ratio configurable rather than hardcoding 3:1.",
+    "anti_loop_signal": {
+      "present": false,
+      "reason": "The review request does not show self-referential loops in the proposed fix itself. The concern about loops is a pre-existing E2E design characteristic that the fix acknowledges and partially addresses."
+    },
+    "user_intent_alignment": "aligned"
+  }
+}

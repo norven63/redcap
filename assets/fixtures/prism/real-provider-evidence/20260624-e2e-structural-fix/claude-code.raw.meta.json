@@ -1,0 +1,30 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "captured_session_handle": null,
+      "exit_code": 0,
+      "recovery": null,
+      "stderr_bytes": 0,
+      "stdout_bytes": 7115,
+      "timed_out": false,
+      "timeout_scope": null
+    }
+  ],
+  "attempts_count": 1,
+  "exit_code": 0,
+  "max_retries": 1,
+  "provider": "claude-code",
+  "raw_kind": "provider-output",
+  "raw_path": "claude-code.raw.txt",
+  "raw_sha256": "930b3c1b1bed358d3595c014e85e887344bd87c2e0453e0323d38d9a1fac141a",
+  "raw_size_bytes": 17766,
+  "review_path": "claude-code.review.json",
+  "schema_id": "prism-provider-raw-metadata",
+  "task_elapsed_timeout_seconds": null,
+  "task_remaining_timeout_seconds": null,
+  "task_total_timeout_seconds": null,
+  "timed_out": false,
+  "timeout_seconds": 240.0,
+  "total_timeout_seconds": 300.0
+}

@@ -45,6 +45,7 @@ machine policy is deliberately updated.
 | `assets/docs/` | Doctrine, revival map, architecture explanations |
 | `assets/knowledge/` | Reviewed reusable knowledge and private wiki entries |
 | `assets/evidence/` | Evidence boundary notice and ignore policy; live runtime evidence belongs in project `.redcap/evidence/` |
+| `assets/fixtures/` | Portable deterministic fixtures for contract checks and installed-package self-checks; not live runtime evidence |
 | `assets/archaeology/` | Source maps and exact-path extraction from old RedCap |
 
 ## Placement Rules
@@ -65,6 +66,8 @@ machine policy is deliberately updated.
 - Put reusable knowledge in `assets/knowledge/`; keep raw old material in
   `assets/archaeology/` by exact reference only.
 - Put live runtime proof in the active project `.redcap/evidence/` or a temporary external run directory; do not use source-tree evidence as task state.
+- Put portable deterministic check fixtures in `assets/fixtures/`; do not place
+  mutable task evidence there.
 - Put first-read explanation in `assets/docs/`; do not let docs become
   authority over executable contracts.
 - Do not put executable or source-like implementation files under `assets/`;

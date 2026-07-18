@@ -33,6 +33,6 @@ Not currently claimed:
 
 - Events not exposed as verified project hooks in this workspace:
   `PermissionRequest`, `PreCompact`, and `PostCompact`.
-- Complete cross-host hook parity. Kimi and Claude Code provider calls are
-  controlled through the Prism dispatcher instead of through provider-native
-  lifecycle hooks.
+- Complete cross-host hook parity. Claude Code provider calls are controlled
+  through the Prism dispatcher instead of provider-native lifecycle hooks;
+  live Kimi dispatch is frozen.

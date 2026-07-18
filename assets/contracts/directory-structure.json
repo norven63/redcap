@@ -37,6 +37,7 @@
       "contracts",
       "docs",
       "evidence",
+      "fixtures",
       "knowledge",
       "manifests",
       "visuals"
@@ -63,6 +64,8 @@
     "assets/docs/directory-architecture.md",
     "assets/evidence/README.md",
     "assets/evidence/.gitignore",
+    "assets/fixtures/README.md",
+    "assets/fixtures/prism/README.md",
     "assets/knowledge/README.md",
     "assets/knowledge/entries/README.md",
     "assets/visuals/README.md",
@@ -109,6 +112,12 @@
         "assets/manifests"
       ],
       "reason": "Non-executable inventories and manifests for bounded workspace migrations."
+    },
+    "test_fixture_assets": {
+      "paths": [
+        "assets/fixtures"
+      ],
+      "reason": "Portable deterministic fixtures used by contract checks and installed-package self-checks; not live runtime evidence or mutable task state."
     },
     "human_visualization_assets": {
       "paths": [
@@ -182,6 +191,17 @@
         ".md",
         ".patch",
         ".tmp",
+        ".txt"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/fixtures",
+      "role": "test_fixture_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json",
+        ".md",
         ".txt"
       ],
       "deny_executable_bits": true
