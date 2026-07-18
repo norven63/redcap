@@ -1,7 +1,4 @@
 {
-  "schema_id": "redcap-knowledge-quality",
-  "version": 1,
-  "index_path": "assets/knowledge/index.json",
   "default_missing_policy": "review_required",
   "entries": {
     "directory-architecture": {
@@ -86,6 +83,22 @@
       "usage_policy": "direct_driver",
       "valid_until": "2026-09-21"
     },
+    "provider-retirement-read-only-boundary": {
+      "applicability": "当前 Prism 只允许 Claude Code 实时调度；Kimi 仅保留历史证据只读兼容。提供方退役必须同时约束命令构造、会话更新、配额计算和负向进程哨兵。",
+      "confidence": "high",
+      "expiry_condition": "活跃评审方集合、历史兼容边界、会话清单 schema 或退役负向探针变化时必须重新复核。",
+      "index_path": "assets/knowledge/entries/provider-retirement-read-only-boundary.md",
+      "index_route": "active-local-index",
+      "reviewed_at": "2026-07-18",
+      "source_refs": [
+        "assets/knowledge/entries/provider-retirement-read-only-boundary.md",
+        "assets/contracts/prism-provider-policy.json",
+        "runtime/prism/docs/prism-provider-policy.md"
+      ],
+      "status": "active",
+      "usage_policy": "direct_driver",
+      "valid_until": "2026-10-16"
+    },
     "raw-evidence-access-boundary": {
       "applicability": "原始证据、归档包、清理和发布边界。",
       "confidence": "medium",
@@ -129,17 +142,22 @@
       "valid_until": "2026-09-21"
     },
     "rsp-03-provider-health": {
-      "applicability": "Kimi、Claude Code 和其他评审方调用路径、超时、续接和失败分类。",
+      "applicability": "仅保留为旧多提供方健康分类历史参考；不得用于启动、恢复、等待或统计 Kimi 实时调用。通用失败分类需在当前 Claude-only provider policy 下重新解释。",
       "confidence": "medium",
-      "expiry_condition": "评审方 CLI 路径、参数、会话输出格式或超时策略变更时必须重新复核。",
+      "conflict_resolution": "assets/contracts/prism-provider-policy.json 和 provider-retirement-read-only-boundary 已取代其中所有 Kimi 实时调度含义；旧条目只能解释历史证据。",
+      "conflicts_with": [
+        "provider-retirement-read-only-boundary"
+      ],
+      "expiry_condition": "若未来经 Norven 明确决策重新启用多提供方实时调度，必须重新设计并评审，不得直接恢复本条目。",
       "index_path": "assets/knowledge/entries/rsp-03-provider-health.md",
       "index_route": "active-local-index",
-      "reviewed_at": "2026-06-21",
+      "reviewed_at": "2026-07-18",
       "source_refs": [
-        "assets/knowledge/entries/rsp-03-provider-health.md"
+        "assets/knowledge/entries/rsp-03-provider-health.md",
+        "assets/contracts/prism-provider-policy.json"
       ],
-      "status": "active",
-      "usage_policy": "direct_driver",
+      "status": "deprecated",
+      "usage_policy": "blocked",
       "valid_until": "2026-09-21"
     },
     "rsp-21-advisory-stop-health": {
@@ -193,7 +211,8 @@
       "reviewed_at": "2026-06-21",
       "source_refs": [
         "assets/knowledge/entries/rsp-residual-batch-mutation-cross-check.md",
-        "assets/evidence/prism/20260621-rsp-09-13-14-17-18-22-residual-batch/resolution-round3.json"
+        "runtime/core/residual_batch.py",
+        "assets/contracts/prism-provider-consensus.json"
       ],
       "status": "active",
       "usage_policy": "direct_driver",
@@ -227,5 +246,8 @@
       "usage_policy": "direct_driver",
       "valid_until": "2026-09-21"
     }
-  }
+  },
+  "index_path": "assets/knowledge/index.json",
+  "schema_id": "redcap-knowledge-quality",
+  "version": 1
 }

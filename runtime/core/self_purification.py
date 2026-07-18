@@ -10,14 +10,19 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
 from typing import Any
 
 import knowledge_gateway
+import knowledge_quality
 
 
 REPO_ROOT = pathlib.Path(os.environ.get("REDCAP_REPO_ROOT", pathlib.Path(__file__).resolve().parents[2])).resolve()
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "prism" / "lib"))
+from prism_lock import file_lock as bounded_file_lock  # noqa: E402
+
 DEFAULT_CONTRACT = REPO_ROOT / "assets" / "contracts" / "self-purification.json"
 DEFAULT_LOOP_CONTRACT = REPO_ROOT / "assets" / "contracts" / "self-purification-loop.json"
 DEFAULT_LOOP_EVIDENCE = REPO_ROOT / ".redcap" / "evidence" / "rsp" / "rsp-07-self-purification-loop.json"
@@ -142,6 +147,58 @@ def knowledge_paths(knowledge_root: pathlib.Path) -> tuple[pathlib.Path, pathlib
     return knowledge_root / "assets" / "knowledge" / "index.json", knowledge_root / "assets" / "knowledge" / "entries"
 
 
+def load_or_initialize_knowledge_quality(knowledge_root: pathlib.Path) -> tuple[pathlib.Path, dict[str, Any]]:
+    path = knowledge_root / "assets" / "knowledge" / "quality.json"
+    if path.exists():
+        payload = knowledge_gateway.load_json(path)
+    else:
+        payload = {
+            "schema_id": "redcap-knowledge-quality",
+            "version": 1,
+            "index_path": "assets/knowledge/index.json",
+            "default_missing_policy": "review_required",
+            "entries": {},
+        }
+    if payload.get("schema_id") != "redcap-knowledge-quality":
+        raise SystemExit(f"知识质量元数据 schema_id 无效：{path}")
+    if payload.get("index_path") != "assets/knowledge/index.json":
+        raise SystemExit(f"知识质量元数据 index_path 无效：{path}")
+    entries = payload.get("entries")
+    if not isinstance(entries, dict):
+        raise SystemExit(f"知识质量元数据 entries 必须是对象：{path}")
+    return path, payload
+
+
+def promoted_quality_record(entry: dict[str, Any], summary: str, now: str) -> dict[str, Any]:
+    reviewed_at = dt.date.fromisoformat(now[:10])
+    return {
+        "applicability": summary,
+        "confidence": "medium",
+        "expiry_condition": "相关合同、实现边界或验收方式变化时必须重新复核。",
+        "index_path": entry["path"],
+        "index_route": entry["route"],
+        "reviewed_at": reviewed_at.isoformat(),
+        "source_refs": [entry["path"]],
+        "status": "active",
+        "usage_policy": "review_required",
+        "valid_until": (reviewed_at + dt.timedelta(days=90)).isoformat(),
+    }
+
+
+def knowledge_entry_content(title: str, body: str) -> str:
+    return f"# {title}\n\n{body.rstrip()}"
+
+
+def render_knowledge_entry(title: str, body: str, reviewer: str, reason: str, now: str) -> str:
+    return (
+        f"{knowledge_entry_content(title, body)}\n\n"
+        "## Review\n\n"
+        f"- reviewer: {reviewer}\n"
+        f"- reviewed_at: {now}\n"
+        f"- reason: {reason}\n"
+    )
+
+
 def load_knowledge_index(knowledge_root: pathlib.Path) -> dict[str, Any]:
     old_root = knowledge_gateway.REPO_ROOT
     knowledge_gateway.REPO_ROOT = knowledge_root
@@ -160,12 +217,23 @@ def search_knowledge(knowledge_root: pathlib.Path, query: str) -> list[dict[str,
     old_root = knowledge_gateway.REPO_ROOT
     knowledge_gateway.REPO_ROOT = knowledge_root
     try:
-        return knowledge_gateway.search_entries(load_knowledge_index(knowledge_root), query)
+        matches = knowledge_gateway.search_entries(load_knowledge_index(knowledge_root), query)
+        quality_path = knowledge_root / "assets" / "knowledge" / "quality.json"
+        # Missing quality metadata intentionally blocks every knowledge entry,
+        # not only retired providers. Direct-driver behavior resumes only after
+        # the quality file is restored and validated.
+        quality = knowledge_gateway.load_json(quality_path) if quality_path.exists() else None
+        enriched_matches: list[dict[str, Any]] = []
+        for match in matches:
+            enriched = dict(match)
+            enriched["quality"] = knowledge_quality.quality_decision_for_entry(enriched, quality)
+            enriched_matches.append(enriched)
+        return enriched_matches
     finally:
         knowledge_gateway.REPO_ROOT = old_root
 
 
-def promote_public_knowledge(
+def _promote_public_knowledge_unlocked(
     *,
     knowledge_root: pathlib.Path,
     entry_id: str,
@@ -185,12 +253,42 @@ def promote_public_knowledge(
     try:
         index_path, entries_dir = knowledge_paths(knowledge_root)
         index = load_knowledge_index(knowledge_root)
-        if knowledge_gateway.index_has_id(index, entry_id):
+        quality_path, quality = load_or_initialize_knowledge_quality(knowledge_root)
+        existing_entry = next(
+            (item for item in index["entries"] if isinstance(item, dict) and item.get("id") == entry_id),
+            None,
+        )
+        if existing_entry is not None:
+            if (
+                existing_entry.get("title") != title
+                or existing_entry.get("summary") != summary
+                or existing_entry.get("tags") != tags
+            ):
+                raise SystemExit(f"知识条目 ID 冲突，不能覆盖既有内容：{entry_id}")
+            existing_path = knowledge_root / str(existing_entry.get("path") or "")
+            if not existing_path.is_file():
+                raise SystemExit(f"已索引知识条目正文不存在：{existing_path}")
+            existing_body = existing_path.read_text(encoding="utf-8")
+            # The Review marker is part of the append-only knowledge entry
+            # schema. Template changes require an explicit migration instead of
+            # silently certifying content under a new interpretation.
+            existing_content, separator, _ = existing_body.partition("\n\n## Review\n\n")
+            if not separator or existing_content != knowledge_entry_content(title, body):
+                raise SystemExit(f"已索引知识条目正文与本次候选不一致：{existing_path}")
+            quality_entries = quality["entries"]
+            quality_backfilled = entry_id not in quality_entries
+            if quality_backfilled:
+                quality_entries[entry_id] = promoted_quality_record(existing_entry, summary, iso_now())
+                write_json(quality_path, quality)
             return {
                 "ok": True,
                 "skipped": True,
-                "reason": "knowledge entry already exists",
+                "reason": "knowledge entry already exists; missing quality metadata was backfilled"
+                if quality_backfilled
+                else "knowledge entry and quality metadata already exist",
                 "entry_id": entry_id,
+                "quality_backfilled": quality_backfilled,
+                "quality": evidence_rel(quality_path, knowledge_root),
             }
         draft_path = evidence_root / "knowledge-draft.json"
         review_path = evidence_root / "knowledge-review.json"
@@ -217,17 +315,9 @@ def promote_public_knowledge(
             "draft_path": evidence_rel(draft_path, knowledge_root),
             "draft": draft,
         }
-        entry_body = (
-            f"# {title}\n\n"
-            f"{body.rstrip()}\n\n"
-            "## Review\n\n"
-            f"- reviewer: {reviewer}\n"
-            f"- reviewed_at: {now}\n"
-            f"- reason: {reason}\n"
-        )
+        entry_body = render_knowledge_entry(title, body, reviewer, reason, now)
         write_json(draft_path, draft)
         write_json(review_path, review)
-        write_text(body_path, entry_body)
         entry = {
             "id": entry_id,
             "title": title,
@@ -238,6 +328,11 @@ def promote_public_knowledge(
             "tags": tags,
             "summary": summary,
         }
+        quality["entries"][entry_id] = promoted_quality_record(entry, summary, now)
+        # Publish body and quality before the index so readers never observe an
+        # indexed entry without the metadata required by the quality gate.
+        write_text(body_path, entry_body)
+        write_json(quality_path, quality)
         index["entries"].append(entry)
         write_json(index_path, index)
         final_failures = knowledge_gateway.validate_index(index)
@@ -249,9 +344,39 @@ def promote_public_knowledge(
             "entry": entry,
             "draft": evidence_rel(draft_path, knowledge_root),
             "review": evidence_rel(review_path, knowledge_root),
+            "quality": evidence_rel(quality_path, knowledge_root),
         }
     finally:
         knowledge_gateway.REPO_ROOT = old_root
+
+
+def promote_public_knowledge(
+    *,
+    knowledge_root: pathlib.Path,
+    entry_id: str,
+    title: str,
+    summary: str,
+    tags: list[str],
+    body: str,
+    source_path: str,
+    reviewer: str,
+    reason: str,
+    evidence_root: pathlib.Path,
+) -> dict[str, Any]:
+    lock_target = knowledge_root / ".redcap" / "state" / "knowledge-promotion"
+    with bounded_file_lock(lock_target, attempts=200, delay=0.05):
+        return _promote_public_knowledge_unlocked(
+            knowledge_root=knowledge_root,
+            entry_id=entry_id,
+            title=title,
+            summary=summary,
+            tags=tags,
+            body=body,
+            source_path=source_path,
+            reviewer=reviewer,
+            reason=reason,
+            evidence_root=evidence_root,
+        )
 
 
 def candidate_lesson(lesson: str, privacy_class: str) -> tuple[str, dict[str, Any]]:
@@ -284,17 +409,35 @@ def run_loop(
     evidence_root.mkdir(parents=True, exist_ok=True)
     now = iso_now()
     matches = search_knowledge(knowledge_root, query)
+    direct_matches = [
+        match for match in matches
+        if isinstance(match.get("quality"), dict)
+        and match["quality"].get("direct_driver_allowed") is True
+    ]
+    if direct_matches:
+        result_handling = "use_relevant_entry"
+        adopted_entries = [direct_matches[0]["id"]]
+        task_decision_effects = [f"采用知识条目 {direct_matches[0]['id']} 作为本任务约束"]
+        no_relevant_entry_reason = None
+    elif matches:
+        result_handling = "record_skip_reason"
+        adopted_entries = []
+        task_decision_effects = []
+        no_relevant_entry_reason = "知识库存在相关命中，但质量策略不允许直接驱动；本轮只记录候选而不采用。"
+    else:
+        result_handling = "record_no_relevant_entry"
+        adopted_entries = []
+        task_decision_effects = []
+        no_relevant_entry_reason = "知识库没有命中；任务后必须评估是否产生新候选。"
     retrieval = {
         "schema_id": RETRIEVAL_SCHEMA_ID,
         "task_summary": task_summary,
         "query": query,
         "matches": matches,
-        "result_handling": "use_relevant_entry" if matches else "record_no_relevant_entry",
-        "adopted_entries": [matches[0]["id"]] if matches else [],
-        "task_decision_effects": [
-            f"采用知识条目 {matches[0]['id']} 作为本任务约束"
-        ] if matches else [],
-        "no_relevant_entry_reason": None if matches else "知识库没有命中；任务后必须评估是否产生新候选。",
+        "result_handling": result_handling,
+        "adopted_entries": adopted_entries,
+        "task_decision_effects": task_decision_effects,
+        "no_relevant_entry_reason": no_relevant_entry_reason,
         "recorded_at": now,
     }
     retrieval_path = evidence_root / "knowledge-retrieval-evidence.json"
@@ -603,6 +746,8 @@ def validate_run_loop_outputs(result: dict[str, Any]) -> list[str]:
             failures.append("retrieval result_handling is invalid")
         if handling == "use_relevant_entry" and not retrieval.get("task_decision_effects"):
             failures.append("retrieval with relevant entry must record task_decision_effects")
+        if handling == "record_skip_reason" and not retrieval.get("no_relevant_entry_reason"):
+            failures.append("retrieval with non-driving matches must record a skip reason")
     if candidates_path.exists():
         candidates = load_json(candidates_path)
         candidate_items = candidates.get("candidates")
@@ -903,12 +1048,26 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 "- release blocker linkage remains until evidence retention is resolved",
             ]),
         )
+        write_text(
+            entries / "blocked-self-purification-reference.md",
+            "# Self Purification Legacy Provider\n\n旧提供方知识只允许历史参考，不得直接驱动任务。\n",
+        )
         write_json(knowledge_root / "assets" / "knowledge" / "index.json", {
             "schema_id": "redcap-knowledge-index",
             "version": 1,
             "default_read": "index-only",
             "raw_archive_default": "forbidden",
             "entries": [
+                {
+                    "id": "blocked-self-purification-reference",
+                    "title": "Self Purification Legacy Provider",
+                    "route": "active-local-index",
+                    "path": "assets/knowledge/entries/blocked-self-purification-reference.md",
+                    "first_read": "assets/knowledge/entries/blocked-self-purification-reference.md",
+                    "body_read_rule": "index-first",
+                    "tags": ["self-purification", "provider", "legacy"],
+                    "summary": "旧提供方自我净化知识只允许历史参考。",
+                },
                 {
                     "id": "seed",
                     "title": "Seed",
@@ -931,6 +1090,51 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 },
             ],
         })
+        reviewed_at = dt.datetime.now(dt.timezone.utc).date()
+        write_json(knowledge_root / "assets" / "knowledge" / "quality.json", {
+            "schema_id": "redcap-knowledge-quality",
+            "version": 1,
+            "index_path": "assets/knowledge/index.json",
+            "default_missing_policy": "review_required",
+            "entries": {
+                "blocked-self-purification-reference": {
+                    "applicability": "旧提供方历史知识负向回归。",
+                    "confidence": "medium",
+                    "expiry_condition": "提供方政策变化时重新复核。",
+                    "index_path": "assets/knowledge/entries/blocked-self-purification-reference.md",
+                    "index_route": "active-local-index",
+                    "reviewed_at": reviewed_at.isoformat(),
+                    "source_refs": ["assets/knowledge/entries/blocked-self-purification-reference.md"],
+                    "status": "deprecated",
+                    "usage_policy": "blocked",
+                    "valid_until": (reviewed_at + dt.timedelta(days=90)).isoformat(),
+                },
+                "seed": {
+                    "applicability": "自我净化任务前检索与决策影响回归。",
+                    "confidence": "medium",
+                    "expiry_condition": "自我净化检索协议变化时重新复核。",
+                    "index_path": "assets/knowledge/entries/seed.md",
+                    "index_route": "active-local-index",
+                    "reviewed_at": reviewed_at.isoformat(),
+                    "source_refs": ["assets/knowledge/entries/seed.md"],
+                    "status": "active",
+                    "usage_policy": "direct_driver",
+                    "valid_until": (reviewed_at + dt.timedelta(days=90)).isoformat(),
+                },
+                "raw-evidence-access-boundary": {
+                    "applicability": "原始证据边界回归。",
+                    "confidence": "medium",
+                    "expiry_condition": "证据保留合同变化时重新复核。",
+                    "index_path": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+                    "index_route": "active-local-index",
+                    "reviewed_at": reviewed_at.isoformat(),
+                    "source_refs": ["assets/knowledge/entries/raw-evidence-access-boundary.md"],
+                    "status": "active",
+                    "usage_policy": "review_required",
+                    "valid_until": (reviewed_at + dt.timedelta(days=90)).isoformat(),
+                },
+            },
+        })
         result = run_loop(
             task_summary="验证自我净化运行闭环",
             evidence_root=tmp / "evidence",
@@ -948,9 +1152,353 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         if result.get("ok") is not True:
             failures.append("run-loop 没有返回成功")
+        initial_retrieval = load_json(pathlib.Path(str(result.get("retrieval") or "")))
+        if initial_retrieval.get("adopted_entries") != ["seed"]:
+            failures.append(f"任务前检索没有只采用质量允许直接驱动的 seed：{initial_retrieval.get('adopted_entries')}")
+        blocked_match = next(
+            (
+                item for item in initial_retrieval.get("matches", [])
+                if isinstance(item, dict) and item.get("id") == "blocked-self-purification-reference"
+            ),
+            None,
+        )
+        if (
+            not isinstance(blocked_match, dict)
+            or not isinstance(blocked_match.get("quality"), dict)
+            or blocked_match["quality"].get("direct_driver_allowed") is not False
+        ):
+            failures.append("被废弃的旧提供方知识没有保持可见但禁止直接驱动")
+
+        quality_path = knowledge_root / "assets" / "knowledge" / "quality.json"
+        quality_backup = load_json(quality_path)
+        quality_path.unlink()
+        missing_quality_result = run_loop(
+            task_summary="验证质量文件缺失时失败关闭",
+            evidence_root=tmp / "missing-quality-evidence",
+            knowledge_root=knowledge_root,
+            query="self-purification",
+            trigger="workflow_drift",
+            lesson="质量文件缺失时不能采用任何知识。",
+            decision="no_promote",
+            candidate_id="missing-quality-fail-closed",
+            privacy_class="public",
+            proposed_destination="assets/knowledge/entries",
+            promote_title="Missing Quality Fail Closed",
+            promote_summary="质量文件缺失时禁止知识直接驱动。",
+            promote_tags=["self-purification", "quality", "negative-test"],
+        )
+        missing_quality_retrieval = load_json(pathlib.Path(missing_quality_result["retrieval"]))
+        if (
+            missing_quality_retrieval.get("result_handling") != "record_skip_reason"
+            or missing_quality_retrieval.get("adopted_entries")
+            or any(
+                not isinstance(item, dict)
+                or not isinstance(item.get("quality"), dict)
+                or item["quality"].get("quality_status") != "missing_quality"
+                for item in missing_quality_retrieval.get("matches", [])
+            )
+        ):
+            failures.append("质量文件缺失时没有对全部命中执行失败关闭")
+        write_json(quality_path, quality_backup)
+
+        write_text(quality_path, "{ malformed quality json")
+        try:
+            search_knowledge(knowledge_root, "self-purification")
+        except SystemExit as exc:
+            error_text = str(exc).casefold()
+            if "invalid" not in error_text or "quality.json" not in error_text:
+                failures.append(f"质量文件损坏返回了错误的失败原因：{exc}")
+        else:
+            failures.append("质量文件损坏时知识检索没有失败关闭")
+        write_json(quality_path, quality_backup)
+
+        missing_entry_quality = json.loads(json.dumps(quality_backup, ensure_ascii=False))
+        missing_entry_quality["entries"].pop("seed", None)
+        write_json(quality_path, missing_entry_quality)
+        missing_entry_result = run_loop(
+            task_summary="验证单条质量元数据缺失时失败关闭",
+            evidence_root=tmp / "missing-entry-quality-evidence",
+            knowledge_root=knowledge_root,
+            query="seed",
+            trigger="workflow_drift",
+            lesson="单条质量元数据缺失时不能采用该知识。",
+            decision="no_promote",
+            candidate_id="missing-entry-quality-fail-closed",
+            privacy_class="public",
+            proposed_destination="assets/knowledge/entries",
+            promote_title="Missing Entry Quality Fail Closed",
+            promote_summary="单条质量元数据缺失时禁止该知识直接驱动。",
+            promote_tags=["self-purification", "quality", "negative-test"],
+        )
+        missing_entry_retrieval = load_json(pathlib.Path(missing_entry_result["retrieval"]))
+        if missing_entry_retrieval.get("adopted_entries") or not any(
+            isinstance(item, dict)
+            and item.get("id") == "seed"
+            and isinstance(item.get("quality"), dict)
+            and item["quality"].get("quality_status") == "missing_quality"
+            for item in missing_entry_retrieval.get("matches", [])
+        ):
+            failures.append("单条质量元数据缺失时没有禁止该知识直接驱动")
+        write_json(quality_path, quality_backup)
+
+        conflicting_quality = json.loads(json.dumps(quality_backup, ensure_ascii=False))
+        conflicting_quality["entries"]["seed"]["conflicts_with"] = ["blocked-self-purification-reference"]
+        conflicting_quality["entries"]["seed"]["conflict_resolution"] = "冲突未解除前 seed 不得直接驱动。"
+        write_json(quality_path, conflicting_quality)
+        conflict_result = run_loop(
+            task_summary="验证知识冲突标记的运行时执行",
+            evidence_root=tmp / "conflicting-quality-evidence",
+            knowledge_root=knowledge_root,
+            query="seed",
+            trigger="workflow_drift",
+            lesson="存在 conflicts_with 时不能采用该知识。",
+            decision="no_promote",
+            candidate_id="conflicting-quality-fail-closed",
+            privacy_class="public",
+            proposed_destination="assets/knowledge/entries",
+            promote_title="Conflicting Quality Fail Closed",
+            promote_summary="存在冲突标记时禁止知识直接驱动。",
+            promote_tags=["self-purification", "quality", "negative-test"],
+        )
+        conflict_retrieval = load_json(pathlib.Path(conflict_result["retrieval"]))
+        if conflict_retrieval.get("adopted_entries") or not any(
+            isinstance(item, dict)
+            and item.get("id") == "seed"
+            and isinstance(item.get("quality"), dict)
+            and "conflicts_with is present" in item["quality"].get("reasons", [])
+            for item in conflict_retrieval.get("matches", [])
+        ):
+            failures.append("conflicts_with 没有在自我净化运行时禁止知识直接驱动")
+        write_json(quality_path, quality_backup)
         matches = search_knowledge(knowledge_root, "self-purification runtime")
         if not any(item.get("id") == "self-purification-runtime-loop" for item in matches):
             failures.append("公共晋升后的知识条目无法被再次检索命中")
+        promoted_quality = load_json(knowledge_root / "assets" / "knowledge" / "quality.json")
+        promoted_meta = promoted_quality.get("entries", {}).get("self-purification-runtime-loop", {})
+        if promoted_meta.get("usage_policy") != "review_required":
+            failures.append("公共晋升没有同步写入保守的知识质量元数据")
+        if promoted_meta.get("source_refs") != ["assets/knowledge/entries/self-purification-runtime-loop.md"]:
+            failures.append("公共晋升质量元数据没有绑定知识正文来源")
+
+        promoted_quality["entries"].pop("self-purification-runtime-loop", None)
+        write_json(knowledge_root / "assets" / "knowledge" / "quality.json", promoted_quality)
+        same_id_workers: list[tuple[str, subprocess.Popen[str]]] = []
+        for suffix in ["a", "b"]:
+            worker = subprocess.Popen(
+                [
+                    sys.executable,
+                    str(pathlib.Path(__file__).resolve()),
+                    "run-loop",
+                    "--task-summary",
+                    "验证自我净化运行闭环",
+                    "--evidence-root",
+                    str(tmp / f"same-id-{suffix}-evidence"),
+                    "--knowledge-root",
+                    str(knowledge_root),
+                    "--query",
+                    "self-purification",
+                    "--trigger",
+                    "workflow_drift",
+                    "--lesson",
+                    "自我净化必须把任务前检索、任务后候选、评审决策和后续召回串成闭环。",
+                    "--decision",
+                    "promote_public",
+                    "--candidate-id",
+                    "self-purification-runtime-loop",
+                    "--privacy-class",
+                    "public",
+                    "--proposed-destination",
+                    "assets/knowledge/entries",
+                    "--promote-title",
+                    "Self Purification Runtime Loop",
+                    "--promote-summary",
+                    "自我净化必须形成可执行的检索、候选、决策和召回闭环。",
+                    "--promote-tags",
+                    "self-purification,runtime,knowledge",
+                ],
+                cwd=str(REPO_ROOT),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            same_id_workers.append((suffix, worker))
+        for suffix, worker in same_id_workers:
+            try:
+                stdout, stderr = worker.communicate(timeout=20)
+            except subprocess.TimeoutExpired:
+                worker.kill()
+                stdout, stderr = worker.communicate(timeout=5)
+                failures.append(f"同一 ID 并发补写进程超时：{suffix}")
+                continue
+            if worker.returncode != 0 or "REDCAP_SELF_PURIFICATION_RUN_LOOP_OK" not in stdout:
+                failures.append(f"同一 ID 并发补写进程失败：{suffix}: {stderr or stdout}")
+        same_id_quality = load_json(knowledge_root / "assets" / "knowledge" / "quality.json")
+        if "self-purification-runtime-loop" not in same_id_quality.get("entries", {}):
+            failures.append("同一 ID 并发补写没有恢复质量元数据")
+
+        conflicting_body = "\n".join([
+            "来源任务：验证自我净化运行闭环",
+            "",
+            "经验：这是一个故意不一致的正文，必须被拒绝。",
+            "",
+            "使用规则：任务前检索命中后，必须说明该经验如何影响计划、实现或验收。",
+        ])
+        try:
+            promote_public_knowledge(
+                knowledge_root=knowledge_root,
+                entry_id="self-purification-runtime-loop",
+                title="Self Purification Runtime Loop",
+                summary="自我净化必须形成可执行的检索、候选、决策和召回闭环。",
+                tags=["self-purification", "runtime", "knowledge"],
+                body=conflicting_body,
+                source_path="negative-probe",
+                reviewer="self-check",
+                reason="正文冲突负向探针。",
+                evidence_root=tmp / "content-conflict-evidence",
+            )
+        except SystemExit as exc:
+            if "正文与本次候选不一致" not in str(exc):
+                failures.append(f"正文冲突返回了错误的失败原因：{exc}")
+        else:
+            failures.append("同一知识 ID 的正文冲突没有被拒绝")
+
+        conflict_workers: list[tuple[str, subprocess.Popen[str]]] = []
+        for suffix, lesson in [
+            ("a", "同一 ID 并发冲突候选 A。"),
+            ("b", "同一 ID 并发冲突候选 B。"),
+        ]:
+            worker = subprocess.Popen(
+                [
+                    sys.executable,
+                    str(pathlib.Path(__file__).resolve()),
+                    "run-loop",
+                    "--task-summary",
+                    "验证同一 ID 不同正文的并发冲突",
+                    "--evidence-root",
+                    str(tmp / f"same-id-conflict-{suffix}-evidence"),
+                    "--knowledge-root",
+                    str(knowledge_root),
+                    "--query",
+                    "same id conflict",
+                    "--trigger",
+                    "workflow_drift",
+                    "--lesson",
+                    lesson,
+                    "--decision",
+                    "promote_public",
+                    "--candidate-id",
+                    "same-id-concurrent-conflict",
+                    "--privacy-class",
+                    "public",
+                    "--proposed-destination",
+                    "assets/knowledge/entries",
+                    "--promote-title",
+                    "Same ID Concurrent Conflict",
+                    "--promote-summary",
+                    "同一知识 ID 的不同正文并发时只能接受一个候选。",
+                    "--promote-tags",
+                    "self-purification,concurrency,conflict",
+                ],
+                cwd=str(REPO_ROOT),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            conflict_workers.append((suffix, worker))
+        conflict_results: list[tuple[str, int, str]] = []
+        for suffix, worker in conflict_workers:
+            try:
+                stdout, stderr = worker.communicate(timeout=20)
+            except subprocess.TimeoutExpired:
+                worker.kill()
+                stdout, stderr = worker.communicate(timeout=5)
+                failures.append(f"同一 ID 不同正文并发进程超时：{suffix}")
+            conflict_results.append((suffix, int(worker.returncode or 0), stderr or stdout))
+        conflict_successes = [item for item in conflict_results if item[1] == 0]
+        conflict_rejections = [item for item in conflict_results if item[1] != 0]
+        if len(conflict_successes) != 1 or len(conflict_rejections) != 1:
+            failures.append(f"同一 ID 不同正文并发必须恰好一方成功：{conflict_results}")
+        elif "正文与本次候选不一致" not in conflict_rejections[0][2]:
+            failures.append(f"同一 ID 不同正文并发没有给出内容冲突原因：{conflict_rejections[0][2]}")
+        conflict_index = load_knowledge_index(knowledge_root)
+        conflict_entries = [
+            item for item in conflict_index.get("entries", [])
+            if isinstance(item, dict) and item.get("id") == "same-id-concurrent-conflict"
+        ]
+        conflict_quality = load_json(knowledge_root / "assets" / "knowledge" / "quality.json")
+        if len(conflict_entries) != 1:
+            failures.append(f"同一 ID 不同正文并发产生了错误的索引数量：{len(conflict_entries)}")
+        if "same-id-concurrent-conflict" not in conflict_quality.get("entries", {}):
+            failures.append("同一 ID 不同正文并发没有保留胜出候选的质量元数据")
+
+        concurrent_workers: list[tuple[str, subprocess.Popen[str]]] = []
+        for suffix in ["a", "b"]:
+            candidate_id = f"concurrent-promotion-{suffix}"
+            worker = subprocess.Popen(
+                [
+                    sys.executable,
+                    str(pathlib.Path(__file__).resolve()),
+                    "run-loop",
+                    "--task-summary",
+                    f"并发晋升回归 {suffix}",
+                    "--evidence-root",
+                    str(tmp / f"concurrent-{suffix}-evidence"),
+                    "--knowledge-root",
+                    str(knowledge_root),
+                    "--query",
+                    "self-purification",
+                    "--trigger",
+                    "new_reusable_design",
+                    "--lesson",
+                    f"并发晋升候选 {suffix} 必须与另一个进程同时安全写入。",
+                    "--decision",
+                    "promote_public",
+                    "--candidate-id",
+                    candidate_id,
+                    "--privacy-class",
+                    "public",
+                    "--proposed-destination",
+                    "assets/knowledge/entries",
+                    "--promote-title",
+                    f"Concurrent Promotion {suffix.upper()}",
+                    "--promote-summary",
+                    f"并发晋升回归条目 {suffix}。",
+                    "--promote-tags",
+                    "self-purification,concurrency",
+                ],
+                cwd=str(REPO_ROOT),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            concurrent_workers.append((candidate_id, worker))
+        for candidate_id, worker in concurrent_workers:
+            try:
+                stdout, stderr = worker.communicate(timeout=20)
+            except subprocess.TimeoutExpired:
+                worker.kill()
+                stdout, stderr = worker.communicate(timeout=5)
+                failures.append(f"并发晋升进程超时：{candidate_id}")
+                continue
+            if worker.returncode != 0 or "REDCAP_SELF_PURIFICATION_RUN_LOOP_OK" not in stdout:
+                failures.append(f"并发晋升进程失败：{candidate_id}: {stderr or stdout}")
+        concurrent_index = load_knowledge_index(knowledge_root)
+        concurrent_ids = {
+            str(item.get("id"))
+            for item in concurrent_index.get("entries", [])
+            if isinstance(item, dict)
+        }
+        concurrent_quality = load_json(knowledge_root / "assets" / "knowledge" / "quality.json")
+        concurrent_quality_ids = set(concurrent_quality.get("entries", {}))
+        for candidate_id, _ in concurrent_workers:
+            if candidate_id not in concurrent_ids:
+                failures.append(f"并发晋升丢失索引条目：{candidate_id}")
+            if candidate_id not in concurrent_quality_ids:
+                failures.append(f"并发晋升丢失质量元数据：{candidate_id}")
+        promotion_lock_dir = knowledge_root / ".redcap" / "state" / ".locks"
+        promotion_lock_files = sorted(path.name for path in promotion_lock_dir.iterdir())
+        if promotion_lock_files != ["knowledge-promotion.lock"]:
+            failures.append(f"知识晋升锁必须按目标复用单一稳定文件且不得残留临时文件：{promotion_lock_files}")
         private_result = run_loop(
             task_summary="验证 Cap 私有人格边界",
             evidence_root=tmp / "private-evidence",

@@ -242,6 +242,22 @@
         "integration-check"
       ],
       "title": "残留批量验证应使用故障注入和跨检查断言"
+    },
+    {
+      "body_read_rule": "index-first",
+      "first_read": "assets/knowledge/entries/provider-retirement-read-only-boundary.md",
+      "id": "provider-retirement-read-only-boundary",
+      "path": "assets/knowledge/entries/provider-retirement-read-only-boundary.md",
+      "route": "active-local-index",
+      "summary": "提供方退役不能靠删除解析器或单点判断：历史证据可读、会话不可写、实时不可调度，并用哨兵和字节不变测试形成纵深门禁。",
+      "tags": [
+        "prism",
+        "provider-policy",
+        "retirement",
+        "historical-evidence",
+        "negative-test"
+      ],
+      "title": "退役提供方必须保持历史只读与实时冻结分离"
     }
   ],
   "raw_archive_default": "forbidden",
